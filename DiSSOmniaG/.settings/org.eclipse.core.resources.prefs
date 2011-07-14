@@ -1,5 +1,6 @@
-#Wed Jul 13 20:53:32 CEST 2011
+#Thu Jul 14 17:55:19 CEST 2011
 eclipse.preferences.version=1
-encoding//src/DiSSOmniaG/api/__init__.py=utf-8
-encoding//src/DiSSOmniaG/util/APIIntrospect.py=utf-8
-encoding//src/DiSSOmniaG_Server.py=utf-8
+encoding//dissomniag/__init__.py=utf-8
+encoding//dissomniag/config.py=utf-8
+encoding//dissomniag/rpcApiAccess.py=utf-8
+encoding/runserver.py=utf-8
