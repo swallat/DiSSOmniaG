@@ -15,8 +15,10 @@ from twisted.conch import error, avatar, recvline, interfaces as conchinterfaces
 from twisted.conch.ssh import factory, userauth, connection, keys, session, common
 from twisted.conch.insults import insults
 from twisted.application import service, internet
+from twisted.python import failure
 from zope.interface import implements
 import os
+import base64
 
 # Imports for Manhole Server
 from twisted.conch import manhole, manhole_ssh
@@ -35,15 +37,15 @@ class Introspection():
     def listMethods(self, user = None):
         return [m for m in dir(self.api) if (callable(getattr(self.api, m)) 
                                              and not m.startswith("_"))]
-
+    
+    # ToDO Reimplememtz
     def methodSignature(self, method, user = None):
         func = getattr(self.api, method)
         if not func:
             return "Unknown method: %s" % method
         import inspect
         argspec = inspect.getargspec(func)
-        argstr = inspect.formatargspec(argspec.args[:-1],
-                                       defaults = argspec.defaults[:-1])
+        argstr = inspect.formatargspec(argspec.args[:-1], defaults = argspec.defaults[:-1])
         return method + argstr
 
     def methodHelp(self, method, user = None):
@@ -56,10 +58,10 @@ class Introspection():
         return doc
         
 class APIServer(xmlrpc.XMLRPC):
-    def __init__(self, papi):
-    #def __init__(self, papi, login):
+    #def __init__(self, papi):
+    def __init__(self, papi, login):
         self.api = papi
-        #self.login = login
+        self.login = login
         self.introspection = Introspection(self.api)
         xmlrpc.XMLRPC.__init__(self, allowNone = True)
         #self.logger = tomato.lib.log.Logger(tomato.config.LOG_DIR + "/api.log")
@@ -74,7 +76,8 @@ class APIServer(xmlrpc.XMLRPC):
     def execute(self, function, args, user):
         try:
             #self.log(function, args, user)
-            return function(*(args[0]), user = user, **(args[1])) 
+            #return function(*(args[0]), user = user, **(args[1]))
+            return function(*(args))
         except xmlrpc.Fault, exc:
             #fault.log(exc)
             raise
@@ -87,14 +90,13 @@ class APIServer(xmlrpc.XMLRPC):
     def render(self, request):
         username = request.getUser()
         passwd = request.getPassword()
-        user = None
-        #user = self.login(username, passwd)
-        #if not user:
-        #    request.setResponseCode(http.UNAUTHORIZED)
-        #    if username == '' and passwd == '':
-        #        return 'Authorization required!'
-        #    else:
-        #        return 'Authorization Failed!'
+        user = self.login(username, passwd)
+        if not user:
+            request.setResponseCode(http.UNAUTHORIZED)
+            if username == '' and passwd == '':
+                return 'Authorization required!'
+            else:
+                return 'Authorization Failed!'
         request.content.seek(0, 0)
         args, functionPath = xmlrpclib.loads(request.content.read())
         function = None
@@ -136,8 +138,9 @@ class CliIntrospection(Introspection):
     
 
 class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
-    def __init__(self, user):
-        self.user = user
+    def __init__(self, avatar):
+        self.avatar = avatar
+        self.user = avatar.user
         self.api = dissomniag.cliApi
     
     def connectionMade(self):
@@ -211,7 +214,7 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
 
     def do_quit(self, terminal):
         "Ends your session. Usage: quit"
-        self.terminal.write("Thanks for playing!")
+        self.terminal.write("Bye")
         self.terminal.nextLine()
         self.terminal.loseConnection()
 
@@ -222,12 +225,52 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
     def connectionLost(self, reason):
         pass
     
+class SSHDiSSOmniaGCredentialsChecker:
+    implements(checkers.ICredentialsChecker)
+    credentialInterfaces = (credentials.ISSHPrivateKey,)
+    
+    def __init__(self):
+        pass
+        
+    def requestAvatarId(self, credentials):
+        user = dissomniag.auth.getUser(credentials.username)
+        if user:
+            if not user.getKeys():
+                raise failure.Failure(
+                                error.ConchError("User has no public Key."))
+            userKeys = user.getKeys()         
+            for key in userKeys:
+                if not credentials.blob == base64.decodestring(key):
+                    # if not key.hasNext():
+                    #    raise failure.Failure(
+                    #        error.ConchError("I don't recognize that key"))
+                    continue
+                return user # ToDO: Überprüfen, warum eine Signatur nicht nötig ist
+                
+                #===========================================================
+                # if not credentials.signature:
+                #    print("credentials.signature %s" % credentials.signature)
+                #    print("Has no signature")
+                #    return failure.Failure(error.ValidPublicKey())
+                # pubKey = keys.Key.fromString(data = credentials.signature)
+                # print("credentials.signature %s" % credentials.signature)
+                # print("credentials.sigData %s" % credentials.sigData)
+                # if pubKey.verify(credentials.signature, credentials.sigData):
+                #    return user
+                # else:
+                #    # continue    Allerdings noch nicht gesichert
+                #    return failure.Failure(
+                #                error.ConchError("Incorrect Signature"))
+                #===========================================================
+         
+        return failure.Failure(error.ConchError("No such user"))
+                                                
 class SSHDiSSOmniaGAvatar(avatar.ConchUser):
     implements(conchinterfaces.ISession)
     
-    def __init__(self, username):
+    def __init__(self, user):
         avatar.ConchUser.__init__(self)
-        self.username = username
+        self.user = user
         self.channelLookup.update({'session':session.SSHSession})
 
     def openShell(self, protocol):
@@ -280,13 +323,13 @@ def getRSAKeys():
 # Manhole Server
 #===============================================================================
 
-def getManholeFactory(namespace, **passwords):
+def getManholeFactory(namespace):
     realm = manhole_ssh.TerminalRealm()
-    def getManhole(_): return manhole.Manhole(namespace)
+    def getManhole(_): return manhole.ColoredManhole(namespace)
     realm.chainedProtocolFactory.protocolFactory = getManhole
     p = portal.Portal(realm)
     p.registerChecker(
-                      checkers.InMemoryUsernamePasswordDatabaseDontUse(**passwords))
+                      SSHDiSSOmniaGCredentialsChecker())
     f = manhole_ssh.ConchFactory(p)
     return f
 
@@ -297,7 +340,7 @@ def getManholeFactory(namespace, **passwords):
 
         
 def startRPCServer():
-    api_server = APIServer(dissomniag.api)
+    api_server = APIServer(dissomniag.api, dissomniag.auth.login)
     if dissomniag.config.SSL:
         sslContext = ssl.DefaultOpenSSLContextFactory(dissomniag.config.SSL_PrivKey, dissomniag.config.SSL_CaKey)
         reactor.listenSSL(dissomniag.config.rpcServerPort, server.Site(api_server), contextFactory = sslContext) 
@@ -307,19 +350,20 @@ def startRPCServer():
 def startSSHServer():
     sshFactory = factory.SSHFactory()
     sshFactory.portal = portal.Portal(SSHDiSSOmniaGRealm())
-    users = {'admin':'aaa', 'guest':'bbb'}
+    #users = {'admin':'aaa', 'guest':'bbb'}
     sshFactory.portal.registerChecker(
-                                      checkers.InMemoryUsernamePasswordDatabaseDontUse(**users))
+                        SSHDiSSOmniaGCredentialsChecker())
     publicKeyString, rsaKey = getRSAKeys()
     sshFactory.publicKeys = {'ssh-rsa': publicKeyString}
     sshFactory.privateKeys = {'ssh-rsa': rsaKey}
     reactor.listenTCP(dissomniag.config.sshServerPort, sshFactory)
 
 def startManholeServer():
-    reactor.listenTCP(dissomniag.config.manholeServerPort, getManholeFactory(globals(), admin = 'aaa'))
+    reactor.listenTCP(dissomniag.config.manholeServerPort, getManholeFactory(globals()))
 
 
 def startServer():
+    dissomniag.auth.addUser(dissomniag.auth.User("admin", "b00tloader", "AAAAB3NzaC1yc2EAAAABIwAAAf0N76ZZlEhL6I3+7bMx2Tje+nuAoJ4ylefaiAvl0w5mnYNIfqw7VUlN4TMjBsBReb8b1mefY5XKBEc2FXKSlCBirQeTap9dfYCMN6fJfQfw2IQFUaiXqUJHyvAqGTTtI5bq8d8QA1Kpuc+VJgGdIQXl5wcn4J+z7zB9BfaCrDsZVDTxbObNqCg8M9mc9mNgcoqHam/F6BuU5EDj1tOqXlWPFr2PgAgvvUAjMwvIbKMZU9IaMdG3hzKdoeYjSlQGhxIXH7Qxmv1MWj/O934eSfRTkYp+HEwmeg4IM/kize6IAfnVh6L4KBq1HKXn8SindeY36SZdSP8cl2H6rnA7w2XfC0ercbi2YjUm5iGAPrODbdd5p1LkTTpBt2dpuM23aBZmaQRcreq420ugipXYAL/THSAQ8mcWPbCoLPj+SDY8+GQLys7Wjzj5N1AlBElY9snbFiDefTsWBHarZEkVvOf3j23UN2pHKUIYteKZTuv0/R1mA2zmQr1Btd/nzUqFZqgLjCXkUZk9iG18wlrPSjkFUQOblGP4dn0kGjj3RZdz8ELr4sCiRiqmfe3RNSnFhqQLYZ+I3EObOKLIcAe2LLILYwln1gQHV2K35O0WpBB9XjPXyl65SWIlKqIUOIRmBRemRoA4M3UCKt1I8FN8HIDgxqlw/LzSIL2SsjkOyw=="))
     print("Starting XML-RPC Server at Port: %s" % dissomniag.config.rpcServerPort)
     startRPCServer()
     print("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)
