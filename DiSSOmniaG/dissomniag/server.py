@@ -24,6 +24,7 @@ import base64
 from twisted.conch import manhole, manhole_ssh
 
 import dissomniag
+from twisted.conch.checkers import SSHPublicKeyDatabase
 
 #===============================================================================
 # The Following Twisted XML-RPC Code was extracted in main Parts 
@@ -148,7 +149,6 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
         self.introspection = CliIntrospection(self.api, self.terminal)
         self.terminal.write("Welcome to the DiSSOmniaG SSH server.")
         self.terminal.nextLine()
-        self.do_help()
         self.showPrompt()
 
     def showPrompt(self):
@@ -223,16 +223,18 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
         self.terminal.reset()
 
     def connectionLost(self, reason):
-        pass
+        pass  
     
-class SSHDiSSOmniaGCredentialsChecker:
-    implements(checkers.ICredentialsChecker)
-    credentialInterfaces = (credentials.ISSHPrivateKey,)
+class SSHDiSSOmniaGPublicKeyDatabase(SSHPublicKeyDatabase):
     
-    def __init__(self):
-        pass
-        
-    def requestAvatarId(self, credentials):
+    def _cbRequestAvatarId(self, validKey, credentials):
+        returnMe = SSHPublicKeyDatabase._cbRequestAvatarId(self, validKey[0], credentials)
+        if returnMe == validKey[1].username:
+            return validKey[1]
+        else:
+            return returnMe
+            
+    def checkKey(self, credentials):
         user = dissomniag.auth.getUser(credentials.username)
         if user:
             if not user.getKeys():
@@ -240,30 +242,12 @@ class SSHDiSSOmniaGCredentialsChecker:
                                 error.ConchError("User has no public Key."))
             userKeys = user.getKeys()         
             for key in userKeys:
-                if not credentials.blob == base64.decodestring(key):
+                if credentials.blob == base64.decodestring(key):
                     # if not key.hasNext():
                     #    raise failure.Failure(
                     #        error.ConchError("I don't recognize that key"))
-                    continue
-                return user # ToDO: Überprüfen, warum eine Signatur nicht nötig ist
-                
-                #===========================================================
-                # if not credentials.signature:
-                #    print("credentials.signature %s" % credentials.signature)
-                #    print("Has no signature")
-                #    return failure.Failure(error.ValidPublicKey())
-                # pubKey = keys.Key.fromString(data = credentials.signature)
-                # print("credentials.signature %s" % credentials.signature)
-                # print("credentials.sigData %s" % credentials.sigData)
-                # if pubKey.verify(credentials.signature, credentials.sigData):
-                #    return user
-                # else:
-                #    # continue    Allerdings noch nicht gesichert
-                #    return failure.Failure(
-                #                error.ConchError("Incorrect Signature"))
-                #===========================================================
-         
-        return failure.Failure(error.ConchError("No such user"))
+                    return [True, user]
+        raise failure.Failure(error.ConchError("No such user"))
                                                 
 class SSHDiSSOmniaGAvatar(avatar.ConchUser):
     implements(conchinterfaces.ISession)
@@ -315,6 +299,9 @@ def getRSAKeys():
         publicKeyString = file('public.key', 'r').read()
     return publicKeyString, rsaKey
 
+class DiSSOmniaGSSHFactory(factory.SSHFactory):
+    pass
+
 #===============================================================================
 # End SSH Server
 #===============================================================================
@@ -329,7 +316,7 @@ def getManholeFactory(namespace):
     realm.chainedProtocolFactory.protocolFactory = getManhole
     p = portal.Portal(realm)
     p.registerChecker(
-                      SSHDiSSOmniaGCredentialsChecker())
+                      SSHDiSSOmniaGPublicKeyDatabase())
     f = manhole_ssh.ConchFactory(p)
     return f
 
@@ -348,15 +335,13 @@ def startRPCServer():
         reactor.listenTCP(dissomniag.config.rpcSserverPort, server.Site(api_server))
 
 def startSSHServer():
-    sshFactory = factory.SSHFactory()
-    sshFactory.portal = portal.Portal(SSHDiSSOmniaGRealm())
-    #users = {'admin':'aaa', 'guest':'bbb'}
-    sshFactory.portal.registerChecker(
-                        SSHDiSSOmniaGCredentialsChecker())
+    Portal = portal.Portal(SSHDiSSOmniaGRealm())
+    Portal.registerChecker(SSHDiSSOmniaGPublicKeyDatabase())
     publicKeyString, rsaKey = getRSAKeys()
-    sshFactory.publicKeys = {'ssh-rsa': publicKeyString}
-    sshFactory.privateKeys = {'ssh-rsa': rsaKey}
-    reactor.listenTCP(dissomniag.config.sshServerPort, sshFactory)
+    DiSSOmniaGSSHFactory.portal = Portal
+    DiSSOmniaGSSHFactory.publicKeys = {'ssh-rsa': publicKeyString}
+    DiSSOmniaGSSHFactory.privateKeys = {'ssh-rsa': rsaKey}
+    reactor.listenTCP(dissomniag.config.sshServerPort, DiSSOmniaGSSHFactory())
 
 def startManholeServer():
     reactor.listenTCP(dissomniag.config.manholeServerPort, getManholeFactory(globals()))
