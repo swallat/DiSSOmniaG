@@ -18,3 +18,11 @@ manholeServerPort = 8010
 SSL = True
 SSL_PrivKey = "privatekey.pem"
 SSL_CaKey = "cert.pem"
+
+MAINTANANCE = False
+DB_FILE = "dissomniag.db"
+DB_STRING = "%s:///%s" % ("sqlite", DB_FILE)
+MIGRATE_REPOSITORY = "dissomniag/migrations"
+
+HTPASSWD_FILE = "htpasswd"
+HTPASSWD_ADMIN_USER = "admin"
