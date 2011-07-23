@@ -41,7 +41,6 @@ class User(Base):
         Constructor
         """
         self.username = username
-        self.savePassword(password)
         if publicKey:
             self.addKey(publicKey)
         self.isAdmin = isAdmin
@@ -49,6 +48,10 @@ class User(Base):
         self.loginSSH = loginSSH
         self.loginManhole = loginManhole
         self.isHtpasswd = isHtpasswd
+        if self.isHtpasswd:
+            self.updateHtpasswdPassword(password)
+        else:
+            self._savePassword(password)
         
     def addKey(self, publicKey):
         publicKey = keys.Key.fromString(publicKey).blob()
@@ -67,14 +70,25 @@ class User(Base):
         return self.publicKeys
         
     def checkPassword(self, password):
-        return self.password == crypt.crypt(password, self.password)
-
-    def savePassword(self, password):
+        return self.passwd == crypt.crypt(password, self.passwd)
+    
+    def saveNewPassword(self, newPassword):
+        if (self.username == dissomniag.config.HTPASSWD_ADMIN_USER):
+            return
+        else:
+            self.isHtpasswd = False
+            self._savePassword(newPassword)
+    
+    def updateHtpasswdPassword(self, newPassword):
+        self.isHtpasswd = True
+        self.passwd = newPassword
+        
+    def _savePassword(self, password):
         saltchars = string.ascii_letters + string.digits + './'
         salt = "$1$"
         salt += ''.join([ random.choice(saltchars) for x in range(8) ])
-        self.password = crypt.crypt(password, salt)
-        self.password_time = datetime.datetime.now()
+        self.passwd = crypt.crypt(password, salt)
+        #self.passwd_time = datetime.datetime.now()
         #self.save()
 
     

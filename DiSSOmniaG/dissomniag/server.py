@@ -18,7 +18,6 @@ from twisted.application import service, internet
 from twisted.python import failure
 from zope.interface import implements
 import os
-import base64
 
 # Imports for Manhole Server
 from twisted.conch import manhole, manhole_ssh
@@ -246,7 +245,7 @@ class SSHDiSSOmniaGPublicKeyDatabase(SSHPublicKeyDatabase):
         elif validFlag == LOGIN_SIGN.SECRET_UNVALID:
             raise failure.Failure(error.ConchError("I don't recognize that key"))
         else:
-            raise failure.Failure(error.ConchError("Unsecified failure"))
+            raise failure.Failure(error.ConchError("Unspecified failure"))
         
 class ManholeDiSSOmniaGPublicKeyDatabase(SSHPublicKeyDatabase):
     def _cbRequestAvatarId(self, validKey, credentials):
@@ -267,34 +266,18 @@ class ManholeDiSSOmniaGPublicKeyDatabase(SSHPublicKeyDatabase):
         elif validFlag == LOGIN_SIGN.SECRET_UNVALID:
             raise failure.Failure(error.ConchError("I don't recognize that key"))
         else:
-            raise failure.Failure(error.ConchError("Unsecified failure"))
+            raise failure.Failure(error.ConchError("Unspecified failure"))
                                                 
 class SSHDiSSOmniaGUserAuthDatabase:
     credentialInterfaces = credentials.IUsernamePassword,
     implements(checkers.ICredentialsChecker)
     
     def requestAvatarId(self, credentials):
-        validFlag, user = dissomniag.auth.loginSSH(username = credentials, passwd = credentials.password)
+        validFlag, user = dissomniag.auth.loginSSH(username = credentials.username, passwd = credentials.password)
         if validFlag == LOGIN_SIGN.VALID_USER:
             return defer.succeed(user)
-        elif validFlag == LOGIN_SIGN.NO_SUCH_USER:
-            return defer.fail(error.UnauthorizedLogin("unable to verify password"))
-        elif validFlag == LOGIN_SIGN.UNVALID_ACCESS_METHOD:
-            return defer.fail(error.UnauthorizedLogin("unable to verify password"))
-        elif validFlag == LOGIN_SIGN.SECRET_UNVALID:
-            return defer.fail(error.UnauthorizedLogin("unable to verify password"))
         else:
             return defer.fail(error.UnauthorizedLogin("unable to verify password"))
-        
-        
-        #user = dissomniag.auth.getUser(credentials.username)
-        #if user:
-        #    if user.checkPassword(credentials.password):
-        #
-        #   return defer.succeed(user)
-        #    else: 
-        #        return defer.fail(error.UnauthorizedLogin("unable to verify password"))
-        #return defer.fail(error.UnauthorizedLogin("unable to verify password"))
         
 class ManholeDiSSOmniaGUserAuthDatabase:
     credentialInterfaces = credentials.IUsernamePassword,
@@ -304,24 +287,8 @@ class ManholeDiSSOmniaGUserAuthDatabase:
         validFlag, user = dissomniag.auth.loginManhole(username = credentials.username, passwd = credentials.password)
         if validFlag == LOGIN_SIGN.VALID_USER:
             return defer.succeed(user)
-        elif validFlag == LOGIN_SIGN.NO_SUCH_USER:
-            return defer.fail(error.UnauthorizedLogin("unable to verify password"))
-        elif validFlag == LOGIN_SIGN.UNVALID_ACCESS_METHOD:
-            return defer.fail(error.UnauthorizedLogin("unable to verify password"))
-        elif validFlag == LOGIN_SIGN.SECRET_UNVALID:
-            return defer.fail(error.UnauthorizedLogin("unable to verify password"))
         else:
             return defer.fail(error.UnauthorizedLogin("unable to verify password"))
-        
-        
-        #user = dissomniag.auth.getUser(credentials.username)
-        #if user:
-        #    if user.checkPassword(credentials.password):
-        #
-        #   return defer.succeed(user)
-        #    else: 
-        #        return defer.fail(error.UnauthorizedLogin("unable to verify password"))
-        #return defer.fail(error.UnauthorizedLogin("unable to verify password"))
     
 class SSHDiSSOmniaGAvatar(avatar.ConchUser):
     implements(conchinterfaces.ISession)
@@ -425,19 +392,17 @@ def startManholeServer():
 
 
 def startServer():
-    session = dissomniag.dbAccess.Session()
-    user1 = dissomniag.auth.User(username = "admin", password = "b00tloader", publicKey = "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAf0N76ZZlEhL6I3+7bMx2Tje+nuAoJ4ylefaiAvl0w5mnYNIfqw7VUlN4TMjBsBReb8b1mefY5XKBEc2FXKSlCBirQeTap9dfYCMN6fJfQfw2IQFUaiXqUJHyvAqGTTtI5bq8d8QA1Kpuc+VJgGdIQXl5wcn4J+z7zB9BfaCrDsZVDTxbObNqCg8M9mc9mNgcoqHam/F6BuU5EDj1tOqXlWPFr2PgAgvvUAjMwvIbKMZU9IaMdG3hzKdoeYjSlQGhxIXH7Qxmv1MWj/O934eSfRTkYp+HEwmeg4IM/kize6IAfnVh6L4KBq1HKXn8SindeY36SZdSP8cl2H6rnA7w2XfC0ercbi2YjUm5iGAPrODbdd5p1LkTTpBt2dpuM23aBZmaQRcreq420ugipXYAL/THSAQ8mcWPbCoLPj+SDY8+GQLys7Wjzj5N1AlBElY9snbFiDefTsWBHarZEkVvOf3j23UN2pHKUIYteKZTuv0/R1mA2zmQr1Btd/nzUqFZqgLjCXkUZk9iG18wlrPSjkFUQOblGP4dn0kGjj3RZdz8ELr4sCiRiqmfe3RNSnFhqQLYZ+I3EObOKLIcAe2LLILYwln1gQHV2K35O0WpBB9XjPXyl65SWIlKqIUOIRmBRemRoA4M3UCKt1I8FN8HIDgxqlw/LzSIL2SsjkOyw== sw@sw-laptop", isAdmin = True, loginManhole = True, loginSSH = True, loginRPC = True, isHtpasswd = False)
-    print(user1.username)
-    user2 = dissomniag.auth.User("sw", "b00tloader")
-    print(user2.username)
-    session.add(user1)
-    session.add(user2)
-    session.flush()
-    for i in session.query(dissomniag.auth.User).all():
-        print "query: " + i.username
-        for j in i.publicKeys:
-            print j.publicKey
+    #session = dissomniag.dbAccess.Session()
+    #user1 = dissomniag.auth.User(username = "admin", password = "b00tloader", publicKey = "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAf0N76ZZlEhL6I3+7bMx2Tje+nuAoJ4ylefaiAvl0w5mnYNIfqw7VUlN4TMjBsBReb8b1mefY5XKBEc2FXKSlCBirQeTap9dfYCMN6fJfQfw2IQFUaiXqUJHyvAqGTTtI5bq8d8QA1Kpuc+VJgGdIQXl5wcn4J+z7zB9BfaCrDsZVDTxbObNqCg8M9mc9mNgcoqHam/F6BuU5EDj1tOqXlWPFr2PgAgvvUAjMwvIbKMZU9IaMdG3hzKdoeYjSlQGhxIXH7Qxmv1MWj/O934eSfRTkYp+HEwmeg4IM/kize6IAfnVh6L4KBq1HKXn8SindeY36SZdSP8cl2H6rnA7w2XfC0ercbi2YjUm5iGAPrODbdd5p1LkTTpBt2dpuM23aBZmaQRcreq420ugipXYAL/THSAQ8mcWPbCoLPj+SDY8+GQLys7Wjzj5N1AlBElY9snbFiDefTsWBHarZEkVvOf3j23UN2pHKUIYteKZTuv0/R1mA2zmQr1Btd/nzUqFZqgLjCXkUZk9iG18wlrPSjkFUQOblGP4dn0kGjj3RZdz8ELr4sCiRiqmfe3RNSnFhqQLYZ+I3EObOKLIcAe2LLILYwln1gQHV2K35O0WpBB9XjPXyl65SWIlKqIUOIRmBRemRoA4M3UCKt1I8FN8HIDgxqlw/LzSIL2SsjkOyw== sw@sw-laptop", isAdmin = True, loginManhole = True, loginSSH = True, loginRPC = True, isHtpasswd = False)
+    #print(user1.username)
+    #user2 = dissomniag.auth.User("sw", "b00tloader")
+    #print(user2.username)
+    #session.add(user1)
+    #session.add(user2)
+    #session.flush()
     
+    print("Parse Htpasswd File at: %s" % dissomniag.config.HTPASSWD_FILE)
+    dissomniag.auth.parseHtpasswdFile()
     print("Starting XML-RPC Server at Port: %s" % dissomniag.config.rpcServerPort)
     startRPCServer()
     print("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)

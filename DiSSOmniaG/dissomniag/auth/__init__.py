@@ -9,38 +9,37 @@ class LOGIN_SIGN(object):
     SECRET_UNVALID = 2
     UNVALID_ACCESS_METHOD = 3
 
-#===============================================================================
-# users = []
-# 
-# def login(username, password):
-#    for user in users:
-#        if user.username == username and user.password == password:
-#            return user
-#    return None  
-# 
-# def getUserAndKeys(username):
-#    session = Session()
-#    try:
-#        user = session.query(User).filter(User.username == username).one()
-#        return user, user.getKeys()
-#    except (NoResultFound, MultipleResultsFound):
-#        return None, None
-# 
-# def getUser(username):
-#    session = Session()
-#    try:
-#        return session.query(User).filter(User.username == username).one()
-#    except (NoResultFound, MultipleResultsFound):
-#        return None
-#        
-# 
-# def getUserObjects():
-#    return users
-# 
-# def addUser(user):
-#    users.append(user)
-#===============================================================================
-    
+def parseHtpasswdFile():
+    #===========================================================================
+    # From Tomato:
+    #===========================================================================
+    lines = [l.rstrip().split(':', 1) for l in file(dissomniag.config.HTPASSWD_FILE).readlines()]
+    session = Session()
+    for line in lines:
+        username = line[0]
+        hashedPassword = line[1]
+        try:
+            dbUser = session.query(User).filter(User.username == username).one()
+            
+            if username == dissomniag.config.HTPASSWD_ADMIN_USER:
+                if dbUser.passwd != hashedPassword:
+                    dbUser.updateHtpasswdPassword(hashedPassword)
+                    session.flush()
+                
+            if dbUser.isHtpasswd and dbUser.passwd != hashedPassword:
+                dbUser.updateHtpasswdPassword(hashedPassword)
+                
+        except NoResultFound:
+            if username == dissomniag.config.HTPASSWD_ADMIN_USER:
+                newUser = User(username, password = hashedPassword, publicKey = None,
+                               isAdmin = True, loginRPC = True, loginSSH = True,
+                               loginManhole = True, isHtpasswd = True)
+            else: 
+                newUser = User(username, password = hashedPassword, publicKey = None,
+                               isAdmin = False, loginRPC = True, loginSSH = True,
+                               loginManhole = False, isHtpasswd = True)
+            session.add(newUser)
+            session.flush()
 
 def loginRPC(username, passwd = None):
     if not passwd:
@@ -54,9 +53,7 @@ def loginRPC(username, passwd = None):
     if not user.loginRPC:
         return LOGIN_SIGN.UNVALID_ACCESS_METHOD, None
     return _loginViaPasswd(user, passwd)
-        
-    
-        
+                
 def loginSSH(username, passwd = None, key = None):
     if not passwd and not key:
         return LOGIN_SIGN.SECRET_UNVALID, None
@@ -74,8 +71,8 @@ def loginSSH(username, passwd = None, key = None):
         return _loginViaPasswd(user, passwd)
             
 def loginManhole(username, passwd = None, key = None):
-    print("In LoginManhole")
     if not passwd and not key:
+        print("Both not")
         return LOGIN_SIGN.SECRET_UNVALID, None
     session = Session()
     try:
@@ -97,9 +94,8 @@ def _loginViaPubKey(user, key):
             return LOGIN_SIGN.VALID_USER, user
     return LOGIN_SIGN.SECRET_UNVALID, None
     
-
-def _loginViaPasswd(user, passwd):
-    if user.checkPassword(passwd):
+def _loginViaPasswd(user, passwd): 
+    if user.checkPassword(passwd) == True:
         return LOGIN_SIGN.VALID_USER, user
     else:
         return LOGIN_SIGN.SECRET_UNVALID, None
