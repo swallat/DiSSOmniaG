@@ -10,8 +10,10 @@ def parseHtpasswdFile():
     #===========================================================================
     lines = [l.rstrip().split(':', 1) for l in file(dissomniag.config.HTPASSWD_FILE).readlines()]
     session = Session()
+    usernamesInHtpasswd = []
     for line in lines:
         username = line[0]
+        usernamesInHtpasswd.append(username)
         hashedPassword = line[1]
         try:
             dbUser = session.query(User).filter(User.username == username).one()
@@ -26,12 +28,20 @@ def parseHtpasswdFile():
                 
         except NoResultFound:
             if username == dissomniag.config.HTPASSWD_ADMIN_USER:
-                newUser = User(username, password = hashedPassword, publicKey = None,
+                newUser = User.addUser(username, password = hashedPassword, publicKey = None,
                                isAdmin = True, loginRPC = True, loginSSH = True,
                                loginManhole = True, isHtpasswd = True)
             else: 
-                newUser = User(username, password = hashedPassword, publicKey = None,
+                newUser = User.addUser(username, password = hashedPassword, publicKey = None,
                                isAdmin = False, loginRPC = True, loginSSH = True,
                                loginManhole = False, isHtpasswd = True)
             session.add(newUser)
             session.commit()
+    try:
+        for user in session.query(User).filter(User.isHtpasswd == True).all():
+            if user.username not in usernamesInHtpasswd:
+                session.delete(user)
+    except NoResultFound:
+        pass
+    session.commit()
+    session.flush()

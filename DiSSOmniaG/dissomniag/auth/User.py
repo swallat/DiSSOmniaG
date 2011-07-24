@@ -188,7 +188,8 @@ class User(Base):
                 return LOGIN_SIGN.VALID_USER, user
         return LOGIN_SIGN.SECRET_UNVALID, None
     @staticmethod    
-    def _loginViaPasswd(user, passwd): 
+    def _loginViaPasswd(user, passwd):
+        
         if user.checkPassword(passwd) == True:
             return LOGIN_SIGN.VALID_USER, user
         else:
