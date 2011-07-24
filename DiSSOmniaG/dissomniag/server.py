@@ -91,7 +91,7 @@ class APIServer(xmlrpc.XMLRPC):
     def render(self, request):
         username = request.getUser()
         passwd = request.getPassword()
-        sign, user = dissomniag.auth.loginRPC(username, passwd) 
+        sign, user = dissomniag.auth.User.loginRPCMethod(username, passwd) 
         if sign != LOGIN_SIGN.VALID_USER:
             request.setResponseCode(http.UNAUTHORIZED)
             if username == '' and passwd == '':
@@ -235,7 +235,7 @@ class SSHDiSSOmniaGPublicKeyDatabase(SSHPublicKeyDatabase):
             return returnMe
             
     def checkKey(self, credentials):
-        validFlag, user = dissomniag.auth.loginSSH(username = credentials, key = credentials.blob)
+        validFlag, user = dissomniag.auth.User.loginSSHMethod(username = credentials.username, key = credentials.blob)
         if validFlag == LOGIN_SIGN.VALID_USER:
             return [True, user]
         elif validFlag == LOGIN_SIGN.NO_SUCH_USER:
@@ -256,7 +256,7 @@ class ManholeDiSSOmniaGPublicKeyDatabase(SSHPublicKeyDatabase):
             return returnMe
             
     def checkKey(self, credentials):
-        validFlag, user = dissomniag.auth.loginManhole(username = credentials.username, key = credentials.blob)
+        validFlag, user = dissomniag.auth.User.loginManholeMethod(username = credentials.username, key = credentials.blob)
         if validFlag == LOGIN_SIGN.VALID_USER:
             return [True, user]
         elif validFlag == LOGIN_SIGN.NO_SUCH_USER:
@@ -273,7 +273,7 @@ class SSHDiSSOmniaGUserAuthDatabase:
     implements(checkers.ICredentialsChecker)
     
     def requestAvatarId(self, credentials):
-        validFlag, user = dissomniag.auth.loginSSH(username = credentials.username, passwd = credentials.password)
+        validFlag, user = dissomniag.auth.User.loginSSHMethod(username = credentials.username, passwd = credentials.password)
         if validFlag == LOGIN_SIGN.VALID_USER:
             return defer.succeed(user)
         else:
@@ -284,7 +284,7 @@ class ManholeDiSSOmniaGUserAuthDatabase:
     implements(checkers.ICredentialsChecker)
     
     def requestAvatarId(self, credentials):
-        validFlag, user = dissomniag.auth.loginManhole(username = credentials.username, passwd = credentials.password)
+        validFlag, user = dissomniag.auth.User.loginManholeMethod(username = credentials.username, passwd = credentials.password)
         if validFlag == LOGIN_SIGN.VALID_USER:
             return defer.succeed(user)
         else:
@@ -392,15 +392,6 @@ def startManholeServer():
 
 
 def startServer():
-    #session = dissomniag.dbAccess.Session()
-    #user1 = dissomniag.auth.User(username = "admin", password = "b00tloader", publicKey = "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAf0N76ZZlEhL6I3+7bMx2Tje+nuAoJ4ylefaiAvl0w5mnYNIfqw7VUlN4TMjBsBReb8b1mefY5XKBEc2FXKSlCBirQeTap9dfYCMN6fJfQfw2IQFUaiXqUJHyvAqGTTtI5bq8d8QA1Kpuc+VJgGdIQXl5wcn4J+z7zB9BfaCrDsZVDTxbObNqCg8M9mc9mNgcoqHam/F6BuU5EDj1tOqXlWPFr2PgAgvvUAjMwvIbKMZU9IaMdG3hzKdoeYjSlQGhxIXH7Qxmv1MWj/O934eSfRTkYp+HEwmeg4IM/kize6IAfnVh6L4KBq1HKXn8SindeY36SZdSP8cl2H6rnA7w2XfC0ercbi2YjUm5iGAPrODbdd5p1LkTTpBt2dpuM23aBZmaQRcreq420ugipXYAL/THSAQ8mcWPbCoLPj+SDY8+GQLys7Wjzj5N1AlBElY9snbFiDefTsWBHarZEkVvOf3j23UN2pHKUIYteKZTuv0/R1mA2zmQr1Btd/nzUqFZqgLjCXkUZk9iG18wlrPSjkFUQOblGP4dn0kGjj3RZdz8ELr4sCiRiqmfe3RNSnFhqQLYZ+I3EObOKLIcAe2LLILYwln1gQHV2K35O0WpBB9XjPXyl65SWIlKqIUOIRmBRemRoA4M3UCKt1I8FN8HIDgxqlw/LzSIL2SsjkOyw== sw@sw-laptop", isAdmin = True, loginManhole = True, loginSSH = True, loginRPC = True, isHtpasswd = False)
-    #print(user1.username)
-    #user2 = dissomniag.auth.User("sw", "b00tloader")
-    #print(user2.username)
-    #session.add(user1)
-    #session.add(user2)
-    #session.flush()
-    
     print("Parse Htpasswd File at: %s" % dissomniag.config.HTPASSWD_FILE)
     dissomniag.auth.parseHtpasswdFile()
     print("Starting XML-RPC Server at Port: %s" % dissomniag.config.rpcServerPort)

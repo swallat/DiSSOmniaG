@@ -17,5 +17,7 @@ if not config.MAINTANANCE:
         print("DB under version control.")
     migrate.versioning.api.upgrade(config.DB_STRING, config.MIGRATE_REPOSITORY, version = None)
 
+from dissomniag.dbAccess import Session, Base
+
 from server import startServer
 

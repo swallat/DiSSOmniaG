@@ -6,12 +6,12 @@ meta = MetaData()
 users = Table('users', meta,
              Column('id', Integer, primary_key = True),
              Column('username', String(40), nullable = False, unique = True),
-             Column('passwd', String(40)),
-             Column('isAdmin', Boolean),
-             Column('loginRPC', Boolean),
-             Column('loginSSH', Boolean),
-             Column('loginManhole', Boolean),
-             Column('isHtpasswd', Boolean),
+             Column('passwd', String(40), nullable = False),
+             Column('isAdmin', Boolean, default = False),
+             Column('loginRPC', Boolean, default = False),
+             Column('loginSSH', Boolean, default = False),
+             Column('loginManhole', Boolean, default = False),
+             Column('isHtpasswd', Boolean, default = False),
 )
 
 public_keys = Table('public_keys', meta,
