@@ -18,7 +18,6 @@ from twisted.application import service, internet
 from twisted.python import failure
 from zope.interface import implements
 import os
-import base64
 
 # Imports for Manhole Server
 from twisted.conch import manhole, manhole_ssh
@@ -26,6 +25,8 @@ from twisted.conch import manhole, manhole_ssh
 import dissomniag
 from twisted.conch.checkers import SSHPublicKeyDatabase
 
+import dissomniag.auth
+from dissomniag.auth import LOGIN_SIGN
 #===============================================================================
 # The Following Twisted XML-RPC Code was extracted in main Parts 
 # from the Glab ToMaTo Project.
@@ -60,9 +61,8 @@ class Introspection():
         
 class APIServer(xmlrpc.XMLRPC):
     #def __init__(self, papi):
-    def __init__(self, papi, login):
+    def __init__(self, papi):
         self.api = papi
-        self.login = login
         self.introspection = Introspection(self.api)
         xmlrpc.XMLRPC.__init__(self, allowNone = True)
         #self.logger = tomato.lib.log.Logger(tomato.config.LOG_DIR + "/api.log")
@@ -91,8 +91,8 @@ class APIServer(xmlrpc.XMLRPC):
     def render(self, request):
         username = request.getUser()
         passwd = request.getPassword()
-        user = self.login(username, passwd)
-        if not user:
+        sign, user = dissomniag.auth.User.loginRPCMethod(username, passwd) 
+        if sign != LOGIN_SIGN.VALID_USER:
             request.setResponseCode(http.UNAUTHORIZED)
             if username == '' and passwd == '':
                 return 'Authorization required!'
@@ -235,20 +235,61 @@ class SSHDiSSOmniaGPublicKeyDatabase(SSHPublicKeyDatabase):
             return returnMe
             
     def checkKey(self, credentials):
-        user = dissomniag.auth.getUser(credentials.username)
-        if user:
-            if not user.getKeys():
-                raise failure.Failure(
-                                error.ConchError("User has no public Key."))
-            userKeys = user.getKeys()         
-            for key in userKeys:
-                if credentials.blob == base64.decodestring(key):
-                    # if not key.hasNext():
-                    #    raise failure.Failure(
-                    #        error.ConchError("I don't recognize that key"))
-                    return [True, user]
-        raise failure.Failure(error.ConchError("No such user"))
+        validFlag, user = dissomniag.auth.User.loginSSHMethod(username = credentials.username, key = credentials.blob)
+        if validFlag == LOGIN_SIGN.VALID_USER:
+            return [True, user]
+        elif validFlag == LOGIN_SIGN.NO_SUCH_USER:
+            raise failure.Failure(error.ConchError("No such user"))
+        elif validFlag == LOGIN_SIGN.UNVALID_ACCESS_METHOD:
+            raise failure.Failure(error.ConchError("I don't recognize that key"))
+        elif validFlag == LOGIN_SIGN.SECRET_UNVALID:
+            raise failure.Failure(error.ConchError("I don't recognize that key"))
+        else:
+            raise failure.Failure(error.ConchError("Unspecified failure"))
+        
+class ManholeDiSSOmniaGPublicKeyDatabase(SSHPublicKeyDatabase):
+    def _cbRequestAvatarId(self, validKey, credentials):
+        returnMe = SSHPublicKeyDatabase._cbRequestAvatarId(self, validKey[0], credentials)
+        if returnMe == validKey[1].username:
+            return validKey[1]
+        else:
+            return returnMe
+            
+    def checkKey(self, credentials):
+        validFlag, user = dissomniag.auth.User.loginManholeMethod(username = credentials.username, key = credentials.blob)
+        if validFlag == LOGIN_SIGN.VALID_USER:
+            return [True, user]
+        elif validFlag == LOGIN_SIGN.NO_SUCH_USER:
+            raise failure.Failure(error.ConchError("No such user"))
+        elif validFlag == LOGIN_SIGN.UNVALID_ACCESS_METHOD:
+            raise failure.Failure(error.ConchError("I don't recognize that key"))
+        elif validFlag == LOGIN_SIGN.SECRET_UNVALID:
+            raise failure.Failure(error.ConchError("I don't recognize that key"))
+        else:
+            raise failure.Failure(error.ConchError("Unspecified failure"))
                                                 
+class SSHDiSSOmniaGUserAuthDatabase:
+    credentialInterfaces = credentials.IUsernamePassword,
+    implements(checkers.ICredentialsChecker)
+    
+    def requestAvatarId(self, credentials):
+        validFlag, user = dissomniag.auth.User.loginSSHMethod(username = credentials.username, passwd = credentials.password)
+        if validFlag == LOGIN_SIGN.VALID_USER:
+            return defer.succeed(user)
+        else:
+            return defer.fail(error.UnauthorizedLogin("unable to verify password"))
+        
+class ManholeDiSSOmniaGUserAuthDatabase:
+    credentialInterfaces = credentials.IUsernamePassword,
+    implements(checkers.ICredentialsChecker)
+    
+    def requestAvatarId(self, credentials):
+        validFlag, user = dissomniag.auth.User.loginManholeMethod(username = credentials.username, passwd = credentials.password)
+        if validFlag == LOGIN_SIGN.VALID_USER:
+            return defer.succeed(user)
+        else:
+            return defer.fail(error.UnauthorizedLogin("unable to verify password"))
+    
 class SSHDiSSOmniaGAvatar(avatar.ConchUser):
     implements(conchinterfaces.ISession)
     
@@ -315,8 +356,8 @@ def getManholeFactory(namespace):
     def getManhole(_): return manhole.ColoredManhole(namespace)
     realm.chainedProtocolFactory.protocolFactory = getManhole
     p = portal.Portal(realm)
-    p.registerChecker(
-                      SSHDiSSOmniaGPublicKeyDatabase())
+    p.registerChecker(ManholeDiSSOmniaGPublicKeyDatabase())
+    p.registerChecker(ManholeDiSSOmniaGUserAuthDatabase())
     f = manhole_ssh.ConchFactory(p)
     return f
 
@@ -327,7 +368,7 @@ def getManholeFactory(namespace):
 
         
 def startRPCServer():
-    api_server = APIServer(dissomniag.api, dissomniag.auth.login)
+    api_server = APIServer(dissomniag.api)
     if dissomniag.config.SSL:
         sslContext = ssl.DefaultOpenSSLContextFactory(dissomniag.config.SSL_PrivKey, dissomniag.config.SSL_CaKey)
         reactor.listenSSL(dissomniag.config.rpcServerPort, server.Site(api_server), contextFactory = sslContext) 
@@ -336,7 +377,10 @@ def startRPCServer():
 
 def startSSHServer():
     Portal = portal.Portal(SSHDiSSOmniaGRealm())
+    
     Portal.registerChecker(SSHDiSSOmniaGPublicKeyDatabase())
+    Portal.registerChecker(SSHDiSSOmniaGUserAuthDatabase())
+    
     publicKeyString, rsaKey = getRSAKeys()
     DiSSOmniaGSSHFactory.portal = Portal
     DiSSOmniaGSSHFactory.publicKeys = {'ssh-rsa': publicKeyString}
@@ -348,7 +392,8 @@ def startManholeServer():
 
 
 def startServer():
-    dissomniag.auth.addUser(dissomniag.auth.User("admin", "b00tloader", "AAAAB3NzaC1yc2EAAAABIwAAAf0N76ZZlEhL6I3+7bMx2Tje+nuAoJ4ylefaiAvl0w5mnYNIfqw7VUlN4TMjBsBReb8b1mefY5XKBEc2FXKSlCBirQeTap9dfYCMN6fJfQfw2IQFUaiXqUJHyvAqGTTtI5bq8d8QA1Kpuc+VJgGdIQXl5wcn4J+z7zB9BfaCrDsZVDTxbObNqCg8M9mc9mNgcoqHam/F6BuU5EDj1tOqXlWPFr2PgAgvvUAjMwvIbKMZU9IaMdG3hzKdoeYjSlQGhxIXH7Qxmv1MWj/O934eSfRTkYp+HEwmeg4IM/kize6IAfnVh6L4KBq1HKXn8SindeY36SZdSP8cl2H6rnA7w2XfC0ercbi2YjUm5iGAPrODbdd5p1LkTTpBt2dpuM23aBZmaQRcreq420ugipXYAL/THSAQ8mcWPbCoLPj+SDY8+GQLys7Wjzj5N1AlBElY9snbFiDefTsWBHarZEkVvOf3j23UN2pHKUIYteKZTuv0/R1mA2zmQr1Btd/nzUqFZqgLjCXkUZk9iG18wlrPSjkFUQOblGP4dn0kGjj3RZdz8ELr4sCiRiqmfe3RNSnFhqQLYZ+I3EObOKLIcAe2LLILYwln1gQHV2K35O0WpBB9XjPXyl65SWIlKqIUOIRmBRemRoA4M3UCKt1I8FN8HIDgxqlw/LzSIL2SsjkOyw=="))
+    print("Parse Htpasswd File at: %s" % dissomniag.config.HTPASSWD_FILE)
+    dissomniag.auth.parseHtpasswdFile()
     print("Starting XML-RPC Server at Port: %s" % dissomniag.config.rpcServerPort)
     startRPCServer()
     print("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)
