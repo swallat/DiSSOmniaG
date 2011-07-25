@@ -16,12 +16,3 @@ Session = scoped_session(sessionmaker())
 Session.configure(bind = engine)
 
 Base = declarative_base()
-
-def wrap_db(func):
-    def callFunc(*args, **kwargs):
-        session = Session()
-        f = func(*args, **kwargs)
-        session.commit()
-        Session.remove()
-        return f
-    return callFunc

@@ -5,7 +5,7 @@ Created on 19.07.2011
 @author: Sebastian Wallat
 """
 # Imports for XML RPC Server
-import xmlrpclib, traceback
+import xmlrpclib, traceback, sys
 from twisted.web import xmlrpc, server, http
 from twisted.internet import defer, reactor, ssl
 
@@ -139,10 +139,10 @@ class CliIntrospection(Introspection):
     
 
 class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
-    def __init__(self, avatar):
+    def __init__(self, avatar, api):
         self.avatar = avatar
         self.user = avatar.user
-        self.api = dissomniag.cliApi
+        self.api = api
     
     def connectionMade(self):
         recvline.HistoricRecvLine.connectionMade(self)
@@ -178,7 +178,7 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
             func = self.getCommandFunc(cmd)
             if func:
                 try:
-                    quitting = func(self.terminal, *args)
+                    quitting = func(self.terminal, self.user, *args)
                 except Exception, e:
                     self.terminal.write("Error: %s" % e)
                     self.terminal.nextLine()
@@ -207,18 +207,18 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
         self.terminal.write(" ".join(args))
         self.terminal.nextLine()
 
-    def do_whoami(self, terminal):
+    def do_whoami(self, terminal, user, *args):
         "Prints your user name. Usage: whoami"
         self.terminal.write(self.user.username)
         self.terminal.nextLine()
 
-    def do_quit(self, terminal):
+    def do_quit(self, terminal, *args):
         "Ends your session. Usage: quit"
         self.terminal.write("Bye")
         self.terminal.nextLine()
         self.terminal.loseConnection()
 
-    def do_clear(self, terminal):
+    def do_clear(self, terminal, *args):
         "Clears the screen. Usage: clear"
         self.terminal.reset()
 
@@ -293,13 +293,14 @@ class ManholeDiSSOmniaGUserAuthDatabase:
 class SSHDiSSOmniaGAvatar(avatar.ConchUser):
     implements(conchinterfaces.ISession)
     
-    def __init__(self, user):
+    def __init__(self, user, api):
         avatar.ConchUser.__init__(self)
         self.user = user
+        self.api = api
         self.channelLookup.update({'session':session.SSHSession})
 
     def openShell(self, protocol):
-        serverProtocol = insults.ServerProtocol(SSHDiSSOmniaGProtocol, self)
+        serverProtocol = insults.ServerProtocol(SSHDiSSOmniaGProtocol, self, self.api)
         serverProtocol.makeConnection(protocol)
         protocol.makeConnection(session.wrapProtocol(serverProtocol))
 
@@ -314,10 +315,13 @@ class SSHDiSSOmniaGAvatar(avatar.ConchUser):
 
 class SSHDiSSOmniaGRealm:
     implements(portal.IRealm)
-
+    
+    def __init__(self, api):
+        self.api = api
+        
     def requestAvatar(self, avatarId, mind, *interfaces):
         if conchinterfaces.IConchUser in interfaces:
-            return interfaces[0], SSHDiSSOmniaGAvatar(avatarId), lambda: None
+            return interfaces[0], SSHDiSSOmniaGAvatar(avatarId, self.api), lambda: None
         else:
             raise Exception, "No supported interfaces found."
         
@@ -376,7 +380,7 @@ def startRPCServer():
         reactor.listenTCP(dissomniag.config.rpcSserverPort, server.Site(api_server))
 
 def startSSHServer():
-    Portal = portal.Portal(SSHDiSSOmniaGRealm())
+    Portal = portal.Portal(SSHDiSSOmniaGRealm(dissomniag.cliApi))
     
     Portal.registerChecker(SSHDiSSOmniaGPublicKeyDatabase())
     Portal.registerChecker(SSHDiSSOmniaGUserAuthDatabase())

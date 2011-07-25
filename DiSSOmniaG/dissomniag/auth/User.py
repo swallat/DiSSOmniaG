@@ -8,10 +8,11 @@ import time, atexit, datetime, crypt, string, random, sys
 from twisted.conch.ssh import keys
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Table, Binary
 from sqlalchemy.orm import relationship 
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import dissomniag.dbAccess
-from dissomniag.dbAccess import Base, Session
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from dissomniag import Base, Session
+
 
 class LOGIN_SIGN(object):
     VALID_USER = 0
@@ -60,7 +61,10 @@ class User(Base):
         self.loginRPC = loginRPC
         self.loginSSH = loginSSH
         self.loginManhole = loginManhole
-        
+   
+    def __repr__(self):
+        return "<User: %s, isAdmin: %s, loginRPC: %s, loginSSH: %s, loginManhole: %s, isHtpasswd: %s, PublicKeys: %s>" \
+                        % (self.username, self.isAdmin, self.loginRPC, self.loginSSH, self.loginManhole, self.isHtpasswd, self.publicKeys)
     
     @staticmethod
     def addUser(username, password, publicKey = None, isAdmin = None,
@@ -209,4 +213,4 @@ class PublicKey(Base):
         self.publicKey = publicKey
         
     def __repr__(self):
-        self.publicKey
+        return str(self.publicKey)
