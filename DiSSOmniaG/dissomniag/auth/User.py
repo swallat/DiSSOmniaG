@@ -4,6 +4,7 @@ Created on 22.07.2011
 
 @author: Sebastian Wallat
 """
+import logging
 import time, atexit, datetime, crypt, string, random, sys
 from twisted.conch.ssh import keys
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Table, Binary
@@ -13,6 +14,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import dissomniag.dbAccess
 from dissomniag import Base, Session
 
+log = logging.getLogger("auth.User")
 
 class LOGIN_SIGN(object):
     VALID_USER = 0

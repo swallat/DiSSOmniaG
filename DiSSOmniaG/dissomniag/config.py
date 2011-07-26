@@ -4,6 +4,9 @@ Created on 19.07.2011
 
 @author: Sebastian Wallat
 """
+import logging
+
+log = logging.getLogger("config")
 
 rpcServerPort = 8008
 sshServerPort = 8009
@@ -26,3 +29,8 @@ MIGRATE_REPOSITORY = "dissomniag/migrations"
 
 HTPASSWD_FILE = "htpasswd"
 HTPASSWD_ADMIN_USER = "admin"
+
+LOG_DIR = "log/"
+LOG_DEBUG_FILENAME = "dissomniag_DEBUG.log"
+LOG_WARNING_FILENAME = "dissomniag_WARNING.log"
+

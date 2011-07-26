@@ -4,6 +4,7 @@ Created on 23.07.2011
 
 @author: Sebastian Wallat
 """
+import logging
 import argparse, getpass
 from colorama import Fore, Style, Back
 import sys
@@ -13,6 +14,7 @@ import dissomniag
 from dissomniag.auth import User, PublicKey
 from dissomniag.utils import CliMethodABCClass
 
+log = logging.getLogger("cliApi.ManageUsers")
 
 class listUser(CliMethodABCClass.CliMethodABCClass):
 

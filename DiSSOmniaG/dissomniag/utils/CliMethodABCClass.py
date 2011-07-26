@@ -4,10 +4,13 @@ Created on 25.07.2011
 
 @author: Sebastian Wallat
 """
+import logging
 from abc import ABCMeta, abstractmethod
 import sys
 import colorama
 from colorama import Fore, Style, Back
+
+log = logging.getLogger("utils.CliMethodABCClass")
 
 class CliMethodABCClass(object):
     __metaclass__ = ABCMeta

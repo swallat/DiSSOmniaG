@@ -5,7 +5,7 @@ Created on 19.07.2011
 @author: Sebastian Wallat
 """
 # Imports for XML RPC Server
-import xmlrpclib, traceback, sys
+import xmlrpclib, traceback, sys, sched, time, logging
 from twisted.web import xmlrpc, server, http
 from twisted.internet import defer, reactor, ssl
 
@@ -27,10 +27,13 @@ from twisted.conch.checkers import SSHPublicKeyDatabase
 
 import dissomniag.auth
 from dissomniag.auth import LOGIN_SIGN
+
+log = logging.getLogger("server")
 #===============================================================================
 # The Following Twisted XML-RPC Code was extracted in main Parts 
 # from the Glab ToMaTo Project.
 #===============================================================================
+
 
 class Introspection():
     def __init__(self, papi):
@@ -392,12 +395,16 @@ def startManholeServer():
 
 def startServer():
     print("Parse Htpasswd File at: %s" % dissomniag.config.HTPASSWD_FILE)
+    log.info("Parse Htpasswd File at: %s" % dissomniag.config.HTPASSWD_FILE)
     dissomniag.auth.parseHtpasswdFile()
     print("Starting XML-RPC Server at Port: %s" % dissomniag.config.rpcServerPort)
+    log.info("Starting XML-RPC Server at Port: %s" % dissomniag.config.rpcServerPort)
     startRPCServer()
     print("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)
+    log.info("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)
     startSSHServer()
     print("Starting Manhole Server at Port: %s" % dissomniag.config.manholeServerPort)
+    log.info("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)
     startManholeServer()
     
     reactor.run()

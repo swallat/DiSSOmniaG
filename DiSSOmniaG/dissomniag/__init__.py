@@ -1,7 +1,12 @@
 
 import migrate.versioning.api
 import migrate.versioning.exceptions
-import os
+import os, logging
+
+import dissomniag.utils.Logging
+
+log = logging.getLogger("dissomniag.__init__")
+
 from dissomniag.config import DB_FILE
 
 #Migrate DB ti current version

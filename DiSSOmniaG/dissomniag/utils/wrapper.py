@@ -5,11 +5,10 @@ Created on 25.07.2011
 @author: Sebastian Wallat
 """
 
-
-
-import sys
+import sys, logging
 from dissomniag.dbAccess import Session
 
+log = logging.getLogger("utils.wrapper")
 
 def wrap_db(func):
     def callFunc(*args, **kwargs):

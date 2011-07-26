@@ -1,3 +1,6 @@
+import logging
+
+log = logging.getLogger("cliApi.__init__")
 
 def listUser(*args):
     import ManageUsers
