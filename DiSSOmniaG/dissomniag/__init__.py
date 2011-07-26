@@ -13,6 +13,7 @@ if not config.MAINTANANCE:
     migrate.versioning.api.upgrade(config.DB_STRING, config.MIGRATE_REPOSITORY, version = None)
 
 from dissomniag.dbAccess import Session, Base
+from dissomniag.utils import *
 import api
 import cliApi
 import config

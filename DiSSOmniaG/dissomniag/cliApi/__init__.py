@@ -1,7 +1,11 @@
 
-def listUsers(*args):
+def listUser(*args):
     import ManageUsers
-    ManageUsers.listUsers().call(*args)
+    ManageUsers.listUser().call(*args)
+
+def listKeys(*args):
+    import ManageUsers
+    ManageUsers.listKeys().call(*args)
 
 def addUser(*args):
     import ManageUsers
@@ -10,6 +14,10 @@ def addUser(*args):
 def addKey(*args):
     import ManageUsers
     ManageUsers.addKey().call(*args)
+
+def modUser(*args):
+    import ManageUsers
+    ManageUsers.modUser().call(*args)
 
 def delUser(*args):
     import ManageUsers
@@ -22,4 +30,7 @@ def delKey(*args):
 def passwd(*args):
     import ManageUsers
     ManageUsers.passwd().call(*args)
-    
+
+def whoami(*args):
+    import ManageUsers
+    ManageUsers.whoami().call(*args)    

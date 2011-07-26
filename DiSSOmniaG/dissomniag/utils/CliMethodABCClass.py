@@ -46,3 +46,12 @@ class CliMethodABCClass(object):
         background = (background if background != None else "")
         style = (style if style != None else "")
         return color + background + style + text + Fore.RESET + Style.RESET_ALL + Back.RESET
+    
+    def printError(self, text):
+        print(self.colorString(str(text), color = Fore.RED, style = Style.BRIGHT))
+    
+    def printSuccess(self, text):
+        print(self.colorString(str(text), color = Fore.GREEN, style = Style.BRIGHT))
+        
+    def printInfo(self, text):
+        print(self.colorString(str(text), color = Fore.YELLOW, style = Style.BRIGHT))

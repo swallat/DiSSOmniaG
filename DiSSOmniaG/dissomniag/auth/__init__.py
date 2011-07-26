@@ -45,3 +45,6 @@ def parseHtpasswdFile():
         pass
     session.commit()
     session.flush()
+
+def refreshHtpasswdFile():
+    pass

@@ -56,7 +56,10 @@ class User(Base):
             else:
                 self._savePassword(password)
         if publicKey:
-            self.addKey(publicKey)
+            try:
+                self.addKey(publicKey)
+            except dissomniag.BadKeyError:
+                pass
         self.isAdmin = isAdmin
         self.loginRPC = loginRPC
         self.loginSSH = loginSSH
@@ -103,6 +106,13 @@ class User(Base):
         
     def addKey(self, publicKey):
         session = dissomniag.dbAccess.Session()
+        
+        #Check if entered Key is a valid Key
+        try:
+            keys.Key.fromString(publicKey)
+        except keys.BadKeyError:
+            raise dissomniag.BadKeyError("Not a valid SSH Key")
+            
         try:
             existingKey = session.query(PublicKey).filter(PublicKey.publicKey == publicKey).one()
             self.publicKeys.append(existingKey)
@@ -120,11 +130,9 @@ class User(Base):
         return self.passwd == crypt.crypt(password, self.passwd)
     
     def saveNewPassword(self, newPassword):
-        if (self.username == dissomniag.config.HTPASSWD_ADMIN_USER):
-            return
-        else:
-            self.isHtpasswd = False
-            self._savePassword(newPassword)
+        self._savePassword(newPassword)
+        if self.isHtpasswd:
+            dissomniag.auth.refreshHtpasswdFile()           
     
     def updateHtpasswdPassword(self, newPassword):
         self.isHtpasswd = True

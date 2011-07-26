@@ -178,7 +178,7 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
             func = self.getCommandFunc(cmd)
             if func:
                 try:
-                    quitting = func(self.terminal, self.user, *args)
+                    quitting = func(self.terminal, self.user, func.__name__, *args)
                 except Exception, e:
                     self.terminal.write("Error: %s" % e)
                     self.terminal.nextLine()
@@ -205,11 +205,6 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
     def do_echo(self, terminal, *args):
         "Echo a string. Usage: echo my line of text"
         self.terminal.write(" ".join(args))
-        self.terminal.nextLine()
-
-    def do_whoami(self, terminal, user, *args):
-        "Prints your user name. Usage: whoami"
-        self.terminal.write(self.user.username)
         self.terminal.nextLine()
 
     def do_quit(self, terminal, *args):
