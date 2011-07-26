@@ -11,7 +11,7 @@ def parseHtpasswdFile():
     #===========================================================================
     # From Tomato:
     #===========================================================================
-    lines = [l.rstrip().split(':', 1) for l in file(dissomniag.config.HTPASSWD_FILE).readlines()]
+    lines = [l.rstrip().split(':', 1) for l in file(dissomniag.config.htpasswd.htpasswd_file).readlines()]
     session = Session()
     usernamesInHtpasswd = []
     for line in lines:
@@ -21,7 +21,7 @@ def parseHtpasswdFile():
         try:
             dbUser = session.query(User).filter(User.username == username).one()
             
-            if username == dissomniag.config.HTPASSWD_ADMIN_USER:
+            if username == dissomniag.config.htpasswd.adminUser:
                 if dbUser.passwd != hashedPassword:
                     dbUser.updateHtpasswdPassword(hashedPassword)
                     session.commit()
@@ -30,7 +30,7 @@ def parseHtpasswdFile():
                 dbUser.updateHtpasswdPassword(hashedPassword)
                 
         except NoResultFound:
-            if username == dissomniag.config.HTPASSWD_ADMIN_USER:
+            if username == dissomniag.config.htpasswd.adminUser:
                 newUser = User.addUser(username, password = hashedPassword, publicKey = None,
                                isAdmin = True, loginRPC = True, loginSSH = True,
                                loginManhole = True, isHtpasswd = True)

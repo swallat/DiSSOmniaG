@@ -371,11 +371,11 @@ def getManholeFactory(namespace):
         
 def startRPCServer():
     api_server = APIServer(dissomniag.api)
-    if dissomniag.config.SSL:
-        sslContext = ssl.DefaultOpenSSLContextFactory(dissomniag.config.SSL_PrivKey, dissomniag.config.SSL_CaKey)
-        reactor.listenSSL(dissomniag.config.rpcServerPort, server.Site(api_server), contextFactory = sslContext) 
+    if dissomniag.config.ssl.SSL:
+        sslContext = ssl.DefaultOpenSSLContextFactory(dissomniag.config.ssl.privateKey, dissomniag.config.ssl.caKey)
+        reactor.listenSSL(dissomniag.config.server.rpcPort, server.Site(api_server), contextFactory = sslContext) 
     else:
-        reactor.listenTCP(dissomniag.config.rpcSserverPort, server.Site(api_server))
+        reactor.listenTCP(dissomniag.config.server.rpcPort, server.Site(api_server))
 
 def startSSHServer():
     Portal = portal.Portal(SSHDiSSOmniaGRealm(dissomniag.cliApi))
@@ -387,24 +387,24 @@ def startSSHServer():
     DiSSOmniaGSSHFactory.portal = Portal
     DiSSOmniaGSSHFactory.publicKeys = {'ssh-rsa': publicKeyString}
     DiSSOmniaGSSHFactory.privateKeys = {'ssh-rsa': rsaKey}
-    reactor.listenTCP(dissomniag.config.sshServerPort, DiSSOmniaGSSHFactory())
+    reactor.listenTCP(dissomniag.config.server.sshPort, DiSSOmniaGSSHFactory())
 
 def startManholeServer():
-    reactor.listenTCP(dissomniag.config.manholeServerPort, getManholeFactory(globals()))
+    reactor.listenTCP(dissomniag.config.server.manholePort, getManholeFactory(globals()))
 
 
 def startServer():
-    print("Parse Htpasswd File at: %s" % dissomniag.config.HTPASSWD_FILE)
-    log.info("Parse Htpasswd File at: %s" % dissomniag.config.HTPASSWD_FILE)
+    print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
+    log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
     dissomniag.auth.parseHtpasswdFile()
-    print("Starting XML-RPC Server at Port: %s" % dissomniag.config.rpcServerPort)
-    log.info("Starting XML-RPC Server at Port: %s" % dissomniag.config.rpcServerPort)
+    print("Starting XML-RPC Server at Port: %s" % dissomniag.config.server.rpcPort)
+    log.info("Starting XML-RPC Server at Port: %s" % dissomniag.config.server.rpcPort)
     startRPCServer()
-    print("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)
-    log.info("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)
+    print("Starting SSH Server at Port: %s" % dissomniag.config.server.sshPort)
+    log.info("Starting SSH Server at Port: %s" % dissomniag.config.server.sshPort)
     startSSHServer()
-    print("Starting Manhole Server at Port: %s" % dissomniag.config.manholeServerPort)
-    log.info("Starting SSH Server at Port: %s" % dissomniag.config.sshServerPort)
+    print("Starting Manhole Server at Port: %s" % dissomniag.config.server.manholePort)
+    log.info("Starting SSH Server at Port: %s" % dissomniag.config.server.manholePort)
     startManholeServer()
     
     reactor.run()

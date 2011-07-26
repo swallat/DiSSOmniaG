@@ -217,13 +217,13 @@ class modUser(CliMethodABCClass.CliMethodABCClass):
                     self.printError("Could not find the user.")
                     return
             if options.isAdmin != None:
-                if self.user == user or user.username == dissomniag.config.HTPASSWD_ADMIN_USER:
+                if self.user == user or user.username == dissomniag.config.htpasswd.adminUser:
                     self.printError("You can not change the admin status of yourself or the default admin user.")
                     self.printInfo("I continue.")
                 else:
                     user.isAdmin = options.isAdmin
             if options.loginSSH != None:
-                if self.user == user or user.username == dissomniag.config.HTPASSWD_ADMIN_USER:
+                if self.user == user or user.username == dissomniag.config.htpasswd.adminUser:
                     self.printError("You can not exclude yourself or the default admin user from accessing this shell.")
                     self.printInfo("I continue.")
                 else:
@@ -278,7 +278,7 @@ class delUser(CliMethodABCClass.CliMethodABCClass):
             self.printError("Permission denied: You cannot delete yourself!")
             return
         
-        if options.username == dissomniag.config.HTPASSWD_ADMIN_USER:
+        if options.username == dissomniag.config.htpasswd.adminUser:
             self.printError("Permission denied: You cannot delete the default admin user!")
             return
         
