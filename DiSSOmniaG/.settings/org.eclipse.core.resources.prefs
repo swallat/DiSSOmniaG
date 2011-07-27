@@ -1,4 +1,4 @@
-#Tue Jul 26 19:12:58 CEST 2011
+#Wed Jul 27 19:13:29 CEST 2011
 eclipse.preferences.version=1
 encoding//dissomniag/MathClasses.py=utf-8
 encoding//dissomniag/api/SimpleMath.py=utf-8
@@ -7,7 +7,13 @@ encoding//dissomniag/cliApi/ManageUsers.py=utf-8
 encoding//dissomniag/cliApi/SimpleMath.py=utf-8
 encoding//dissomniag/config.py=utf-8
 encoding//dissomniag/dbAccess.py=utf-8
+encoding//dissomniag/initMigrate.py=utf-8
 encoding//dissomniag/server.py=utf-8
+encoding//dissomniag/taskManager/context.py=utf-8
+encoding//dissomniag/taskManager/dispatcher.py=utf-8
+encoding//dissomniag/taskManager/jobs.py=utf-8
+encoding//dissomniag/taskManager/tasks.py=utf-8
+encoding//dissomniag/taskManager/worker.py=utf-8
 encoding//dissomniag/utils/CliMethodABCClass.py=utf-8
 encoding//dissomniag/utils/Exceptions.py=utf-8
 encoding//dissomniag/utils/Logging.py=utf-8

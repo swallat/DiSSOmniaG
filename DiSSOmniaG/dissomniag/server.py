@@ -27,6 +27,7 @@ from twisted.conch.checkers import SSHPublicKeyDatabase
 
 import dissomniag.auth
 from dissomniag.auth import LOGIN_SIGN
+from dissomniag import initMigrate
 
 log = logging.getLogger("server")
 #===============================================================================
@@ -394,6 +395,10 @@ def startManholeServer():
 
 
 def startServer():
+    """
+    starts The server
+    """
+    initMigrate.init()
     print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
     log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
     dissomniag.auth.parseHtpasswdFile()
@@ -408,6 +413,7 @@ def startServer():
     startManholeServer()
     
     reactor.run()
+    print("CLEANUP")
 
 if __name__ == '__main__':
     startServer()

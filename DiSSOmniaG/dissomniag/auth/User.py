@@ -26,6 +26,9 @@ user_publickey = Table('user_publickey', Base.metadata,
                        Column('user_id', Integer, ForeignKey('users.id')),
                        Column('key_id', Integer, ForeignKey('public_keys.id')),
 )
+"""
+Test
+"""
 
 class User(Base):
     """

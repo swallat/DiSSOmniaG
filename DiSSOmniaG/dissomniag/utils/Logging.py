@@ -43,7 +43,7 @@ def setUpLogger(logger):
                                                           maxBytes = 1000000,
                                                           backupCount = 10)
     warningHandler.setLevel(logging.WARNING)
-    formatter = logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
+    formatter = logging.Formatter("%(asctime)s %(name)-12s %(threadName)-10s %(levelname)-8s %(message)s")
     debugHandler.setFormatter(formatter)
     warningHandler.setFormatter(formatter)
     logger.addHandler(warningHandler)

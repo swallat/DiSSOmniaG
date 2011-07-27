@@ -18,3 +18,6 @@ Session = scoped_session(sessionmaker())
 Session.configure(bind = engine)
 
 Base = declarative_base()
+"""
+The declarative Base
+"""

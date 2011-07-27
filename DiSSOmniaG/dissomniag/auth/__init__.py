@@ -8,6 +8,9 @@ from dissomniag.dbAccess import Session
 from User import * 
 
 def parseHtpasswdFile():
+    """
+    Test parseHtPasswdFile()
+    """
     #===========================================================================
     # From Tomato:
     #===========================================================================

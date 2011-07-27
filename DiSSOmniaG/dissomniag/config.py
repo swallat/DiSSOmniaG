@@ -51,11 +51,6 @@ server = server(config, "server").parse()
 
 
 class ssl(ParseSection):
-    #    Easiest way to create the key file pair was to use OpenSSL -- http://openssl.org/ Windows binaries are available
-    #    You can create a self-signed certificate easily "openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout privatekey.pem"
-    #    for more information --  http://docs.python.org/library/ssl.html#ssl-certificates
-    #SSL_PrivKey='/etc/ssl/private/ssl-cert-snakeoil.key'    # Replace with your PEM formatted key file
-    #SSL_CaKey='/etc/ssl/certs/ssl-cert-snakeoil.pem'  # Replace with your PEM formatted certificate file
     def parse(self):
         if not self.config.has_section(self.sectionName):
             self.SSL = False
@@ -72,8 +67,9 @@ class db(ParseSection):
     def parse(self):
         self.maintainance = self.bool(self.parseOption(self.sectionName, "Maintainance", "False"))
         self.db_file = self.parseOption(self.sectionName, "db_file", "dissomniag.db")
-        self.db_string = "%s:///%s" % ("sqlite", self.db_file)
-        self.migrate_repository = "dissomniag/migrations"
+        self.db_string = str("%s:///%s" % ("sqlite", self.db_file))
+        import os
+        self.migrate_repository = str(os.path.abspath("dissomniag/migrations/"))
         return self
     
 db = db(config, "DB").parse()

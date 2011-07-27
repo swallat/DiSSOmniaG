@@ -36,4 +36,27 @@ def passwd(*args):
 
 def whoami(*args):
     import ManageUsers
-    ManageUsers.whoami().call(*args)    
+    ManageUsers.whoami().call(*args)
+
+def testSubprocess(terminal, user, *args):
+    import sys
+    sys.stdout = terminal
+    sys.stderr = terminal
+    import subprocess
+    
+    terminal.write("One line at a time:")
+    terminal.nextLine()
+    
+    proc = subprocess.Popen("python repeater.py",
+                            shell = True,
+                            stdin = subprocess.PIPE,
+                            stdout = subprocess.PIPE,
+                            )
+    for i in range(5):
+        proc.stdin.write(" % d\n" % i)
+        output = proc.stdout.readline()
+        terminal.write(str(output.rstrip()))
+        terminal.nextLine()
+    remainder = proc.communicate()[0]
+    terminal.write(str(remainder))
+    terminal.nextLine()
