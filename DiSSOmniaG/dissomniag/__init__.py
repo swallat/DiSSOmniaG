@@ -1,23 +1,23 @@
+import os, logging, sys
 
-import migrate.versioning.api
-import migrate.versioning.exceptions
-import os
 
+
+import config
+
+import utils.Logging
+
+log = logging.getLogger("dissomniag.__init__")
+"""
+Logger
+"""
+
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+
+from dbAccess import Session, Base
+from utils import *
 import api
 import cliApi
-import config
 import auth
-from dissomniag.config import DB_FILE
-
-#Migrate DB ti current version
-if not config.MAINTANANCE:
-    try:
-        migrate.versioning.api.version_control(config.DB_STRING, config.MIGRATE_REPOSITORY, version = None)
-    except migrate.versioning.exceptions.DatabaseAlreadyControlledError:
-        print("DB under version control.")
-    migrate.versioning.api.upgrade(config.DB_STRING, config.MIGRATE_REPOSITORY, version = None)
-
-from dissomniag.dbAccess import Session, Base
-
 from server import startServer
 

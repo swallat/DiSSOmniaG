@@ -3,3 +3,5 @@ __pychache__/
 */__pychache__/
 DiSSOmniaG/dissomniag.db
 DiSSOmniaG/htpasswd
+DiSSOmniaG/log/*
+docs/build/*

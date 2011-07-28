@@ -4,14 +4,17 @@ Created on 22.07.2011
 
 @author: Sebastian Wallat
 """
+import logging
 import time, atexit, datetime, crypt, string, random, sys
 from twisted.conch.ssh import keys
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Table, Binary
 from sqlalchemy.orm import relationship 
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import dissomniag.dbAccess
-from dissomniag.dbAccess import Base, Session
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from dissomniag import Base, Session
+
+log = logging.getLogger("auth.User")
 
 class LOGIN_SIGN(object):
     VALID_USER = 0
@@ -23,6 +26,9 @@ user_publickey = Table('user_publickey', Base.metadata,
                        Column('user_id', Integer, ForeignKey('users.id')),
                        Column('key_id', Integer, ForeignKey('public_keys.id')),
 )
+"""
+Test
+"""
 
 class User(Base):
     """
@@ -55,12 +61,18 @@ class User(Base):
             else:
                 self._savePassword(password)
         if publicKey:
-            self.addKey(publicKey)
+            try:
+                self.addKey(publicKey)
+            except dissomniag.BadKeyError:
+                pass
         self.isAdmin = isAdmin
         self.loginRPC = loginRPC
         self.loginSSH = loginSSH
         self.loginManhole = loginManhole
-        
+   
+    def __repr__(self):
+        return "<User: %s, isAdmin: %s, loginRPC: %s, loginSSH: %s, loginManhole: %s, isHtpasswd: %s, PublicKeys: %s>" \
+                        % (self.username, self.isAdmin, self.loginRPC, self.loginSSH, self.loginManhole, self.isHtpasswd, self.publicKeys)
     
     @staticmethod
     def addUser(username, password, publicKey = None, isAdmin = None,
@@ -99,6 +111,13 @@ class User(Base):
         
     def addKey(self, publicKey):
         session = dissomniag.dbAccess.Session()
+        
+        #Check if entered Key is a valid Key
+        try:
+            keys.Key.fromString(publicKey)
+        except keys.BadKeyError:
+            raise dissomniag.BadKeyError("Not a valid SSH Key")
+            
         try:
             existingKey = session.query(PublicKey).filter(PublicKey.publicKey == publicKey).one()
             self.publicKeys.append(existingKey)
@@ -116,11 +135,9 @@ class User(Base):
         return self.passwd == crypt.crypt(password, self.passwd)
     
     def saveNewPassword(self, newPassword):
-        if (self.username == dissomniag.config.HTPASSWD_ADMIN_USER):
-            return
-        else:
-            self.isHtpasswd = False
-            self._savePassword(newPassword)
+        self._savePassword(newPassword)
+        if self.isHtpasswd:
+            dissomniag.auth.refreshHtpasswdFile()           
     
     def updateHtpasswdPassword(self, newPassword):
         self.isHtpasswd = True
@@ -209,4 +226,4 @@ class PublicKey(Base):
         self.publicKey = publicKey
         
     def __repr__(self):
-        self.publicKey
+        return str(self.publicKey)
