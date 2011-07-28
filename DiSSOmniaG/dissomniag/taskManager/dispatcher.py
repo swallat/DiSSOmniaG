@@ -16,3 +16,6 @@ class Dispatcher(object):
         Constructor
         """
         
+    def _getNewWorker(self):
+        pass
+        
