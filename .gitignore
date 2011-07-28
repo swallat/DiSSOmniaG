@@ -5,3 +5,4 @@ DiSSOmniaG/dissomniag.db
 DiSSOmniaG/htpasswd
 DiSSOmniaG/log/*
 docs/build/*
+docs/log/*
