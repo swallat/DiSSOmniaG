@@ -311,3 +311,23 @@ Lorem ipsum [#f1]_ dolor sit amet ... [#f2]_
 Lorem ipsum [Ref]_ dolor sit amet.
 
 .. [Ref] Book or article reference, URL or whatever.
+
+API
+
+.. automodule:: dissomniag
+   :members:
+
+.. automodule:: dissomniag.server
+   :members:
+
+.. automodule:: dissomniag.initMigrate
+   :members:
+
+.. automodule:: dissomniag.auth.User
+   :members:
+
+.. autoclass:: dissomniag.auth.User.User
+   :members:
+
+.. automodule:: dissomniag.dbAccess
+   :members:
