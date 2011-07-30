@@ -4,7 +4,7 @@ Created on 26.07.2011
 
 @author: Sebastian Wallat
 """
-import logging, os
+import logging, os, sys
 import logging.handlers
 import time
 import glob
@@ -38,6 +38,8 @@ def setUpLogger(logger):
                                                     backupCount = 10)
     debugHandler.setLevel(logging.DEBUG)
     
+    
+    
     warningHandler = logging.handlers.RotatingFileHandler(warningFile,
                                                           mode = 'a',
                                                           maxBytes = 1000000,
@@ -49,6 +51,11 @@ def setUpLogger(logger):
     logger.addHandler(warningHandler)
     logger.addHandler(debugHandler)
     
+    if dissomniag.config.log.toStdOut:
+        stdOutHandler = logging.StreamHandler(stream = sys.stdout)
+        stdOutHandler.setFormatter(formatter)
+        logger.addHandler(stdOutHandler)
+    
     
     if not firstRun:
         # Add timestamp
@@ -56,6 +63,8 @@ def setUpLogger(logger):
         
         # Roll over on application start
         for handler in logger.handlers:
+            if not isinstance(handler, logging.handlers.RotatingFileHandler):
+                continue
             handler.doRollover()
     
     # Add timestamp

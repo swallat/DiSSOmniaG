@@ -89,6 +89,7 @@ class log(ParseSection):
         self.logDir = self.parseOption(self.sectionName, "logDir", "log/")
         self.debugFilename = self.parseOption(self.sectionName, "debugFilename", "dissomniag_DEBUG.log")
         self.warningFilename = self.parseOption(self.sectionName, "warningFilename", "dissomniag_WARNING.log")
+        self.toStdOut = self.bool(self.parseOption(self.sectionName, "toStdOut", "True"))
         return self
         
 log = log(config, "LOG").parse()

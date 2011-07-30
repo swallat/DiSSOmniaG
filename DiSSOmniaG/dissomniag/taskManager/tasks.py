@@ -6,8 +6,7 @@ Created on 27.07.2011
 """
 import logging
 from abc import ABCMeta, abstractmethod
-
-import dissomniag
+from _pyio import __metaclass__
 
 log = logging.getLogger("taskManagaer.tasks")
 
@@ -23,6 +22,7 @@ class TaskReturns:
     SUCCESS = 1
     
 class TaskException(Exception):
+    __metaclass__ = ABCMeta
     """
     Class doc
     """
@@ -32,7 +32,7 @@ class TaskException(Exception):
     def __str__(self):
         return repr(self.value)
     
-class TaskFailed(TaskException):
+class TaskFailed(TaskException):# 
     """
     Class doc
     """
@@ -40,14 +40,7 @@ class TaskFailed(TaskException):
     
 class UnrevertableFailure(TaskException):
     """
-    Raised when an Failer appears that cannot be reverted.
-    """
-    pass
-
-class TaskIsUnrevertable(TaskException):
-    """
-    Raised when Job tries to revert the current Task although it is
-    not revertable.
+    Raised when an Failure appears that cannot be reverted.
     """
     pass
 
@@ -58,31 +51,26 @@ class AtomicTask:
     """
     
     
-    def __init__(self, isRevertable = None):
+    def __init__(self):
         """
         Constructor
         """
         self.state = TaskStates.QUEUED
         self.job = None
         self.context = None
-        if isRevertable != None:
-            self.isRevertable = isRevertable
         
     
     @abstractmethod
-    def run(self, JobObject, Context):
+    def run(self, JobObject, Context, lastFailed = False):
         self.job = JobObject
         self.context = Context
         assert self.job != None
         assert self.context != None
         
     @abstractmethod
-    def revert(self, JobObject, Context):
+    def revert(self, JobObject, Context, lastFailed = False):
         self.job = JobObject
         self.context = Context
         assert self.job != None
         assert self.context != None
-        
-    def _isSelfRevertable(self):
-        return self.isRevertable
         

@@ -399,19 +399,18 @@ def startServer():
     starts The server
     """
     initMigrate.init()
-    print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
+    #print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
     log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
     dissomniag.auth.parseHtpasswdFile()
-    print("Starting XML-RPC Server at Port: %s" % dissomniag.config.server.rpcPort)
+    #print("Starting XML-RPC Server at Port: %s" % dissomniag.config.server.rpcPort)
     log.info("Starting XML-RPC Server at Port: %s" % dissomniag.config.server.rpcPort)
     startRPCServer()
-    print("Starting SSH Server at Port: %s" % dissomniag.config.server.sshPort)
+    #print("Starting SSH Server at Port: %s" % dissomniag.config.server.sshPort)
     log.info("Starting SSH Server at Port: %s" % dissomniag.config.server.sshPort)
     startSSHServer()
-    print("Starting Manhole Server at Port: %s" % dissomniag.config.server.manholePort)
-    log.info("Starting SSH Server at Port: %s" % dissomniag.config.server.manholePort)
+    #print("Starting Manhole Server at Port: %s" % dissomniag.config.server.manholePort)
+    log.info("Starting Manhole Server at Port: %s" % dissomniag.config.server.manholePort)
     startManholeServer()
-    
     reactor.run()
     print("CLEANUP")
 

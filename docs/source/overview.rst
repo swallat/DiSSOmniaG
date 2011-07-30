@@ -210,18 +210,23 @@ smart dude.
    Beware killer rabbits!
    
 .. attention::
+
    Beware killer rabbits!
 
 .. caution::
+
    Beware killer rabbits!
    
-.. error:: 
+.. error::
+ 
    Beware killer rabbits!
    
 .. hint::
+
    Beware killer rabbits!
    
-.. important:: 
+.. important::
+ 
    Beware killer rabbits!
 
 .. note:: This is a paragraph
@@ -229,9 +234,11 @@ smart dude.
    - Here is a bullet list.
    
 .. tip::
+
    Beware killer rabbits!
    
-.. warning:: 
+.. warning::
+ 
    Beware killer rabbits!
 
 
