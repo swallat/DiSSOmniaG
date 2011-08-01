@@ -13,6 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import dissomniag.dbAccess
 from dissomniag import Base, Session
+from dissomniag.taskManager import Job
 
 log = logging.getLogger("auth.User")
 
@@ -47,6 +48,7 @@ class User(Base):
     isHtpasswd = Column(Boolean, default = False)
     
     publicKeys = relationship('PublicKey', secondary = user_publickey, backref = 'users')
+    
 
     def __init__(self, username, password, publicKey = None, isAdmin = False, loginRPC = False, loginSSH = False, loginManhole = False, isHtpasswd = False):
         """

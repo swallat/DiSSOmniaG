@@ -19,5 +19,6 @@ from utils import *
 import api
 import cliApi
 import auth
+import taskManager
 from server import startServer
 

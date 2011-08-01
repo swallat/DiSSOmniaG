@@ -28,9 +28,9 @@ def synchronized(conditionOrLock):
         def call(*args, **kwargs):
             with conditionOrLock:
                 return fn(*args, **kwargs)
-        call.__name__ = fn.__name__
-        call.__doc__ = fn.__doc__
-        call.__dict__.update(fn.__dict__)
+        #call.__name__ = fn.__name__
+        #call.__doc__ = fn.__doc__
+        #call.__dict__.update(fn.__dict__)
         return call
     return wrap
 

@@ -8,6 +8,7 @@ import logging
 from abc import ABCMeta
 import sqlalchemy as sa
 from sqlalchemy import Column
+from sqlalchemy.orm import relationship 
 import datetime
 import threading
 
@@ -16,6 +17,7 @@ import dissomniag.dbAccess
 import tasks
 import context
 import dispatcher
+from dissomniag.taskManager.dispatcher import Dispatcher
 
 log = logging.getLogger("taskManagaer.jobs")
 
@@ -48,8 +50,10 @@ class Job(dissomniag.dbAccess.Base, threading.Thread):
     description = Column(sa.types.Text, nullable = False)
     startTime = Column(sa.types.DateTime, default = datetime.datetime.now(), nullable = False)
     endTime = Column(sa.types.DateTime)
-    state = Column(sa.types.Enum(JobStates().getList()), sa.CheckConstraint("0 >= state > 7", name = "jobState"), nullable = False)
+    state = Column(sa.types.Integer, sa.CheckConstraint("0 >= state > 7", name = "jobState"), nullable = False)
     trace = Column(sa.types.Text)
+    user_id = Column(sa.types.Integer, sa.ForeignKey("users.id"))
+    user = relationship("User", backref = "jobs")
     
     
     currentTaskId = 0
@@ -70,17 +74,20 @@ class Job(dissomniag.dbAccess.Base, threading.Thread):
         self.currentTaskId = 0
         self.runningLock = threading.RLock()
         self.writeProperty = threading.Condition()
+        self.dispatcher = None
         
         session = dissomniag.Session()
         session.commit()
         
-    def start(self):
+    def start(self, dispatcher):
         """
         Overwrite standard start method.
         Ensures that only a dispatcher can start a Job
         """
         if not threading.current_thread().name().startsWith(dispatcher.Dispatcher.startName):
             raise JobStartNotAllowed()
+        
+        self.dispatcher = dispatcher
         
         threading.Thread.start(self)
         
@@ -97,6 +104,11 @@ class Job(dissomniag.dbAccess.Base, threading.Thread):
         """
         Called from worker.
         """
+        
+        if not isinstance(self.dispatcher, Dispatcher):
+            log.WARNING("Dispatcher not set in Job %d at startup." % self.id)
+            return
+        
         with self.runningLock:
             with self.writeProperty:
                 session = dissomniag.Session()

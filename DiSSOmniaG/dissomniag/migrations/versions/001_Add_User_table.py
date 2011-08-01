@@ -1,5 +1,6 @@
 from sqlalchemy import *
 from migrate import *
+import datetime
 
 meta = MetaData()
 
@@ -24,6 +25,16 @@ user_publickey = Table('user_publickey', meta,
                        Column('key_id', Integer, ForeignKey('public_keys.id')),
 )
 
+jobs = Table('jobs', meta,
+             Column('id', Integer, primary_key = True),
+             Column('description', Text, nullable = False),
+             Column('startTime', DateTime, default = datetime.datetime.now(), nullable = False),
+             Column('endTime', DateTime),
+             Column('state', Integer, CheckConstraint("0 >= state > 7", name = "jobState"), nullable = False),
+             Column('trace', Text),
+             Column('user_id', Integer, ForeignKey('users.id')),
+)
+
 def upgrade(migrate_engine):
     print("Migrate: Add User Table")
     meta.bind = migrate_engine
@@ -32,9 +43,12 @@ def upgrade(migrate_engine):
     public_keys.create()
     print("Migrate: Add User_publickey Table")
     user_publickey.create()
+    print("Migrate: Add Job Table")
+    jobs.create()
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
     users.drop()
     public_keys.drop()
     user_publickey.drop()
+    jobs.drop()
