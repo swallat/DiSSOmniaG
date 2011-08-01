@@ -2,7 +2,7 @@ import logging
 
 log = logging.getLogger("auth.__init__")
 
-import dissomniag.dbAccess as dbAccess
+import dissomniag.dbAccess
 from dissomniag.dbAccess import Session
 
 from User import * 

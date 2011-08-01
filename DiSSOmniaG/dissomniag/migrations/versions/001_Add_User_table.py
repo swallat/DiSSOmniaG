@@ -30,7 +30,7 @@ jobs = Table('jobs', meta,
              Column('description', Text, nullable = False),
              Column('startTime', DateTime, default = datetime.datetime.now(), nullable = False),
              Column('endTime', DateTime),
-             Column('state', Integer, CheckConstraint("0 >= state > 7", name = "jobState"), nullable = False),
+             Column('state', Integer, CheckConstraint("0 <= state < 7", name = "jobState"), nullable = False),
              Column('trace', Text),
              Column('user_id', Integer, ForeignKey('users.id')),
 )

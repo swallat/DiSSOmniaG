@@ -18,15 +18,15 @@ class TaskStates:
     FAILED = 4
     
 class TaskReturns:
-    FAILED_BUT_GO_AHEAD = 0
-    SUCCESS = 1
+    FAILED_BUT_GO_AHEAD = False
+    SUCCESS = True
     
 class TaskException(Exception):
     __metaclass__ = ABCMeta
     """
     Class doc
     """
-    def __init__(self, value):
+    def __init__(self, value = None):
         self.value = value
         
     def __str__(self):
@@ -58,19 +58,28 @@ class AtomicTask:
         self.state = TaskStates.QUEUED
         self.job = None
         self.context = None
-        
     
-    @abstractmethod
-    def run(self, JobObject, Context, lastFailed = False):
+      
+    def call(self, JobObject, Context, lastFailed = False):
         self.job = JobObject
         self.context = Context
+        self.lastFailed = lastFailed
         assert self.job != None
         assert self.context != None
+        self.run()
+    
+    @abstractmethod   
+    def run(self):
+        raise NotImplementedError()
         
-    @abstractmethod
-    def revert(self, JobObject, Context, lastFailed = False):
+    def callRevert(self, JobObject, Context, lastFailed = False):
         self.job = JobObject
         self.context = Context
         assert self.job != None
         assert self.context != None
+        self.revert()
+        
+    @abstractmethod   
+    def revert(self):
+        raise NotImplementedError()
         

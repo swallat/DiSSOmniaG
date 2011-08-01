@@ -23,6 +23,7 @@ class Dispatcher(threading.Thread):
     """
     staticLock = threading.Lock()
     startName = "Dispatcher"
+    isStarted = False
     
     _instance = None
     
@@ -123,6 +124,7 @@ class Dispatcher(threading.Thread):
         
         #End while
         log.info("Dispatcher cleaned up")
+        self._instance = None
     
     def _handleDispatcherCanceled(self):
         """ Handle self.state == dispatcherStates.CANCELLED """
@@ -154,19 +156,20 @@ class Dispatcher(threading.Thread):
         """
         listBefore = self.finishedJobList
         while not self._compareJobLists():
-            self.condition.wait(timeout = 10000)
-            if listBefore == self.finishedJobList:
-                """
-                The Timeout makes sure, that the Programm exits.
-                """
-                break
+            with self.condition:
+                self.condition.wait(timeout = 10000)
+                if listBefore == self.finishedJobList:
+                    """
+                    The Timeout makes sure, that the Programm exits.
+                    """
+                    break
         
                 
             
         
     def _handleJobsArrived(self):
         with self.condition:
-            if self._compareJobLists(self):
+            if self._compareJobLists():
                 self._startUpNewJobs()
             else:
                 log.debug("Jobs arrived but not all Jobs finished yet")
@@ -175,6 +178,7 @@ class Dispatcher(threading.Thread):
     def _handleJobsFinished(self):
         with self.condition:
             if self._compareJobLists():
+                log.info("ALL JOBS COMPLETED")
                 self._startUpNewJobs()
             else:
                 return
@@ -196,7 +200,7 @@ class Dispatcher(threading.Thread):
     def _getJobRunning(self, id):
         with self.condition:
             for job in self.runningJobDict:
-                if job.id == id:
+                if job.getId() == id:
                     return job
             
             return None
@@ -241,7 +245,7 @@ class Dispatcher(threading.Thread):
             replacement = []
             found = False
             for job in jobList:
-                if job.id == id:
+                if job.getId() == id:
                     job.cancel()
                     found = True
                     continue
@@ -254,7 +258,7 @@ class Dispatcher(threading.Thread):
             try:
                 self.runningJobDict = self.inputQueue.get_nowait()
             except Queue.Empty, e:
-                log.WARNING("Dispatcher notified Jobs inserted. But there were no Jobs. Exception: %s" % str(e))
+                #log.warning("Dispatcher notified Jobs inserted. But there were no Jobs. Exception: %s" % str(e))
                 return
             else:
                 self.finishedJobList = []
@@ -279,8 +283,8 @@ class Dispatcher(threading.Thread):
             ticket = []
             ticket.append(job)
             self.inputQueue.put_nowait(ticket)
-            self.condition.notifyAll()
             self.jobsArrived = True
+            self.condition.notifyAll()
 
     def _addJobsConcurrent(self, jobs = []):
         with self.condition:
@@ -288,8 +292,8 @@ class Dispatcher(threading.Thread):
             for job in jobs:
                 fullTicket.append(job)
             self.inputQueue.put_nowait(fullTicket)
-            self.condition.notifyAll()
             self.jobsArrived = True
+            self.condition.notifyAll()
     
     def _cancelJob(self, jobId):
         with self.condition:
@@ -321,7 +325,7 @@ class Dispatcher(threading.Thread):
             try:
                 jobs = self.inputQueue.get_nowait()
                 for job in jobs:
-                    if job.id == jobId:
+                    if job.getId() == jobId:
                         returnJob = job
                 replacementQueue.put_nowait(jobs)
             except Queue.Empty:
@@ -335,7 +339,7 @@ class Dispatcher(threading.Thread):
         with self.condition:
             self.finishedJobList.append(job)
             self.jobsFinished = True
-            log.debug("Job %d finished in Dispatcher." % job.id)
+            log.debug("Job %d finished in Dispatcher." % job.getId())
             self.condition.notifyAll()
         
 
@@ -344,7 +348,9 @@ class Dispatcher(threading.Thread):
         with Dispatcher.staticLock:
             """ Start the Dispatcher and return the Dispatcher object """
             d = Dispatcher()
-            d.start()
+            if not d.isStarted:
+                d.start()
+                d.isStarted = True
             return d
 
     @staticmethod
