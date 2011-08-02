@@ -9,7 +9,7 @@ from abc import ABCMeta
 import sqlalchemy as sa
 from sqlalchemy import Column
 from sqlalchemy.orm import relationship 
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import datetime
 import threading
 
@@ -421,25 +421,126 @@ class Job(threading.Thread):
         pass
     
     @staticmethod
-    def getJobListJson():
+    def getJobs(user, specifyUserName = None, all = False, zombiJobs = False, jobId = None):
         """
-        Get a list of all Jobs Json
+        Get all Jobs per user
+        expelledJobs (verwaiste Jobs, ohne User)
         """
-        pass
+        session = dissomniag.Session()
+        
+        if user.isAdmin and all:
+            try:
+                return session.query(JobInfo).all()
+            except NoResultFound:
+                return None    
+        
+        if user.isAdmin and specifyUserName != None and jobId == None:
+            try:
+                return session.query(JobInfo).filter(JobInfo.user.username == specifyUserName).all()
+            except NoResultFound:
+                return None
+        
+        if user.isAdmin and zombiJobs:
+            try:
+                return session.query(JobInfo).filter(JobInfo.user == None)
+            except NoResultFound:
+                return None
+        
+        if jobId != None:
+            try:
+                job = session.query(JobInfo).filter(JobInfo.id == int(jobId)).one()
+            except (NoResultFound, MultipleResultsFound):
+                return None
+            if not user.isAdmin and not user == job.user:
+                return None
+            else:
+                return job
+        else:
+            try:
+                return session.query(JobInfo).filter(JobInfo.user == user).all()
+            except NoResultFound:
+                return None
+        
     
     @staticmethod
-    def getJobList():
-        """
-        Get a job list (Colorisation in view)
-        """
-        pass
-    
-    @staticmethod
-    def cleanUpJobDatabase():
+    def cleanUpJobDatabase(user, designatedUser = None, all = False, inJobs = None):
         """
         Cleans up old jobs in the database
         """
-        pass
+        session = dissomniag.Session()
+        
+        if user.isAdmin and all:
+            """ 
+            As Admin delete All not Running Jobs
+            """
+            try:
+                jobs = session.query(JobInfo).filter(JobInfo.state in JobStates.getFinalStates()).all()
+            except NoResultFound:
+                return False
+            else:
+                for job in jobs:
+                    session.delete(job)
+                
+                return True
+            
+        if user.isAdmin and inJobs != None:
+            """
+            As Admin delete all Jobs in List inJobs
+            """
+            deletedAll = True
+            for job in inJobs:
+                if not isinstance(job, JobInfo):
+                    deletedAll = False
+                else:
+                    session.delete(job)
+            
+            session.commit()
+            return deletedAll
+        
+        if inJobs != None:
+            """
+            As normal user 
+            delete Jobs in inJobs
+            """
+            deletedAll = True
+            for job in inJobs:
+                if not isinstance(job, JobInfo):
+                    deletedAll = False
+                    continue
+                if not user.isAdmin and (designatedUser == None or job.user != designatedUser):
+                    deletedAll = False
+                    continue
+                session.delete(job)
+            
+            session.commit()
+            return deletedAll
+        
+        if user.isAdmin and designatedUser != None:
+            """
+            As Admin user delete all Jobs from designatedUser
+            """
+            try:
+                jobs = session.query(JobInfo).filter(JobInfo.state in JobStates.getFinalStates()).filter(JobInfo.user == user).all()
+            except NoResultFound:
+                return False
+            else:
+                for job in jobs:
+                    session.delete(job)
+                return True
+        
+        """
+        Delete all Jobs from user
+        """
+        try:
+                jobs = session.query(JobInfo).filter(JobInfo.state in JobStates.getFinalStates()).filter(JobInfo.user == user).all()
+        except NoResultFound:
+            return False
+        else:
+            for job in jobs:
+                session.delete(job)
+            
+            return True
+        
     
     
         

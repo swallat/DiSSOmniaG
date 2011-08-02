@@ -102,8 +102,8 @@ class addUser(CliMethodABCClass.CliMethodABCClass):
         assert options.username
         assert options.password
         if not self.user.isAdmin:
-			print(self.colorString("Permission denied: Only Admin users are allowed to add a users!", color = Fore.RED, style = Style.BRIGHT))
-			return
+            print(self.colorString("Permission denied: Only Admin users are allowed to add a users!", color = Fore.RED, style = Style.BRIGHT))
+            return
             
         options.key = " ".join(options.key)
 
@@ -261,7 +261,7 @@ class modUser(CliMethodABCClass.CliMethodABCClass):
             
         
 class delUser(CliMethodABCClass.CliMethodABCClass):
-	
+    
     def implementation(self, *args):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
@@ -300,7 +300,7 @@ class delUser(CliMethodABCClass.CliMethodABCClass):
         
                
 class delKey(CliMethodABCClass.CliMethodABCClass):
-	
+    
     def implementation(self, *args):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
@@ -352,7 +352,7 @@ class delKey(CliMethodABCClass.CliMethodABCClass):
     
 
 class passwd(CliMethodABCClass.CliMethodABCClass):
-	
+    
     def implementation(self, *args):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
