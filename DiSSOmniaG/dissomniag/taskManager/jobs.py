@@ -10,6 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy import Column
 from sqlalchemy.orm import relationship 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy import and_
 import datetime
 import threading
 
@@ -51,10 +52,15 @@ class JobStates:
             return "UNKNOWN"
     @staticmethod
     def getFinalStates():
-        return [JobStates.CANCELLED,
+        return (JobStates.CANCELLED,
                      JobStates.SUCCEDED,
                      JobStates.FAILED,
-                     JobStates.FAILED_UNREVERTABLE]
+                     JobStates.FAILED_UNREVERTABLE)
+    @staticmethod
+    def getRunningStates():
+        return (JobStates.QUEUED,
+                JobStates.RUNNING,
+                JobStates.REVERTING)
         
     
 class JobStartNotAllowed(Exception):
@@ -408,138 +414,178 @@ class Job(threading.Thread):
         self._reFetchInfoObj()
         return self.infoObj.trace
     
-    def getDetailsJson(self):
-        """
-        returns a details in Json Format
-        """
-        pass
-
-    def getDetails(self):
-        """
-        return Detailed String (Colorisation in view)
-        """
-        pass
-    
     @staticmethod
-    def getJobs(user, specifyUserName = None, all = False, zombiJobs = False, jobId = None):
+    def getJobsViaUser(user, userName = None, withRunning = True, exclusiveRunning = False):
         """
-        Get all Jobs per user
-        expelledJobs (verwaiste Jobs, ohne User)
+        Get all Jobs per User
         """
+        
         session = dissomniag.Session()
-        
-        if user.isAdmin and all:
-            try:
-                return session.query(JobInfo).all()
-            except NoResultFound:
-                return None    
-        
-        if user.isAdmin and specifyUserName != None and jobId == None:
-            try:
-                return session.query(JobInfo).filter(JobInfo.user.username == specifyUserName).all()
-            except NoResultFound:
-                return None
-        
-        if user.isAdmin and zombiJobs:
-            try:
-                return session.query(JobInfo).filter(JobInfo.user == None)
-            except NoResultFound:
-                return None
-        
-        if jobId != None:
-            try:
-                job = session.query(JobInfo).filter(JobInfo.id == int(jobId)).one()
-            except (NoResultFound, MultipleResultsFound):
-                return None
-            if not user.isAdmin and not user == job.user:
-                return None
-            else:
-                return job
-        else:
-            try:
-                return session.query(JobInfo).filter(JobInfo.user == user).all()
-            except NoResultFound:
-                return None
-        
-    
-    @staticmethod
-    def cleanUpJobDatabase(user, designatedUser = None, all = False, inJobs = None):
-        """
-        Cleans up old jobs in the database
-        """
-        session = dissomniag.Session()
-        
-        if user.isAdmin and all:
-            """ 
-            As Admin delete All not Running Jobs
-            """
-            try:
-                jobs = session.query(JobInfo).filter(JobInfo.state in JobStates.getFinalStates()).all()
-            except NoResultFound:
-                return False
-            else:
-                for job in jobs:
-                    session.delete(job)
-                
-                return True
-            
-        if user.isAdmin and inJobs != None:
-            """
-            As Admin delete all Jobs in List inJobs
-            """
-            deletedAll = True
-            for job in inJobs:
-                if not isinstance(job, JobInfo):
-                    deletedAll = False
-                else:
-                    session.delete(job)
-            
-            session.commit()
-            return deletedAll
-        
-        if inJobs != None:
-            """
-            As normal user 
-            delete Jobs in inJobs
-            """
-            deletedAll = True
-            for job in inJobs:
-                if not isinstance(job, JobInfo):
-                    deletedAll = False
-                    continue
-                if not user.isAdmin and (designatedUser == None or job.user != designatedUser):
-                    deletedAll = False
-                    continue
-                session.delete(job)
-            
-            session.commit()
-            return deletedAll
-        
-        if user.isAdmin and designatedUser != None:
-            """
-            As Admin user delete all Jobs from designatedUser
-            """
-            try:
-                jobs = session.query(JobInfo).filter(JobInfo.state in JobStates.getFinalStates()).filter(JobInfo.user == user).all()
-            except NoResultFound:
-                return False
-            else:
-                for job in jobs:
-                    session.delete(job)
-                return True
-        
-        """
-        Delete all Jobs from user
-        """
+        userName = str(userName)
         try:
-                jobs = session.query(JobInfo).filter(JobInfo.state in JobStates.getFinalStates()).filter(JobInfo.user == user).all()
+            if user.isAdmin and userName != None:
+                if withRunning:
+                    if exclusiveRunning:
+                        return session.query(JobInfo).filter(JobInfo.user.username == userName).all()
+                    else:
+                        return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getRunningStates()), JobInfo.user.username == userName)).all()
+                else:
+                    return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getFinalStates()), JobInfo.user.username == userName)).all()
+    
+            elif userName == None:
+                if withRunning:
+                    if exclusiveRunning:
+                        return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getRunningStates()), JobInfo.user == user)).all()
+                    else:
+                        return session.query(JobInfo).filter(JobInfo.user == user).all()
+                else:
+                    return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getFinalStates()), JobInfo.user == user)).all()
+            else:
+                return None
+        except NoResultFound:
+            return None
+            
+    @staticmethod
+    def getJobViaId(user, jobId, withZombi = True, exclusiveZombi = False, withRunning = True, exclusiveRunning = False):
+        """
+        Get a single Job with a specific ID
+        """
+        session = dissomniag.Session()
+        jobId = int(jobId)
+        try:
+            if withRunning:
+                if exclusiveRunning:
+                    if withZombi:
+                        if exclusiveZombi:
+                            job = session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getRunningStates()), JobInfo.id == jobId)).filter(JobInfo.user == None).one()
+                        else:
+                            job = session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getRunningStates()), JobInfo.id == jobId)).one()
+                    else:
+                        job = session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getRunningStates()), JobInfo.id == jobId)).filter(JobInfo.user != None).one()
+    
+                else:
+                    if withZombi:
+                        if exclusiveZombi:
+                            job = session.query(JobInfo).filter(JobInfo.id == jobId).filter(JobInfo.user == None).one()
+                        else:
+                            job = session.query(JobInfo).filter(JobInfo.id == jobId).one()
+                    else:
+                        job = session.query(JobInfo).filter(JobInfo.id == jobId).filter(JobInfo.user != None).one()
+    
+            else:
+                if withZombi:
+                    if exclusiveZombi:
+                        job = session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getFinalStates()), JobInfo.id == jobId)).filter(JobInfo.user == None).one()
+                    else:
+                        job = session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getFinalStates()), JobInfo.id == jobId)).one()
+                else:
+                    job = session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getFinalStates()), JobInfo.id == jobId)).filter(JobInfo.user != None).one()
+        
+        except (NoResultFound, MultipleResultsFound):
+            return None
+        
+        if job != None and (user.isAdmin or job.user == user):
+            return job
+        else:
+            return None
+        
+    @staticmethod
+    def getJobs(user, withZombi = True, exclusiveZombi = False, withRunning = True, exclusiveRunning = False):
+        """
+        Get all Jobs in Db
+        """
+        if not user.isAdmin:
+            return None
+        session = dissomniag.Session()
+        try:
+            if withRunning:
+                if exclusiveRunning:
+                    if withZombi:
+                        if exclusiveZombi:
+                            return session.query(JobInfo).filter(JobInfo.state.in_(JobStates.getRunningStates())).filter(JobInfo.user == None).all()
+                        else:
+                            return session.query(JobInfo).filter(JobInfo.state.in_(JobStates.getRunningStates())).all()
+                    else:
+                        return session.query(JobInfo).filter(JobInfo.state.in_(JobStates.getRunningStates())).filter(JobInfo.user != None).all()
+                else:
+                    if withZombi:
+                        if exclusiveZombi:
+                            return session.query(JobInfo).filter(JobInfo.user == None).all()
+                        else:
+                            return session.query(JobInfo).all()
+                    else:
+                        return session.query(JobInfo).filter(JobInfo.user != None).all()
+            else:
+                if withZombi:
+                    if exclusiveZombi:
+                        return session.query(JobInfo).filter(JobInfo.state.in_(JobStates.getFinalStates())).filter(JobInfo.user == None).all()
+                    else:
+                        return session.query(JobInfo).filter(JobInfo.state.in_(JobStates.getFinalStates())).all()
+                else:
+                    return session.query(JobInfo).filter(JobInfo.state.in_(JobStates.getFinalStates())).filter(JobInfo.user != None).all()
+        except (NoResultFound, MultipleResultsFound):
+            return None
+    
+    @staticmethod
+    def cleanUpJobDbViaUser(user, userName = None):
+        """
+        Delete old Jobs in Db via userName
+        """
+        session = dissomniag.Session()
+        userName = str(userName)
+        try:
+            if user.isAdmin and userName != None:
+                jobs = session.query(JobInfo).filter(JobInfo.user.username == userName).filter(JobInfo.state.in_(JobStates.getFinalStates())).all()
+            elif not user.isAdmin and userName == None:
+                jobs = session.query(JobInfo).filter(JobInfo.user == user).filter(JobInfo.state.in_(JobStates.getFinalStates())).all()
+            else:
+                return False
         except NoResultFound:
             return False
-        else:
-            for job in jobs:
-                session.delete(job)
-            
-            return True
+        
+        for job in jobs:
+            session.delete(job)
+        session.commit()
+        return True
+   
+    @staticmethod
+    def cleanUpJobDbViaId(user, jobId):
+        """
+        Delete single Job in Db via jobId
+        """
+        session = dissomniag.Session()
+        jobId = int(jobId)
+        try:
+            if user.isAdmin:
+                job = session.query(JobInfo).filter(JobInfo.id == jobId).filter(JobInfo.state.in_(JobStates.getFinalStates())).one()
+            else:
+                job = session.query(JobInfo).filter(JobInfo.user == user).filter(JobInfo.state.in_(JobStates.getFinalStates())).filter(JobInfo.id == jobId).one()
+        except (NoResultFound, MultipleResultsFound):
+            return False
+        
+        session.delete(job)
+        session.commit()
+        return True
+   
+    @staticmethod
+    def cleanUpJobDb(user):
+        """
+        Delete Jobs in Db
+        If user == adminUser all Final State jobs are deleted
+        """
+        session = dissomniag.Session()
+        try:
+            if user.isAdmin:
+                jobs = session.query(JobInfo).filter(JobInfo.state.in_(JobStates.getFinalStates())).all()
+            else:
+                jobs = session.query(JobInfo).filter(JobInfo.state.in_(JobStates.getFinalStates())).filter(JobInfo.user == user).all()
+        except NoResultFound:
+            return False
+        
+        for job in jobs:
+            session.delete(job)
+        session.commit()
+        return True
         
     
     
