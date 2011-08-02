@@ -70,56 +70,56 @@ class Dispatcher(threading.Thread):
                 self.condition.wait()
                 """ Wait for any condition to occure """
             
-            if self.state == dispatcherStates.CANCELLED:
-                """ 
-                A cancel request Arrived for the Dispatcher arrived 
-                
-                :caution: 
-                
-                    Make sure that the current state does not change 
-                    in self._handleCancel()
+                if self.state == dispatcherStates.CANCELLED:
+                    """ 
+                    A cancel request Arrived for the Dispatcher arrived 
+                    
+                    :caution: 
+                    
+                        Make sure that the current state does not change 
+                        in self._handleCancel()
+                            
+                    """
+                    log.debug("Cancel request arrived")
+                    self._handleDispatcherCanceled()
+                    continue
+                    
+                if self.jobsFinished:
+                    """
+                    Some Jobs finished Work.
+                    
+                    :caution: 
                         
-                """
-                log.debug("Cancel request arrived")
-                self._handleDispatcherCanceled()
-                continue
-            
-            if self.jobsArrived:
-                """ 
-                Some requests to handle a new Job arrived 
-                
-                :caution: 
+                        More than one Job could have finished.
                     
-                    More than one Job could be arrived
+                    """
+                    log.debug("Jobs have finished")
+                    self.jobsFinished = False
+                    self._handleJobsFinished()
                 
-                """
-                log.debug("New Job arrived in Dispatcher")
-                self.jobsArrived = False
-                self._handleJobsArrived()
-                
-            if self.jobsFinished:
-                """
-                Some Jobs finished Work.
-                
-                :caution: 
+                if self.jobIdsToCancel != []:
+                    """
+                    Some Jobs are requested to be canceled.
                     
-                    More than one Job could have finished.
-                
-                """
-                log.debug("Jobs have finished")
-                self.jobsFinished = False
-                self._handleJobsFinished()
-            
-            if self.jobIdsToCancel != []:
-                """
-                Some Jobs are requested to be canceled.
-                
-                :caution: 
+                    :caution: 
+                        
+                        More than one Job could could be requested to be canceled.
+                    """
+                    log.debug("Cancel Job request")
+                    self._handleJobsCancelRequest()
                     
-                    More than one Job could could be requested to be canceled.
-                """
-                log.debug("Cancel Job request")
-                self._handleJobsCancelRequest()
+                if self.jobsArrived:
+                    """ 
+                    Some requests to handle a new Job arrived 
+                    
+                    :caution: 
+                        
+                        More than one Job could be arrived
+                    
+                    """
+                    log.debug("New Job arrived in Dispatcher")
+                    self.jobsArrived = False
+                    self._handleJobsArrived()
                 
         
         #End while
@@ -284,6 +284,7 @@ class Dispatcher(threading.Thread):
             ticket.append(job)
             self.inputQueue.put_nowait(ticket)
             self.jobsArrived = True
+            log.debug("Job %d arrived in Dispatcher" % job.getId())
             self.condition.notifyAll()
 
     def _addJobsConcurrent(self, jobs = []):
@@ -373,7 +374,7 @@ class Dispatcher(threading.Thread):
             
             Use this method to add a job, if you want future consistency.
             """
-            return Dispatcher()._addJobConcurrent(jobs)
+            return Dispatcher()._addJobsConcurrent(jobs)
     
     @staticmethod
     def cancelJob(user, jobId):

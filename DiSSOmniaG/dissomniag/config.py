@@ -94,3 +94,10 @@ class log(ParseSection):
         
 log = log(config, "LOG").parse()
 
+class dispatcher(ParseSection):
+    
+    def parse(self):
+        self.revertBeforeCancel = self.bool(self.parseOption(self.sectionName, "reverBeforeCancel", "False"))
+        return self
+    
+dispatcher = dispatcher(config, "DISPATCHER").parse()

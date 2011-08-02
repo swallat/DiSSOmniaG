@@ -49,6 +49,12 @@ class JobStates:
             return "FAILED_UNREVERTABLE"
         else:
             return "UNKNOWN"
+    @staticmethod
+    def getFinalStates():
+        return [JobStates.CANCELLED,
+                     JobStates.SUCCEDED,
+                     JobStates.FAILED,
+                     JobStates.FAILED_UNREVERTABLE]
         
     
 class JobStartNotAllowed(Exception):
@@ -112,6 +118,10 @@ class Job(threading.Thread):
         session.commit()
         session.flush()
         self.id = self.infoObj.id
+        if user != None:
+            self.user_id = user.id
+        else:
+            self.user_id = None
         
         
         self.context = context
@@ -119,7 +129,7 @@ class Job(threading.Thread):
         self.taskList = []
         self.currentTaskId = 0
         self.runningLock = threading.RLock()
-        self.writeProperty = threading.Condition()
+        self.writeProperty = threading.RLock()
         self.dispatcher = None
         
         self.infoObj = None
@@ -128,31 +138,41 @@ class Job(threading.Thread):
         
         
     def _setState(self, state):
-        self.state = state
-        if self.infoObj == None:
+        with self.writeProperty:
             self._reFetchInfoObj()
-        self.infoObj.state = state
-        session = dissomniag.Session()
-        session.commit()
+            self.state = state
+            self.infoObj.state = state
         
     def _reFetchInfoObj(self):
-        session = dissomniag.Session()
-        try:
-            self.infoObj = session.query(JobInfo).filter(JobInfo.id == self.id).one()
-        except NoResultFound:
-            raise NoJobInfoObj()
+        if self.infoObj == None:
+            session = dissomniag.Session()
+            try:
+                self.infoObj = session.query(JobInfo).filter(JobInfo.id == self.id).one()
+            except NoResultFound:
+                raise NoJobInfoObj()
     
     def getState(self):
-        if self.infoObj == None:
-            self._reFetchInfoObj()
-        return self.infoObj.state
+        info = self.getInfo()
+        return info.state
     
     def getUser(self):
-        session = dissomniag.Session()
-        try:
-            return session.query(JobInfo).filter(JobInfo.id == self.id).one().user
-        except NoResultFound:
-            raise NoJobInfoObj()
+        info = self.getInfo()
+        if info.user == None:
+            return False
+        else:
+            return info.user
+        
+    def _getStatePrivate(self):
+        self._reFetchInfoObj()
+        if self.state != self.infoObj.state:
+            if self.state == JobStates.CANCELLED:
+                self.trace("### JOB CANCELLED ###")
+            self.infoObj.state = self.state
+        return self.state
+    
+    def getUserId(self):
+        return self.user_id
+    
         
     def getInfo(self):
         session = dissomniag.Session()
@@ -162,16 +182,14 @@ class Job(threading.Thread):
             raise NoJobInfoObj()
         
     def getId(self):
-        if self.infoObj == None:
-            self._reFetchInfoObj()
-        return self.infoObj.id
+        return self.id
     
     def _setEndTime(self):
-        if self.infoObj == None:
+        with self.writeProperty:
+            session = dissomniag.Session()
             self._reFetchInfoObj()
-        self.infoObj.endTime = datetime.datetime.now()
-        session = dissomniag.Session()
-        session.commit()
+            self.infoObj.endTime = datetime.datetime.now()
+            session.commit()
         
         
     def start(self, dispatcher):
@@ -208,11 +226,18 @@ class Job(threading.Thread):
         with self.runningLock:
             
             with self.writeProperty:
+                
+                if self._getStatePrivate() == JobStates.CANCELLED:
+                    self._setEndTime()
+                    self.dispatcher.jobFinished(self)
+                    return
+                
                 session = dissomniag.Session()
                 self._setState(JobStates.RUNNING) 
                 session.commit()
             
             try:
+                self.trace("### RUNNING ###")
                 self._run()
                 """ 
                 Run all tasks
@@ -226,6 +251,7 @@ class Job(threading.Thread):
                 """
                 A task failed, but not unrevertable
                 """
+                self.trace("### TASK FAILED, TRY REVERTING ###")
                 try:
                     self._revertFrom(self.currentTaskId)
                     """
@@ -242,6 +268,7 @@ class Job(threading.Thread):
                     If annother Error occures:
                     The system has been corrupted unrevertable.
                     """
+                    self.trace("### TASK UNREVERTABLE FAILED ###")
                     with self.writeProperty:
                         self._setState(JobStates.FAILED_UNREVERTABLE)
                         """
@@ -254,6 +281,7 @@ class Job(threading.Thread):
                 An unrevertable Failure occured.
                 The system may be corrupted.
                 """
+                self.trace("### TASK UNREVERTABLE FAILED ###")
                 with self.writeProperty:
                     self._setState(JobStates.FAILED_UNREVERTABLE)
                     """
@@ -261,6 +289,7 @@ class Job(threading.Thread):
                     The System may be corrupted
                     """
             finally:
+                self.trace("### TASK END ###")
                 self._setEndTime()
                 self.dispatcher.jobFinished(self)
                 """
@@ -276,14 +305,14 @@ class Job(threading.Thread):
         lastFailed = False
         for i, task in enumerate(self.taskList):
             
-            if self.state == JobStates.CANCELLED:
+            if self._getStatePrivate() == JobStates.CANCELLED:
                 """
                 Check if a cancell request occured
                 """
                 self.trace("Job %s cancelled while executing taskId: %s" % \
                             (str(self.id), str(self.currentTaskId)))
-                log.INFO("Job %s cancelled while executing taskId: %s" % \
-                            (str(self.id), str(self.currentTaskId)))
+                log.info("Job %s cancelled while executing taskId: %s" % \
+                            (str(self.id), str(self.currentTaskId))) 
                 raise tasks.TaskFailed()
             
             self.currentTaskId = i
@@ -300,18 +329,19 @@ class Job(threading.Thread):
         Revert performed Tasks.
         """
         with self.writeProperty:
+            if dissomniag.config.dispatcher.revertBeforeCancel:
+                if self._getStatePrivate() == JobStates.CANCELLED:
+                    """
+                    Check if a cancell request occured
+                    """
+                    self.trace("Job %s cancelled while executing taskId: %s" % \
+                                (str(self.id), str(self.currentTaskId)))
+                    log.info("Job %s cancelled while executing taskId: %s" % \
+                                (str(self.id), str(self.currentTaskId)))
+                    raise tasks.TaskFailed()
             
-            if self.state == JobStates.CANCELLED:
-                """
-                Check if a cancell request occured
-                """
-                self.trace("Job %s cancelled while executing taskId: %s" % \
-                            (str(self.id), str(self.currentTaskId)))
-                log.INFO("Job %s cancelled while executing taskId: %s" % \
-                            (str(self.id), str(self.currentTaskId)))
-                raise tasks.TaskFailed()
-            
-            self._setState(JobStates.REVERTING)
+            if self._getStatePrivate() != JobStates.CANCELLED:   
+                self._setState(JobStates.REVERTING)
             session = dissomniag.Session()
             session.commit()
         
@@ -319,15 +349,16 @@ class Job(threading.Thread):
         
         for i, task in zip(range(taskId, -1, -1), reversed(self.taskList[:(taskId + 1)])):
             
-            if self.state == JobStates.CANCELLED:
-                """
-                Check if a cancell request occured
-                """
-                self.trace("Job %s cancelled while executing taskId: %s" % \
-                            (str(self.id), str(self.currentTaskId)))
-                log.INFO("Job %s cancelled while executing taskId: %s" % \
-                            (str(self.id), str(self.currentTaskId)))
-                raise tasks.TaskFailed()
+            if dissomniag.config.dispatcher.revertBeforeCancel:
+                if self._getStatePrivate() == JobStates.CANCELLED:
+                    """
+                    Check if a cancell request occured
+                    """
+                    self.trace("Job %s cancelled while executing taskId: %s" % \
+                                (str(self.id), str(self.currentTaskId)))
+                    log.INFO("Job %s cancelled while executing taskId: %s" % \
+                                (str(self.id), str(self.currentTaskId)))
+                    raise tasks.TaskFailed()
             
             self.currentTaskId = i
             
@@ -356,15 +387,14 @@ class Job(threading.Thread):
         Cancel Job
         """
         with self.writeProperty:
-            self._setState(JobStates.CANCELLED)
+            self.state = JobStates.CANCELLED
         
     def trace(self, traceMessage):
         """
         Adds a Trace message from a Task or the running Job.
         """
         with self.writeProperty:
-            if self.infoObj == None:
-                self._reFetchInfoObj()
+            self._reFetchInfoObj()
             if self.infoObj.trace == None:
                 self.infoObj.trace = traceMessage + "\n"
             else:
@@ -375,8 +405,7 @@ class Job(threading.Thread):
         """
         returns the Trace Message from the running Job.
         """
-        if self.infoObj == None:
-                self._reFetchInfoObj()
+        self._reFetchInfoObj()
         return self.infoObj.trace
     
     def getDetailsJson(self):
