@@ -58,9 +58,6 @@ def setUpLogger(logger):
     
     
     if not firstRun:
-        # Add timestamp
-        logger.warning('\n---------\nLog closed on %s.\n---------\n' % time.asctime())
-        
         # Roll over on application start
         for handler in logger.handlers:
             if not isinstance(handler, logging.handlers.RotatingFileHandler):
@@ -71,5 +68,11 @@ def setUpLogger(logger):
     logger.warning('\n---------\nLog started on %s.\n---------\n' % time.asctime())
     
     return logger
+
+def doLogEnd():
+    # Add timestamp
+    logger.warning('\n---------\nLog closed on %s.\n---------\n' % time.asctime())
+    
+    
 
 logger = setUpLogger(logging.getLogger(''))

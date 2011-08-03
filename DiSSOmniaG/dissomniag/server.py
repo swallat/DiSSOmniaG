@@ -419,6 +419,7 @@ def startServer():
     #print("Closing Dispatcher")
     log.info("Closing Dispatcher")
     dissomniag.taskManager.Dispatcher.cleanUpDispatcher()
+    dissomniag.utils.Logging.doLogEnd()
 
 if __name__ == '__main__':
     startServer()
