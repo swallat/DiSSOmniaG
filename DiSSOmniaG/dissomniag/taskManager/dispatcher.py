@@ -58,7 +58,10 @@ class Dispatcher(threading.Thread):
             self.finishedJobList = []
             self.state = dispatcherStates.RUNNING
             self.inputQueue = Queue.Queue()
+            self.independentQueue = Queue.Queue()
+            self.independentJobList = []
             self.jobsArrived = False
+            self.independentJobArrived = False
             self.jobsFinished = False
             self.jobIdsToCancel = []
             self.cancelCondition = threading.Condition()
@@ -122,6 +125,19 @@ class Dispatcher(threading.Thread):
                     self.jobsArrived = False
                     self._handleJobsArrived()
                 
+                if self.independentJobArrived:
+                    """
+                    Some independent Jobs arrived and can be handled
+                    concurrently to the jobs in the standard input Queue.
+                    
+                    :caution:
+                    
+                        More than one Job could be arrived
+                    """
+                    log.debug("New independent job arrived in dispatcher.")
+                    self.independentJobArrived = False
+                    self._handleIndependentJobsArrived()
+                
         
         #End while
         log.info("Dispatcher cleaned up")
@@ -145,7 +161,18 @@ class Dispatcher(threading.Thread):
                 except Queue.Empty:
                     queueCleanedUp = True
                     break
-                
+            """
+            Clean up independent Queue
+            """
+            independentQueueCleanedUp = False
+            while not independentQueueCleanedUp:
+                try:
+                    job = self.independentQueue.get_nowait()
+                    job.cancelBeforeStartup()
+                except Queue.Empty:
+                    independentQueueCleanedUp = True
+                    break
+                 
             """
             Cancel all running Jobs
             """
@@ -153,12 +180,15 @@ class Dispatcher(threading.Thread):
             for job in self.runningJobDict:
                 job.cancel()
             
+            for job in self.independentJobList:
+                job.cancel()
+            
             """
             Wait until all Jobs have finished correctly.
             Must be outside of a Lock!!
             """
             listBefore = self.finishedJobList
-            while not self._compareJobLists():
+            while not self._compareJobLists() and self.independentJobList != []:
                 with self.condition:
                     self.condition.wait(timeout = 10000)
                     """
@@ -167,9 +197,6 @@ class Dispatcher(threading.Thread):
                     if listBefore == self.finishedJobList: 
                         break
         
-                
-            
-        
     def _handleJobsArrived(self):
         with self.condition:
             if self._compareJobLists():
@@ -177,7 +204,20 @@ class Dispatcher(threading.Thread):
             else:
                 log.debug("Jobs arrived but not all Jobs finished yet")
                 return                            
-        
+    
+    def _handleIndependentJobsArrived(self):
+        with self.condition:
+            queueEmpty = False
+            while not queueEmpty:
+                try:
+                    job = self.independentQueue.get_nowait()
+                except Queue.Empty:
+                    queueEmpty = True
+                else:
+                    if job not in self.independentJobList:
+                        self.independentJobList.append(job)
+                        job.start()
+    
     def _handleJobsFinished(self):
         with self.condition:
             if self._compareJobLists():
@@ -205,7 +245,10 @@ class Dispatcher(threading.Thread):
             for job in self.runningJobDict:
                 if job.getId() == id:
                     return job
-            
+            for job in self.independentJobList:
+                if job.getId() == id:
+                    return job
+                
             return None
         
     def _cancelQueuedJob(self, id):
@@ -223,7 +266,7 @@ class Dispatcher(threading.Thread):
                         replacementQueue.put_nowait(elem)
             except Queue.Empty:
                 log.warning("Try to cancel a Job, but inputQueue is empty.")
-                return False
+                #return False
             while not queueEmpty:
                 try:
                     elem = self.inputQueue.get_nowait()
@@ -238,6 +281,22 @@ class Dispatcher(threading.Thread):
                 except Queue.Empty:
                     queueEmpty = True
             self.inputQueue = replacementQueue
+            
+            if not found:
+                replacementIndependentQueue = Queue.Queue()
+                independentQueueEmpty = False
+                while not independentQueueEmpty:
+                    try:
+                        job = self.independentQueue.get_nowait()
+                        if job.getId() == id:
+                            found = True
+                            job.cancelBeforeStartup()
+                        else:
+                            replacementIndependentQueue.put_nowait(job)
+                    except Queue.Empty:
+                        independentQueueEmpty = True
+                self.independentQueue = replacementIndependentQueue
+            
             if found:
                 return True
             else:
@@ -254,7 +313,6 @@ class Dispatcher(threading.Thread):
                     continue
                 replacement.append(job)
             return found, replacement
-    
         
     def _startUpNewJobs(self):
         with self.condition:
@@ -298,6 +356,14 @@ class Dispatcher(threading.Thread):
             self.inputQueue.put_nowait(fullTicket)
             self.jobsArrived = True
             self.condition.notifyAll()
+            
+    def _addJobIndependent(self, job):
+        with self.condition:
+            assert job != None
+            self.independentQueue.put_nowait(job)
+            self.independentJobArrived = True
+            log.debug("Independent Job arrived in Dispatcher %d" % job.getId())
+            self.condition.notifyAll()  
     
     def _cancelJob(self, jobId):
         with self.condition:
@@ -338,17 +404,31 @@ class Dispatcher(threading.Thread):
             except Queue.Empty:
                 inputQueueEmpty = True
         self.inputQueue = replacementQueue
-        return returnJob
+        
+        if returnJob == None:
+            replacementIndependentQueue = Queue.Queue()
+            independentQueueEmpty = False
+            while not independentQueueEmpty:
+                try:
+                    job = self.independentQueue.get_nowait()
+                    if job.getId() == jobId:
+                        returnJob = job
+                    replacementIndependentQueue.put_nowait(job)
+                except Queue.Empty:
+                    independentQueueEmpty = True
+            self.independentQueue = replacementIndependentQueue
             
-            
+        return returnJob      
     
     def jobFinished(self, job):
         with self.condition:
-            self.finishedJobList.append(job)
-            self.jobsFinished = True
-            log.debug("Job %d finished in Dispatcher." % job.getId())
-            self.condition.notifyAll()
-        
+            if job in self.runningJobDict:
+                self.finishedJobList.append(job)
+                self.jobsFinished = True
+                log.debug("Job %d finished in Dispatcher." % job.getId())
+                self.condition.notifyAll()
+            elif job in self.independentJobList:
+                self.independentJobList.remove(job)        
 
     @staticmethod
     def startDispatcher():
@@ -381,6 +461,17 @@ class Dispatcher(threading.Thread):
             Use this method to add a job, if you want future consistency.
             """
             return Dispatcher()._addJobsConcurrent(jobs)
+    
+    @staticmethod
+    def addJobIndependent(user, job):
+        with Dispatcher.staticLock:
+            """
+            For future use added. If we want more than one dispatcher
+            the dispatching process must be controlled by a single instance.
+            
+            Use this method to add a job, if you want future consistency.
+            """
+            return Dispatcher()._addJobIndependent(job)
     
     @staticmethod
     def cancelJob(user, jobId):
