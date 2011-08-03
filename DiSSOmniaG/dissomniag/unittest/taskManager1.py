@@ -189,7 +189,7 @@ class Test(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(Test, cls).tearDownClass()
-        dissomniag.taskManager.Dispatcher.cancelAll()
+        dissomniag.taskManager.Dispatcher.cleanUpDispatcher()
         global context
         context = None     
     #===========================================================================

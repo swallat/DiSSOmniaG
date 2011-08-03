@@ -150,7 +150,7 @@ class Test(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(Test, cls).tearDownClass()
-        dissomniag.taskManager.Dispatcher.cancelAll()
+        dissomniag.taskManager.Dispatcher.cleanUpDispatcher()
         global context
         context = None
 
@@ -242,7 +242,10 @@ class Test(unittest.TestCase):
         print(job1.getInfo())
         
         print ("#### COUNTER %d ####" % counter)
-        assert counter == -3
+        if dissomniag.config.dispatcher.revertBeforeCancel:
+            assert counter == -3
+        else:
+            assert counter == 3
         with counterLock:
             counter = 0
 
@@ -355,7 +358,10 @@ class Test(unittest.TestCase):
         print(job2.getInfo())
         global counter, counterLock
         print ("#### COUNTER %d ####" % counter)
-        assert counter == 8
+        if dissomniag.config.dispatcher.revertBeforeCancel:
+            assert counter == 8
+        else:
+            assert counter == 2
         with counterLock:
             counter = 0
             
@@ -433,7 +439,7 @@ class Test(unittest.TestCase):
         taskManager.Dispatcher.addJob(user = None, job = job1)
         taskManager.Dispatcher.addJob(user = None, job = job2)
         time.sleep(1)
-        taskManager.Dispatcher.cancelAll()
+        taskManager.Dispatcher.cleanUpDispatcher()
         time.sleep(5)
         print(job1.getInfo())
         print(job2.getInfo())
