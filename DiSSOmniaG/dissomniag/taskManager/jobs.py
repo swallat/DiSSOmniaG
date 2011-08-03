@@ -16,6 +16,7 @@ import threading
 
 import dissomniag
 import dissomniag.dbAccess
+import dissomniag.auth.User
 import tasks
 import context
 import dispatcher
@@ -125,9 +126,9 @@ class Job(threading.Thread):
         session.flush()
         self.id = self.infoObj.id
         if user != None:
-            self.user_id = user.id
+            self.user = user
         else:
-            self.user_id = None
+            self.user = None
         
         
         self.context = context
@@ -171,9 +172,11 @@ class Job(threading.Thread):
     def _getStatePrivate(self):
         self._reFetchInfoObj()
         if self.state != self.infoObj.state:
+            session = dissomniag.Session()
             if self.state == JobStates.CANCELLED:
                 self.trace("### JOB CANCELLED ###")
             self.infoObj.state = self.state
+            session.commit()
         return self.state
     
     def getUserId(self):
@@ -232,7 +235,6 @@ class Job(threading.Thread):
         with self.runningLock:
             
             with self.writeProperty:
-                
                 if self._getStatePrivate() == JobStates.CANCELLED:
                     self._setEndTime()
                     self.dispatcher.jobFinished(self)
@@ -335,7 +337,7 @@ class Job(threading.Thread):
         Revert performed Tasks.
         """
         with self.writeProperty:
-            if dissomniag.config.dispatcher.revertBeforeCancel:
+            if not dissomniag.config.dispatcher.revertBeforeCancel:
                 if self._getStatePrivate() == JobStates.CANCELLED:
                     """
                     Check if a cancell request occured
@@ -355,7 +357,7 @@ class Job(threading.Thread):
         
         for i, task in zip(range(taskId, -1, -1), reversed(self.taskList[:(taskId + 1)])):
             
-            if dissomniag.config.dispatcher.revertBeforeCancel:
+            if not dissomniag.config.dispatcher.revertBeforeCancel:
                 if self._getStatePrivate() == JobStates.CANCELLED:
                     """
                     Check if a cancell request occured
@@ -394,6 +396,16 @@ class Job(threading.Thread):
         """
         with self.writeProperty:
             self.state = JobStates.CANCELLED
+    
+    def cancelBeforeStartup(self):
+        with self.runningLock:
+            session = dissomniag.Session()
+            self._reFetchInfoObj()
+            self.state = JobStates.CANCELLED
+            self.infoObj.state = self.state
+            session.commit()
+            self.infoObj = None
+            
         
     def trace(self, traceMessage):
         """
@@ -421,18 +433,25 @@ class Job(threading.Thread):
         """
         
         session = dissomniag.Session()
-        userName = str(userName)
+        if userName != None:
+            try:
+                otherUser = session.query(dissomniag.auth.User).filter(dissomniag.auth.User.username == str(userName)).one()
+            except (NoResultFound, MultipleResultsFound):
+                otherUser = None
+        else:
+            otherUser = None
+        
         try:
-            if user.isAdmin and userName != None:
+            if user.isAdmin and userName != None and otherUser != None:
                 if withRunning:
                     if exclusiveRunning:
-                        return session.query(JobInfo).filter(JobInfo.user.username == userName).all()
+                        return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getRunningStates()), JobInfo.user == otherUser)).all()
                     else:
-                        return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getRunningStates()), JobInfo.user.username == userName)).all()
+                        return session.query(JobInfo).filter(JobInfo.user == otherUser).all()
                 else:
-                    return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getFinalStates()), JobInfo.user.username == userName)).all()
+                    return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getFinalStates()), JobInfo.user_id == otherUser)).all()
     
-            elif userName == None:
+            elif userName == None or (userName != None and userName == user.username):
                 if withRunning:
                     if exclusiveRunning:
                         return session.query(JobInfo).filter(and_(JobInfo.state.in_(JobStates.getRunningStates()), JobInfo.user == user)).all()
@@ -451,7 +470,7 @@ class Job(threading.Thread):
         Get a single Job with a specific ID
         """
         session = dissomniag.Session()
-        jobId = int(jobId)
+        #jobId = int(jobId)
         try:
             if withRunning:
                 if exclusiveRunning:
@@ -532,11 +551,18 @@ class Job(threading.Thread):
         Delete old Jobs in Db via userName
         """
         session = dissomniag.Session()
-        userName = str(userName)
+        if userName != None:
+            try:
+                otherUser = session.query(dissomniag.auth.User).filter(dissomniag.auth.User.username == str(userName)).one()
+            except (NoResultFound, MultipleResultsFound):
+                otherUser = None
+        else:
+            otherUser = None
+            
         try:
-            if user.isAdmin and userName != None:
-                jobs = session.query(JobInfo).filter(JobInfo.user.username == userName).filter(JobInfo.state.in_(JobStates.getFinalStates())).all()
-            elif not user.isAdmin and userName == None:
+            if user.isAdmin and userName != None and otherUser != None:
+                jobs = session.query(JobInfo).filter(JobInfo.user == otherUser).filter(JobInfo.state.in_(JobStates.getFinalStates())).all()
+            elif userName == None:
                 jobs = session.query(JobInfo).filter(JobInfo.user == user).filter(JobInfo.state.in_(JobStates.getFinalStates())).all()
             else:
                 return False
@@ -554,7 +580,9 @@ class Job(threading.Thread):
         Delete single Job in Db via jobId
         """
         session = dissomniag.Session()
+        
         jobId = int(jobId)
+
         try:
             if user.isAdmin:
                 job = session.query(JobInfo).filter(JobInfo.id == jobId).filter(JobInfo.state.in_(JobStates.getFinalStates())).one()
@@ -564,6 +592,26 @@ class Job(threading.Thread):
             return False
         
         session.delete(job)
+        session.commit()
+        return True
+    
+    @staticmethod
+    def cleanUpJobDbViaZombi(user):
+        """
+        Delete all Zombi Jobs
+        """
+        session = dissomniag.Session()
+        if not user.isAdmin:
+            return False
+        
+        try:
+            jobs = session.query(JobInfo).filter(JobInfo.user == None).all()
+        except NoResultFound:
+            return False
+        
+        for job in jobs:
+            session.delete(job)
+            
         session.commit()
         return True
    

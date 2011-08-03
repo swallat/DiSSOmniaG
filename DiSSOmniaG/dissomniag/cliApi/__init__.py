@@ -37,6 +37,18 @@ def passwd(*args):
 def whoami(*args):
     import ManageUsers
     ManageUsers.whoami().call(*args)
+    
+def jobs(*args):
+    import ManageJobs
+    ManageJobs.CliJobs().call(*args)
+
+def stopJob(*args):
+    import ManageJobs
+    ManageJobs.stopJob().call(*args)
+    
+def addDummyJob(*args):
+    import ManageJobs
+    ManageJobs.addDummyJob().call(*args)
 
 def testSubprocess(terminal, user, *args):
     import sys

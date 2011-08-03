@@ -61,15 +61,16 @@ class Dispatcher(threading.Thread):
             self.jobsArrived = False
             self.jobsFinished = False
             self.jobIdsToCancel = []
+            self.cancelCondition = threading.Condition()
     
     def run(self):
         """ Start the Dispatche Run while """
         log.info("Dispatcher started")
-        while self.state == dispatcherStates.RUNNING:
+        while self.state == dispatcherStates.RUNNING or self.state == dispatcherStates.CANCELLED:
             with self.condition:
                 self.condition.wait()
                 """ Wait for any condition to occure """
-            
+                log.info("POINT State %s" % ("Running" if self.state == dispatcherStates.RUNNING else "Cancelled"))
                 if self.state == dispatcherStates.CANCELLED:
                     """ 
                     A cancel request Arrived for the Dispatcher arrived 
@@ -82,7 +83,7 @@ class Dispatcher(threading.Thread):
                     """
                     log.debug("Cancel request arrived")
                     self._handleDispatcherCanceled()
-                    continue
+                    break
                     
                 if self.jobsFinished:
                     """
@@ -124,6 +125,8 @@ class Dispatcher(threading.Thread):
         
         #End while
         log.info("Dispatcher cleaned up")
+        with self.cancelCondition:
+            self.cancelCondition.notifyAll()
         self._instance = None
     
     def _handleDispatcherCanceled(self):
@@ -138,10 +141,10 @@ class Dispatcher(threading.Thread):
             while not queueCleanedUp:
                 try:
                     for job in self.inputQueue.get_nowait():
-                        job.cancel()
+                        job.cancelBeforeStartup()
                 except Queue.Empty:
                     queueCleanedUp = True
-                    continue
+                    break
                 
             """
             Cancel all running Jobs
@@ -150,19 +153,19 @@ class Dispatcher(threading.Thread):
             for job in self.runningJobDict:
                 job.cancel()
             
-        """
-        Wait until all Jobs have finished correctly.
-        Must be outside of a Lock!!
-        """
-        listBefore = self.finishedJobList
-        while not self._compareJobLists():
-            with self.condition:
-                self.condition.wait(timeout = 10000)
-                if listBefore == self.finishedJobList:
+            """
+            Wait until all Jobs have finished correctly.
+            Must be outside of a Lock!!
+            """
+            listBefore = self.finishedJobList
+            while not self._compareJobLists():
+                with self.condition:
+                    self.condition.wait(timeout = 10000)
                     """
-                    The Timeout makes sure, that the Programm exits.
+                    The Timeout makes sure, that the Program exits.
                     """
-                    break
+                    if listBefore == self.finishedJobList: 
+                        break
         
                 
             
@@ -178,7 +181,7 @@ class Dispatcher(threading.Thread):
     def _handleJobsFinished(self):
         with self.condition:
             if self._compareJobLists():
-                log.info("ALL JOBS COMPLETED")
+                log.info("All Jobs in Concurrent List completed")
                 self._startUpNewJobs()
             else:
                 return
@@ -219,7 +222,7 @@ class Dispatcher(threading.Thread):
                         replacementQueue = Queue.Queue()
                         replacementQueue.put_nowait(elem)
             except Queue.Empty:
-                log.WARRINING("Try to cancel a Job, but inputQueue is empty.")
+                log.warning("Try to cancel a Job, but inputQueue is empty.")
                 return False
             while not queueEmpty:
                 try:
@@ -246,7 +249,7 @@ class Dispatcher(threading.Thread):
             found = False
             for job in jobList:
                 if job.getId() == id:
-                    job.cancel()
+                    job.cancelBeforeStartup()
                     found = True
                     continue
                 replacement.append(job)
@@ -302,9 +305,12 @@ class Dispatcher(threading.Thread):
             self.condition.notifyAll()
     
     def _cancelAll(self):
+        log.info("In CancelAll")
         with self.condition:
             self.state = dispatcherStates.CANCELLED
             self.condition.notifyAll()
+        with self.cancelCondition:  
+            self.cancelCondition.wait()
         
     def _getJob(self, jobId):
         with self.condition:
@@ -331,7 +337,7 @@ class Dispatcher(threading.Thread):
                 replacementQueue.put_nowait(jobs)
             except Queue.Empty:
                 inputQueueEmpty = True
-        
+        self.inputQueue = replacementQueue
         return returnJob
             
             
@@ -388,7 +394,7 @@ class Dispatcher(threading.Thread):
             return Dispatcher()._cancelJob(jobId)
 
     @staticmethod
-    def cancelAll():
+    def cleanUpDispatcher():
         with Dispatcher.staticLock:
             """
             For future use added. If we want more than one dispatcher

@@ -129,15 +129,15 @@ class CliIntrospection(Introspection):
     def __init__(self, api, terminal):
         Introspection.__init__(self, api)
     
-    def listMethods(self, terminal, user = None):
+    def listMethods(self, terminal, user = None, *args):
         terminal.write(str(Introspection.listMethods(self, user = user)))
         terminal.nextLine()
         
-    def methodHelp(self, terminal, method, user = None):
+    def methodHelp(self, terminal, user, methodName, method, *args):
         terminal.write(str(Introspection.methodHelp(self, str(method), user = user)))
         terminal.nextLine()
     
-    def methodSignature(self, terminal, method, user = None):
+    def methodSignature(self, terminal, user, methodName, method, *args):
         terminal.write(str(Introspection.methodSignature(self, str(method), user = user)))
         terminal.nextLine()
     
@@ -418,7 +418,7 @@ def startServer():
     reactor.run()
     #print("Closing Dispatcher")
     log.info("Closing Dispatcher")
-    dissomniag.taskManager.Dispatcher.cancelAll()
+    dissomniag.taskManager.Dispatcher.cleanUpDispatcher()
 
 if __name__ == '__main__':
     startServer()
