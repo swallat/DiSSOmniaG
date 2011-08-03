@@ -256,11 +256,9 @@ class addDummyJob(CliMethodABCClass.CliMethodABCClass):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
         
-        #=======================================================================
-        # if not self.user.isAdmin:
-        #    self.printError("You are not allowed to use this programm! Go away!")
-        #    return
-        #=======================================================================
+        if not self.user.isAdmin:
+            self.printError("You are not allowed to use this programm! Go away!")
+            return
         
         parser = argparse.ArgumentParser(description = 'Add a dummy Job with a Time', prog = args[0])
         parser.add_argument("-t", "--time", action = "store", dest = "time", default = 10)
