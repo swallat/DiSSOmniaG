@@ -60,6 +60,7 @@ class Dispatcher(threading.Thread):
             self.inputQueue = Queue.Queue()
             self.independentQueue = Queue.Queue()
             self.independentJobList = []
+            self.independentJobListLock = threading.RLock()
             self.jobsArrived = False
             self.independentJobArrived = False
             self.jobsFinished = False
@@ -214,9 +215,10 @@ class Dispatcher(threading.Thread):
                 except Queue.Empty:
                     queueEmpty = True
                 else:
-                    if job not in self.independentJobList:
-                        self.independentJobList.append(job)
-                        job.start()
+                    with self.independentJobListLock:
+                        if job not in self.independentJobList:
+                            self.independentJobList.append(job)
+                            job.start()
     
     def _handleJobsFinished(self):
         with self.condition:
@@ -428,7 +430,8 @@ class Dispatcher(threading.Thread):
                 log.debug("Job %d finished in Dispatcher." % job.getId())
                 self.condition.notifyAll()
             elif job in self.independentJobList:
-                self.independentJobList.remove(job)        
+                with self.independentJobListLock:
+                    self.independentJobList.remove(job)        
 
     @staticmethod
     def startDispatcher():
