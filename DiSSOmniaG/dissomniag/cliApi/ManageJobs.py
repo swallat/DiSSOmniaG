@@ -256,13 +256,16 @@ class addDummyJob(CliMethodABCClass.CliMethodABCClass):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
         
-        if not self.user.isAdmin:
-            self.printError("You are not allowed to use this programm! Go away!")
-            return
+        #=======================================================================
+        # if not self.user.isAdmin:
+        #    self.printError("You are not allowed to use this programm! Go away!")
+        #    return
+        #=======================================================================
         
         parser = argparse.ArgumentParser(description = 'Add a dummy Job with a Time', prog = args[0])
         parser.add_argument("-t", "--time", action = "store", dest = "time", default = 10)
         parser.add_argument("-z", "--zombi", action = "store_true", dest = "zombi", default = False)
+        parser.add_argument("-i", "--independent", action = "store_true", dest = "independent", default = False)
         options = parser.parse_args(list(args[1:]))
         
         context = taskManager.Context()
@@ -274,7 +277,10 @@ class addDummyJob(CliMethodABCClass.CliMethodABCClass):
         job.addTask(DummyTask())
         job.addTask(DummyTask())
         jobId = job.id
-        taskManager.Dispatcher.addJob(user = self.user, job = job)
+        if options.independent:
+            taskManager.Dispatcher.addJobIndependent(user = self.user, job = job)
+        else:
+            taskManager.Dispatcher.addJob(user = self.user, job = job)
         self.printSuccess("Your job have the ID %d" % jobId)
         
 class DummyTask(taskManager.AtomicTask):

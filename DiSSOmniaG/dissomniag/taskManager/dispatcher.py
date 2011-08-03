@@ -218,7 +218,7 @@ class Dispatcher(threading.Thread):
                     with self.independentJobListLock:
                         if job not in self.independentJobList:
                             self.independentJobList.append(job)
-                            job.start()
+                            job.start(self)
     
     def _handleJobsFinished(self):
         with self.condition:
