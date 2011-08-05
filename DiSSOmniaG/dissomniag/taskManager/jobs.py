@@ -83,8 +83,8 @@ class JobInfo(dissomniag.dbAccess.Base):
     endTime = Column(sa.types.DateTime)
     state = Column(sa.types.Integer, sa.CheckConstraint("0 <= state < 7", name = "jobState"), nullable = False)
     trace = Column(sa.types.Text)
-    user_id = Column(sa.types.Integer, sa.ForeignKey("users.id"))
-    user = relationship("User", backref = "jobs")
+    user_id = Column(sa.types.Integer, sa.ForeignKey("users.id")) # Many to One style
+    user = relationship("User", backref = "jobs") # Many to One style
     
     def __init__(self, description, state, user = None):
         self.state = state
