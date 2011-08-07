@@ -9,8 +9,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 import dissomniag
-import Interface
-import SSHHostKey
+from dissomniag.model import *
 
 class NodeState:
     UP = 0
@@ -32,22 +31,25 @@ class NodeState:
             return None
 
 class AbstractNode(dissomniag.Base):
-    __metaclass__ = abc.ABCMeta()
     __tablename__ = "nodes" 
     id = sa.Column(sa.Integer, primary_key = True)
-    commonName = sa.Column(sa.String(40), unique = True)
-    uuid = sa.Column(sa.String(36), unique = True)
-    sshKey_id = sa.Column(sa.Integer, sa.ForeignKey('sshHostKeys.id')) #One to One
-    sshKey = orm.relationship("sshKey", backref = orm.backref("node", uselist = False))
+    commonName = sa.Column(sa.String(40), nullable = False, unique = True)
+    sshKey_id = sa.Column(sa.Integer, sa.ForeignKey('sshNodeKeys.id')) #One to One
+    sshKey = orm.relationship("SSHNodeKey", backref = orm.backref("node", uselist = False))
     administrativeUserName = sa.Column(sa.String(), default = "root", nullable = False)
     utilityFolder = sa.Column(sa.String(200), nullable = True)
     state = sa.Column(sa.Integer, sa.CheckConstraint("0 <= state < 4", name = "nodeState"), nullable = False)
     interfaces = orm.relationship('Interface', backref = "node") #One to Many style
+    
+    networks = orm.relationship('Network', secondary = node_network, backref = 'nodes')
+    
     discriminator = sa.Column('type', sa.String(50), nullable = False)
-    __mapper_args__ = {'polimorphic_on': discriminator}
+    __mapper_args__ = {'polymorphic_on': discriminator}
     """
     classdocs
     """
+    
+    
 
 
         

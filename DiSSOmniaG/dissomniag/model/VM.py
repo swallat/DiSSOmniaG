@@ -8,11 +8,9 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 import dissomniag
-import AbstractNode
-import Topology
-import Host
+from dissomniag.model import *
 
-class VM(AbstractNode.AbstractNode):
+class VM(AbstractNode):
     __tablename__ = 'vms'
     __mapper_args__ = {'polymorphic_identity': 'vm'}
     vm_id = sa.Column('id', sa.Integer, sa.ForeignKey('nodes.id'), primary_key = True)
@@ -25,6 +23,7 @@ class VM(AbstractNode.AbstractNode):
     dynamicAptList = sa.Column(sa.String)
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))
+    host = orm.relationship("Host", primaryjoin = "VM.host_id == Host.host_id", backref = "virtualMachines")
     liveCd_id = sa.Column(sa.Integer, sa.ForeignKey('livecds.id'))
     liveCd = orm.relationship("LiveCd", backref = orm.backref('livecds', uselist = False))
     

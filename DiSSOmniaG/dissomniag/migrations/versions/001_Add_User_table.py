@@ -36,7 +36,7 @@ jobs = Table('jobs', meta,
 )
 
  
-sshHostKeys = Table('sshHostKeys', meta,
+sshNodeKeys = Table('sshNodeKeys', meta,
            Column('id', Integer, primary_key = True),
            Column('privateKey', Binary(1000), unique = True, nullable = True),
            Column('privateKeyFile', String, nullable = True),
@@ -46,13 +46,12 @@ sshHostKeys = Table('sshHostKeys', meta,
 
 nodes = Table('nodes', meta,
            Column('id', Integer, primary_key = True),
-           Column('commonName', String(40), unique = True),
-           Column('uuid', String(36), unique = True),
-           Column('sshKey_id', Integer, ForeignKey('sshHostKeys.id')),
+           Column('commonName', String(40), nullable = False, unique = True),
+           Column('sshKey_id', Integer, ForeignKey('sshNodeKeys.id')),
            Column('administrativeUserName', String(), default = "root", nullable = False),
            Column('utilityFolder', String(200), nullable = True),
            Column('state', Integer, CheckConstraint("0 <= state < 4", name = "nodeState"), nullable = False),
-           Column('type', String(50), nullable = False)
+           Column('type', String(50), nullable = False),
 )
 
 hosts = Table('hosts', meta,
@@ -65,28 +64,38 @@ interfaces = Table('interfaces', meta,
            Column('macAddress', String(17), nullable = False, unique = True),
            Column('name', String(20), nullable = False),
            Column('node_id', Integer, ForeignKey('nodes.id')),
+           UniqueConstraint('id', 'node_id', 'name'),
+)
+
+networks = Table('networks', meta,
+           Column('id', Integer, primary_key = True),
+           Column('name', String, nullable = False),
+           Column('netAddress', String(39), nullable = False),
+           Column('netMask', String(39), nullable = False),
+           Column('topology_id', Integer, ForeignKey('topologies.id'), nullable = False),
+           Column('type', String(50)),
 )
 
 topologies = Table('topologies', meta,
            Column('id', Integer, primary_key = True),
            Column('name', String, nullable = False),
+           Column('host_id', Integer, ForeignKey('hosts.id')),
 )
 
-networks = Table('networks', meta,
-           Column('id', Integer, primary_key = True),
-           Column('netAddress', String(39), nullable = False, unique = True),
-           Column('netMask', String(39), nullable = False),
-           Column("host_id", Integer, ForeignKey('hosts.id')),
-           Column('topology_id', Integer, ForeignKey('topologies.id')),
-           Column('type', String(50)),
+node_network = Table('node_network', meta,
+                          Column('node_id', Integer, ForeignKey('nodes.id')),
+                          Column('network_id', Integer, ForeignKey('networks.id')),
 )
 
 ipAddresses = Table('ipAddresses', meta,
            Column('id', Integer, primary_key = True),
-           Column('addr', String(39), nullable = False, unique = True),
-           Column('netmask', String(39), nullable = False),
+           Column('addr', String(39), nullable = False),
+           Column('isV6', Boolean, nullable = False, default = False),
+           Column('node_id', Integer, ForeignKey('nodes.id'), nullable = False), #One to many style
            Column('interface_id', Integer, ForeignKey('interfaces.id')), # One to many style
            Column('network_id', Integer, ForeignKey('networks.id')), # Many to One style
+           Column('topology_id', Integer, ForeignKey('topologies.id')), #Many to One style
+           UniqueConstraint('addr', 'node_id', name = "uniqueAddressPerNode"),
 )
 
 user_topology = Table('user_topology', meta,
@@ -96,7 +105,6 @@ user_topology = Table('user_topology', meta,
 
 liveCds = Table('livecds', meta,
            Column('id', Integer, primary_key = True),
-           Column('uuid', String(36), unique = True, nullable = False),
            Column('buildDir', String, nullable = False),
            Column('staticAptList', String),
            Column('pxeInternalPath', String),
@@ -119,11 +127,11 @@ vms = Table('vms', meta,
 
 
 topology_connections = Table('topologyConnections', meta,
-           Column('id', Integer, primary_key = True),
-           Column('fromVM_id', Integer, ForeignKey('vms.id'), nullable = False),
-           Column('viaGenNetwork', Integer, ForeignKey('networks.id'), nullable = False),
-           Column('toVm_id', Integer, ForeignKey('vms.id'), nullable = False),
-           Column('topology_id', Integer, ForeignKey('topologies.id')),
+          Column('id', Integer, primary_key = True),
+          Column('fromVM_id', Integer, ForeignKey('vms.id'), nullable = False),
+          Column('viaGenNetwork_id', Integer, ForeignKey('networks.id'), nullable = False),
+          Column('toVm_id', Integer, ForeignKey('vms.id'), nullable = False),
+          Column('topology_id', Integer, ForeignKey('topologies.id')),
 )
 
 
@@ -141,7 +149,7 @@ def upgrade(migrate_engine):
     print("Migrate: Add Job Table")
     jobs.create()
     print("Migrate: Add sshHostKeys Table")
-    sshHostKeys.create()
+    sshNodeKeys.create()
     print("Migrate: Add Nodes Table")
     nodes.create()
     print("Migrate: Add Hosts Table")
@@ -152,6 +160,8 @@ def upgrade(migrate_engine):
     topologies.create()
     print("Migrate: Add Networks Table")
     networks.create()
+    print("Migrate: Add Node_Network Table")
+    node_network.create()
     print("Migrate: Add ipAddresses Table")
     ipAddresses.create()
     print("Migrate: Add user_topology Table")
@@ -171,12 +181,13 @@ def downgrade(migrate_engine):
     liveCds.drop()
     user_topology.drop()
     ipAddresses.drop()
+    node_network.drop()
     networks.drop()
     topologies.drop()
     interfaces.drop()
     hosts.drop()
     nodes.drop()
-    sshHostKeys.drop()
+    sshNodeKeys.drop()
     jobs.drop()
     user_publickey.drop()
     public_keys.drop()

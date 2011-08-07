@@ -8,9 +8,9 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 import dissomniag
-import AbstractNode
+from dissomniag.model import *
 
-class ControlSystem(AbstractNode.AbstractNode, dissomniag.utils.SingletonMixin.Singleton):
+class ControlSystem(AbstractNode):
     __mapper_args__ = {'polymorphic_identity': 'ControlSystem'}
     
     """

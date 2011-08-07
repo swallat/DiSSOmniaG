@@ -6,9 +6,10 @@ Created on 05.08.2011
 """
 import sqlalchemy as sa
 import dissomniag
+from dissomniag.model import *
 
-class SSHHostKey(dissomniag.Base):
-    __tablename__ = "sshHostKeys"
+class SSHNodeKey(dissomniag.Base):
+    __tablename__ = "sshNodeKeys"
     id = sa.Column(sa.Integer, primary_key = True)
     privateKey = sa.Column(sa.Binary(1000), unique = True, nullable = True)
     privateKeyFile = sa.Column(sa.String, nullable = True)
