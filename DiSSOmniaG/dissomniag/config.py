@@ -38,6 +38,15 @@ class ParseSection(object):
             return self.config.get(section, option)
         else:
             return defaultValue
+        
+class dissomniag(ParseSection):
+    
+    def parse(self):
+        self.isCentral = self.bool(self.parseOption(self.sectionName, "isCentral", "True"))
+        self.centralIp = self.parseOption(self.sectionName, "CentralSystemIP", "None")
+        self.configDir = self.parseOption(self.sectionName, "configDir", ".")
+        return self
+dissomniag = dissomniag(config, "dissomniag").parse()
 
 class server(ParseSection):
     

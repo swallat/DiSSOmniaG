@@ -7,9 +7,14 @@ Created on 05.08.2011
 import abc
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+import logging
+import netifaces
 
 import dissomniag
 from dissomniag.model import *
+
+log = logging.getLogger("model.AbstractNode")
 
 class NodeState:
     UP = 0
@@ -48,6 +53,65 @@ class AbstractNode(dissomniag.Base):
     """
     classdocs
     """
+    
+    
+    def parseLocalInterfaces(self):
+        excludedInterfaces = ['lo', 'lo0']
+        excludedIps = ['fe80:', '172.0.0.1']
+        interfaceCodes = {"mac" : 17, 'ipv4': 2 , 'ipv6' : 10}
+        session = dissomniag.Session()
+        interfaces = netifaces.interfaces()
+        
+        savedInterfaces = []
+        
+        for interface in interfaces:
+            if interface in excludedInterfaces:
+                continue
+            myInt = None
+            
+            addresses = netifaces.ifaddresses(interface)
+            for key in addresses:
+                if key == interfaceCodes['mac'] and myInt == None:
+                    for address in addresses[key]:
+                        try:
+                            myInt = session.query(Interface).filter(Interface.macAddress == address['addr']).one()
+                            continue # Checl if IP have changed
+                        except NoResultFound:
+                            myInt = Interface(self, interface, address['addr'])
+                elif (key == interfaceCodes['ipv4'] or key == interfaceCodes['ipv6']) and myInt != None:
+                    
+                    for address in addresses[key]:
+                        found = False
+                        for exclude in excludedIps:
+                            if address['addr'].startswith(exclude):
+                                found = True
+                                break
+                        if found:
+                            continue
+                        if key == interfaceCodes['ipv4']:
+                            ipFullString = ("%s/%s" % (address['addr'], address['netmask']))
+                        else:
+                            try:
+                                ipv6Netmask = dissomniag.model.IpAddress.parseIpv6Netmask(address['netmask'])
+                            except dissomniag.model.NoIpv6Mask:
+                                continue
+                            else:
+                                ipFullString = ("%s/%s" % (address['addr'], ipv6Netmask))
+                        
+                        
+                        myInt.addIp(ipFullString)
+                    
+                else:
+                    print("parseLocalInterfaces tried to add a seond mac to a interface or tried to add a ip to a non existing interface")
+            if myInt != None:
+                self.interfaces.append(myInt)
+                savedInterfaces.append(myInt)
+            # Delete unused Interfaces
+            for interface in self.interfaces:
+                if not (interface in savedInterfaces):
+                    session.delete(interface)
+            
+                    
     
     
 

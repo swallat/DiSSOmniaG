@@ -30,5 +30,31 @@ class VM(AbstractNode):
     """
     classdocs
     """
+    
+class VMIdentity(VM):
+    isStarted = False
+    """
+    classdocs
+    """
+    
+    def __new__(cls, *args, **kwargs):
+        # Store instance on cls._instance_dict with cls hash
+        key = str(hash(cls))
+        if not hasattr(cls, '_instance_dict'):
+            cls._instance_dict = {}
+        if key not in cls._instance_dict:
+            cls._instance_dict[key] = \
+                super(VMIdentity, cls).__new__(cls, *args, **kwargs)
+        return cls._instance_dict[key]
+
+
+    def start(self):
+        if not self.isStarted:
+            self.isStarted = True
+        else:
+            raise dissomniag.Identity.IdentityRestartNotAllowed()
+    
+    def _tearDown(self):
+        pass
 
 

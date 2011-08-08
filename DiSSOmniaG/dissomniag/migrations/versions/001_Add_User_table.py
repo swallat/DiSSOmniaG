@@ -72,7 +72,7 @@ networks = Table('networks', meta,
            Column('name', String, nullable = False),
            Column('netAddress', String(39), nullable = False),
            Column('netMask', String(39), nullable = False),
-           Column('topology_id', Integer, ForeignKey('topologies.id'), nullable = False),
+           Column('topology_id', Integer, ForeignKey('topologies.id')),
            Column('type', String(50)),
 )
 

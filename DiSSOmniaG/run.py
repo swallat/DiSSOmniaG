@@ -7,4 +7,5 @@ Created on 19.07.2011
 
 if __name__ == '__main__':
     import dissomniag
-    dissomniag.startServer()
+    #dissomniag.startServer()
+    dissomniag.start()

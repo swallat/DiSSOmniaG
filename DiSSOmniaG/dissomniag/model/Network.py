@@ -6,6 +6,7 @@ Created on 05.08.2011
 """
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+import ipaddr
 
 import dissomniag
 from dissomniag.dbAccess import Base
@@ -22,16 +23,33 @@ class Network(dissomniag.Base):
     name = sa.Column(sa.String, nullable = False)
     netAddress = sa.Column(sa.String(39), nullable = False)
     netMask = sa.Column(sa.String(39), nullable = False) 
-    discriminator = sa.Column('type', sa.String(50))
-    __mapper_args__ = {'polymorphic_on': discriminator}
+    type = sa.Column('type', sa.String(50))
+    __mapper_args__ = {'polymorphic_on': type}
     """
     classdocs
     """
-
+    
+    def __init__(self, network, node = None, name = None):
+        
+        session = dissomniag.Session()
+        if type(network) == str:
+            network = ipaddr.IPNetwork(network)
+        
+        if name == None:
+            name = "PublicNetwork"
+        self.name = name
+        
+        self.netAddress = str(network.network)
+        self.netMask = str(network.netmask)
+        session.add(self)
+        session.commit()
+        if node != None:
+            self.nodes.append(node)
+            session.commit()
 
 class generatedNetwork(Network):
     __mapper_args__ = {'polymorphic_identity': 'generatedNetwork'}
-    topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'), nullable = False)
+    topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     topology = orm.relationship("Topology", backref = "generatedNetworks")
     """
     classdocs
