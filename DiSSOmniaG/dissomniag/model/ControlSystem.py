@@ -15,7 +15,7 @@ from dissomniag.model import *
 
 log = logging.getLogger("model.ControlSystem")
 
-class ControlSystem(AbstractNode):
+class ControlSystem(AbstractNode, dissomniag.Identity):
     __mapper_args__ = {'polymorphic_identity': 'ControlSystem'}
     isStarted = False
     
@@ -59,11 +59,18 @@ class ControlSystem(AbstractNode):
                 session.commit()
         if dissomniag.config.dissomniag.isCentral:
             self.parseLocalInterfaces()
+            self.maintainanceIP = self.ipAddresses[0]
+            sshPrivateKey, privateKeyString, sshPublicKey, publicKeyString = self.getRsaKeys(all = True)
+            self.sshKey = dissomniag.model.SSHNodeKey()
+            self.sshKey.privateKey = privateKeyString
+            self.sshKey.privateKeyFile = sshPrivateKey
+            self.sshKey.publicKey = publicKeyString
+            self.sshKey.publicKeyFile = sshPublicKey
             
     def checkCentralSystemRunning(self, ip):
         ret = subprocess.call("ping -c 1 %s" % ip,
                               shell = True,
-                              stdout = ('/dev/null', 'w'),
+                              stdout = open('/dev/null', 'w'),
                               stderr = subprocess.STDOUT)
         if (ret == 0):
             return True

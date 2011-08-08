@@ -45,6 +45,8 @@ class dissomniag(ParseSection):
         self.isCentral = self.bool(self.parseOption(self.sectionName, "isCentral", "True"))
         self.centralIp = self.parseOption(self.sectionName, "CentralSystemIP", "None")
         self.configDir = self.parseOption(self.sectionName, "configDir", ".")
+        self.rsaKeyPrivate = self.parseOption(self.sectionName, "rsaKey", "ssh_key")
+        self.rsaKeyPublic = self.parseOption(self.sectionName, "rsaKeyPub", "ssh_key.pub")
         return self
 dissomniag = dissomniag(config, "dissomniag").parse()
 

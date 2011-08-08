@@ -323,7 +323,9 @@ class SSHDiSSOmniaGRealm:
             return interfaces[0], SSHDiSSOmniaGAvatar(avatarId, self.api), lambda: None
         else:
             raise Exception, "No supported interfaces found."
-        
+###
+#DEPRECATED
+###   
 def getRSAKeys():
     if not (os.path.exists('public.key') and os.path.exists('private.key')):
         #generate a RSA keypar
@@ -384,7 +386,7 @@ def startSSHServer():
     Portal.registerChecker(SSHDiSSOmniaGPublicKeyDatabase())
     Portal.registerChecker(SSHDiSSOmniaGUserAuthDatabase())
     
-    publicKeyString, rsaKey = getRSAKeys()
+    publicKeyString, rsaKey = dissomniag.getIdentity().getRsaKeys()
     DiSSOmniaGSSHFactory.portal = Portal
     DiSSOmniaGSSHFactory.publicKeys = {'ssh-rsa': publicKeyString}
     DiSSOmniaGSSHFactory.privateKeys = {'ssh-rsa': rsaKey}

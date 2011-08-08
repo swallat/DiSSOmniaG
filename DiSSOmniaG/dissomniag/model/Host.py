@@ -22,5 +22,11 @@ class Host(AbstractNode):
     """
     classdocs
     """
-
+    
+    def __init__(self, commonName, maintainanceIp, administrativeUserName = None):
+        pass
+    
+    
+    def addSelfGeneratedNetwork(self, name, ipNetwork):
+        pass
         

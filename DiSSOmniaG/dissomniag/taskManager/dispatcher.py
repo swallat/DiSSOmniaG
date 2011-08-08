@@ -74,7 +74,7 @@ class Dispatcher(threading.Thread):
             with self.condition:
                 self.condition.wait()
                 """ Wait for any condition to occure """
-                log.info("POINT State %s" % ("Running" if self.state == dispatcherStates.RUNNING else "Cancelled"))
+                log.info("State %s" % ("Running" if self.state == dispatcherStates.RUNNING else "Cancelled"))
                 if self.state == dispatcherStates.CANCELLED:
                     """ 
                     A cancel request Arrived for the Dispatcher arrived 

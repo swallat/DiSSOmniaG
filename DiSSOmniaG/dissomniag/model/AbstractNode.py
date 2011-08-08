@@ -39,6 +39,8 @@ class AbstractNode(dissomniag.Base):
     __tablename__ = "nodes" 
     id = sa.Column(sa.Integer, primary_key = True)
     commonName = sa.Column(sa.String(40), nullable = False, unique = True)
+    maintainanceIP_id = sa.Column(sa.Integer, sa.ForeignKey('ipAddresses.id'), unique = True)
+    maintainanceIP = orm.relationship("IpAddress", primaryjoin = "AbstractNode.maintainanceIP_id == IpAddress.id")
     sshKey_id = sa.Column(sa.Integer, sa.ForeignKey('sshNodeKeys.id')) #One to One
     sshKey = orm.relationship("SSHNodeKey", backref = orm.backref("node", uselist = False))
     administrativeUserName = sa.Column(sa.String(), default = "root", nullable = False)
@@ -111,6 +113,23 @@ class AbstractNode(dissomniag.Base):
                 if not (interface in savedInterfaces):
                     session.delete(interface)
             
+    def addIp(self, ipAddressOrNetwork):
+        pass
+    
+    def addInterface(self, name, mac, ipAddrOrNetwork):
+        pass
+    
+    def modUtilityFolder(self, folder):
+        pass
+    
+    def modSSHNodeKey(self, privateKeyFile = None, publicKeyFile = None, privateKey = None, publicKey = None):
+        pass
+    
+    def modMaintainandceIP(self, newIp, deleteOld = False):
+        pass
+    
+    def modAdministrativeUserName(self, username):
+        pass
                     
     
     
