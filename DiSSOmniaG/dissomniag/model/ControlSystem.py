@@ -56,6 +56,10 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
                  state = dissomniag.model.NodeState.UP,
                  parseLocalInterfaces = True)
             session.add(self)
+            self.parseLocalInterfaces(self.user)
+        
+            if self.maintainanceIP == None and len(self.ipAddresses) > 0:
+                self.maintainanceIP = self.ipAddresses[0]
         elif myDbObj != None and dissomniag.config.dissomniag.isCentral:
             self.commonName = "Main"
             self.state = dissomniag.model.NodeState.UP

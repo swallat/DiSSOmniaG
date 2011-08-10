@@ -134,7 +134,7 @@ class Interface(dissomniag.Base):
             if interface.node.reDefineMaintainanceIPOnInterfaceDelete(user, interface):
                 session = dissomniag.Session()
                 for ipaddr in interface.ipAddresses:
-                    IpAddress.deleteIpAddress(ipaddr)
+                    dissomniag.model.IpAddress.deleteIpAddress(user, ipaddr)
                 session.delete(interface)
                 return True
             return False

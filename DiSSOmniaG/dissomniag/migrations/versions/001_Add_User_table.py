@@ -49,11 +49,11 @@ nodes = Table('nodes', meta,
            Column('id', Integer, primary_key = True),
            Column('uuid', String(36), nullable = False, unique = True),
            Column('commonName', String(40), nullable = False, unique = True),
-           Column('maintainanceIP_id', Integer, ForeignKey('ipAddresses.id'), unique = True),
+           Column('maintainanceIP_id', Integer, ForeignKey('ipAddresses.id'), nullable = True),
            Column('sshKey_id', Integer, ForeignKey('sshNodeKeys.id')),
            Column('administrativeUserName', String(), default = "root", nullable = False),
            Column('utilityFolder', String(200), nullable = True),
-           Column('state', Integer, CheckConstraint("0 <= state < 4", name = "nodeState"), nullable = False),
+           Column('state', Integer, CheckConstraint("0 <= state < 7", name = "nodeState"), nullable = False),
            Column('type', String(50), nullable = False),
 )
 
@@ -104,6 +104,7 @@ ipAddresses = Table('ipAddresses', meta,
            Column('addr', String(39), nullable = False),
            Column('isV6', Boolean, nullable = False, default = False),
            Column('isDhcpAddress', Boolean, nullable = False, default = False),
+           Column('isMaintainance', Boolean, nullable = False, default = False),
            Column('node_id', Integer, ForeignKey('nodes.id')), #One to many style
            Column('interface_id', Integer, ForeignKey('interfaces.id')), # One to many style
            Column('network_id', Integer, ForeignKey('networks.id')), # Many to One style

@@ -71,8 +71,8 @@ class generatedNetwork(Network):
     __mapper_args__ = {'polymorphic_identity': 'generatedNetwork'}
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     topology = orm.relationship("Topology", backref = "generatedNetworks")
-    dhcpAddress_id = sa.Column(sa.Integer, sa.ForeignKey('ipAddresses.id'))
-    dhcpAddress = orm.relationship("IpAddress", primaryjoin = "IpAddress.id == generatedNetwork.dhcpAddress_id")
+    #dhcpAddress_id = sa.Column(sa.Integer, sa.ForeignKey('ipAddresses.id'))
+    #dhcpAddress = orm.relationship("IpAddress", primaryjoin = "IpAddress.id == generatedNetwork.dhcpAddress_id")
     withQos = sa.Column(sa.Boolean, nullable = False, default = False)
     inboundAverage = sa.Column(sa.Integer)
     inboundPeak = sa.Column(sa.Integer)
@@ -240,9 +240,7 @@ class generatedNetwork(Network):
             outboundAttrib = outbound.attrib
             outboundAttrib['average'] = str(self.outboundAverage)
             outboundAttrib['peak'] = str(self.outboundPeak)
-            outboundAttrib['burst'] = str(self.outboundBurst)
-        
-        
+            outboundAttrib['burst'] = str(self.outboundBurst)      
                 
     def setQos(self, user, inboundAvg, inboundPeak, inboundBurst, outboundAvg, outboundPeak, outboundBurst):
         self.authUser(user)
@@ -283,8 +281,6 @@ class generatedNetwork(Network):
         self.outboundPeak = None
         self.outboundBurst = None
         self.withQos = False
-        
-        
     
     def authUser(self, user):
         if self.topology != None:

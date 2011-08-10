@@ -47,7 +47,7 @@ class NodeState:
     
     @staticmethod
     def checkIn(state):
-        if 0 <= state < 4:
+        if 0 <= state < 7:
             return True
         else:
             return False
@@ -57,13 +57,13 @@ class AbstractNode(dissomniag.Base):
     id = sa.Column(sa.Integer, primary_key = True)
     uuid = sa.Column(sa.String(36), nullable = False, unique = True)
     commonName = sa.Column(sa.String(40), nullable = False, unique = True)
-    maintainanceIP_id = sa.Column(sa.Integer, sa.ForeignKey('ipAddresses.id'), unique = True)
-    maintainanceIP = orm.relationship("IpAddress", primaryjoin = "AbstractNode.maintainanceIP_id == IpAddress.id")
+    #maintainanceIP_id = sa.Column(sa.Integer, sa.ForeignKey('ipAddresses.id'), nullable = True)
+    #maintainanceIP = orm.relationship("IpAddress", primaryjoin = "AbstractNode.maintainanceIP_id == IpAddress.id")
     sshKey_id = sa.Column(sa.Integer, sa.ForeignKey('sshNodeKeys.id')) #One to One
     sshKey = orm.relationship("SSHNodeKey", backref = orm.backref("node", uselist = False))
     administrativeUserName = sa.Column(sa.String(), default = "root", nullable = False)
     utilityFolder = sa.Column(sa.String(200), nullable = True)
-    state = sa.Column(sa.Integer, sa.CheckConstraint("0 <= state < 4", name = "nodeState"), nullable = False)
+    state = sa.Column(sa.Integer, sa.CheckConstraint("0 <= state < 7", name = "nodeState"), nullable = False)
     interfaces = orm.relationship('Interface', backref = "node") #One to Many style
     
     networks = orm.relationship('Network', secondary = node_network, backref = 'nodes')
@@ -94,9 +94,9 @@ class AbstractNode(dissomniag.Base):
         session.commit()
         
         if maintainanceIP != None:
-            self.addIp(maintainanceIP, isMaintainanceIP = True)
+            self.addIp(user, maintainanceIP, isMaintainanceIP = True)
         
-        if sshKey != None and (sshKey, SSHNodeKey):
+        if sshKey != None and isinstance(sshKey, SSHNodeKey):
             self.sshKey = sshKey
         
         if administrativeUserName != None:
@@ -108,7 +108,7 @@ class AbstractNode(dissomniag.Base):
         if parseLocalInterfaces:
             self.parseLocalInterfaces(user)
         
-        if self.maintainanceIP == None and len(self.ipAddresses) > 0:
+        if maintainanceIP == None and len(self.ipAddresses) > 0:
             self.maintainanceIP = self.ipAddresses[0]
         
             
@@ -127,7 +127,7 @@ class AbstractNode(dissomniag.Base):
         self.authUser(user)
         
         session = dissomniag.Session()
-        if isinstance(ipAddrOrNet) == str:
+        if type(ipAddrOrNet) == str:
             ipAddrOrNet = ipaddr.IPNetwork(ipAddrOrNet)
         ip = None
         found = False
@@ -341,6 +341,16 @@ class AbstractNode(dissomniag.Base):
         
     def authUser(self, user):
         raise NotImplementedError()
+    
+    def changeState(self, user, state):
+        self.authUser(user)
+        
+        session = dissomniag.Session()
+        if not JobStates.checkIn(state):
+            return False
+        else:
+            self.state = state
+        session.commit()
     
     @staticmethod
     def deleteNode(user, node):

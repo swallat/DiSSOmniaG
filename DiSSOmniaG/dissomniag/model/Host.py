@@ -30,13 +30,17 @@ class Host(AbstractNode):
         self.qemuConnector = "qemu+ssh://%s@%s/system?no_tty=1" % (self.administrativeUserName, maintainanceIP)
         
         super(Host, self).__init__(user = user, commonName = commonName,
-                                   maintainanceIP = maintainanceIP, ssKey = sshKey,
-                                   administrativeUserName = administrativeUserName)
+                                   maintainanceIP = maintainanceIP, sshKey = sshKey,
+                                   administrativeUserName = administrativeUserName,
+                                   state = dissomniag.model.NodeState.DOWN)
+        
+        self.check(user)
+        self.initiateRemote(user)
         
         
     
     
-    def addSelfGeneratedNetwork(self, user, name, ipNetwork):
+    def addSelfGeneratedNetwork(self, user, name, ipNetwork = None):
         pass
     
     def authUser(self, user):
@@ -44,7 +48,16 @@ class Host(AbstractNode):
             return True
         raise dissomniag.UnauthorizedFunctionCall()
     
-    def checkConnectivity(self, user):
+    def check(self, user):
+        self.authUser(user)
+        
+        context = dissomniag.taskManager.Context()
+        context.add(self, "host")
+        job = dissomniag.taskManager.Job(context, dexcription = "Ping Host to check if it is up.", user = user)
+        job.addTask(dissomniag.tasks.HostTasks.CheckHostUpTask())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        
+    def initiateRemote(self, user):
         pass
     
     @staticmethod

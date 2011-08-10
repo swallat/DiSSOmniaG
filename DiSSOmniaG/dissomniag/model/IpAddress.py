@@ -24,6 +24,7 @@ class IpAddress(dissomniag.Base):
     addr = sa.Column(sa.String(39), nullable = False)
     isV6 = sa.Column(sa.Boolean, nullable = False, default = False)
     isDhcpAddress = sa.Column(sa.Boolean, nullable = False, default = False)
+    isMaintainance = sa.Column(sa.Boolean, nullable = False, default = False)
     node_id = sa.Column(sa.Integer, sa.ForeignKey('nodes.id')) #One to many style, da immer gesichert sein muss, dass eine IP auf einem Host nur einmal vorkommen kann. ROUTING
     node = orm.relationship('AbstractNode', primaryjoin = "IpAddress.node_id == AbstractNode.id", backref = "ipAddresses") #One to Many style
     interface_id = sa.Column(sa.Integer, sa.ForeignKey('interfaces.id')) # One to many style
