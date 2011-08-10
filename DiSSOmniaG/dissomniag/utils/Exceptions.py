@@ -14,3 +14,15 @@ class BadKeyError(Exception):
         
     def __str__(self):
         return repr(self.value)
+    
+class NotStringError(Exception):
+    pass
+
+class NoValidMac(Exception):
+    pass
+
+class LogicalError(Exception):
+    pass
+
+class UnauthorizedFunctionCall(Exception):
+    pass

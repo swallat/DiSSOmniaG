@@ -9,6 +9,7 @@ import sqlalchemy.orm as orm
 import logging
 import subprocess, os, netifaces
 from twisted.internet import reactor
+import uuid
 
 import dissomniag
 from dissomniag.model import *
@@ -18,6 +19,7 @@ log = logging.getLogger("model.ControlSystem")
 class ControlSystem(AbstractNode, dissomniag.Identity):
     __mapper_args__ = {'polymorphic_identity': 'ControlSystem'}
     isStarted = False
+    user = None
     
     """
     classdocs
@@ -35,18 +37,31 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
     
     def __init__(self):
         session = dissomniag.Session()
-        self.commonName = "Main"
-        
+        self.user = self.getAdministrativeUser()
         try:
             myDbObj = session.query(ControlSystem).one()
         except NoResultFound:
             myDbObj = None
         
-        if dissomniag.config.dissomniag.isCentral:
+        if myDbObj == None and dissomniag.config.dissomniag.isCentral:
+            sshPrivateKey, privateKeyString, sshPublicKey, publicKeyString = self.getRsaKeys(all = True)
+            sshKey = dissomniag.model.SSHNodeKey()
+            sshKey.privateKey = privateKeyString
+            sshKey.privateKeyFile = sshPrivateKey
+            sshKey.publicKey = publicKeyString
+            sshKey.publicKeyFile = sshPublicKey
+            super(ControlSystem, self).__init__(user = self.user, commonName = "Main",
+                 sshKey = sshKey,
+                 utilityFolder = os.path.abspath(dissomniag.config.dissomniag.configDir),
+                 state = dissomniag.model.NodeState.UP,
+                 parseLocalInterfaces = True)
+            session.add(self)
+        elif myDbObj != None and dissomniag.config.dissomniag.isCentral:
+            self.commonName = "Main"
             self.state = dissomniag.model.NodeState.UP
             self.utilityFolder = os.path.abspath(dissomniag.config.dissomniag.configDir)
-        else:
-            
+        elif not dissomniag.config.dissomniag.isCentral:
+            self.commonName = "Main"
             assert dissomniag.config.dissomniag.centralIp != None
             
             if self.checkCentralSystemRunning(dissomniag.config.dissomnig.centralIP):
@@ -55,17 +70,20 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
                 self.state = dissomniag.model.NodeState.DOWN
             
         if myDbObj == None:
-                session.add(self)
-                session.commit()
-        if dissomniag.config.dissomniag.isCentral:
-            self.parseLocalInterfaces()
-            self.maintainanceIP = self.ipAddresses[0]
-            sshPrivateKey, privateKeyString, sshPublicKey, publicKeyString = self.getRsaKeys(all = True)
-            self.sshKey = dissomniag.model.SSHNodeKey()
-            self.sshKey.privateKey = privateKeyString
-            self.sshKey.privateKeyFile = sshPrivateKey
-            self.sshKey.publicKey = publicKeyString
-            self.sshKey.publicKeyFile = sshPublicKey
+            session.add(self)
+        
+        session.commit()
+        
+    def authUser(self, user):
+        if user.isAdmin:
+            return True
+        raise dissomniag.UnauthorizedFunctionCall()
+    
+    def getIdentityUser(self, user):
+        self.authUser(user)
+        if self.user == None:
+            self.user = self.getAdministrativeUser()
+        return self.user
             
     def checkCentralSystemRunning(self, ip):
         ret = subprocess.call("ping -c 1 %s" % ip,

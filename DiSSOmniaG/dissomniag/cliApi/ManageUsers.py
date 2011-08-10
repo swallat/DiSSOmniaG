@@ -29,7 +29,7 @@ class listUser(CliMethodABCClass.CliMethodABCClass):
         session = dissomniag.Session()
         
         for user in session.query(User).all():
-            if not self.user.isAdmin and user.username != self.user.username:
+            if (not self.user.isAdmin and user.username != self.user.username) or user.username == dissomniag.Identity.systemUserName:
                 continue
             self.printSuccess(str("User: %s" % user.username))
             print(str("\t isAdmin: %s" % user.isAdmin))
@@ -190,6 +190,8 @@ class modUser(CliMethodABCClass.CliMethodABCClass):
         options = parser.parse_args(args[1:])
         
         if not self.user.isAdmin:
+            if options.username == dissomniag.Identity.systemUserName:
+                self.printError("Could not find user.")
             if options.isAdmin != None or options.loginSSH != None or options.loginRPC != None or options.loginManhole != None:
                 self.printError("You don't have the permissions to do that.")
                 return
@@ -282,6 +284,10 @@ class delUser(CliMethodABCClass.CliMethodABCClass):
             self.printError("Permission denied: You cannot delete the default admin user!")
             return
         
+        if options.username == dissomniag.Identity.systemUserName:
+            self.printError("Permission denied: You cannot delete the system user!")
+            return
+        
         session = dissomniag.Session()
         
         try:
@@ -369,6 +375,9 @@ class passwd(CliMethodABCClass.CliMethodABCClass):
         session = dissomniag.Session()
         
         if self.user.isAdmin:
+            if options.username and options.username == dissomniag.Identity.systemUserName:
+                self.printError("The user doesn't exists.")
+                return
             if options.username and options.username != self.user.username:
                 try:
                     user = session.query(User).filter(User.username == options.username).one()

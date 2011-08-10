@@ -23,12 +23,13 @@ class IpAddress(dissomniag.Base):
     id = sa.Column(sa.Integer, primary_key = True)
     addr = sa.Column(sa.String(39), nullable = False)
     isV6 = sa.Column(sa.Boolean, nullable = False, default = False)
-    node_id = sa.Column(sa.Integer, sa.ForeignKey('nodes.id'), nullable = False) #One to many style, da immer gesichert sein muss, dass eine IP auf einem Host nur einmal vorkommen kann. ROUTING
+    isDhcpAddress = sa.Column(sa.Boolean, nullable = False, default = False)
+    node_id = sa.Column(sa.Integer, sa.ForeignKey('nodes.id')) #One to many style, da immer gesichert sein muss, dass eine IP auf einem Host nur einmal vorkommen kann. ROUTING
     node = orm.relationship('AbstractNode', primaryjoin = "IpAddress.node_id == AbstractNode.id", backref = "ipAddresses") #One to Many style
     interface_id = sa.Column(sa.Integer, sa.ForeignKey('interfaces.id')) # One to many style
     interface = orm.relationship('Interface', backref = 'ipAddresses')
     network_id = sa.Column(sa.Integer, sa.ForeignKey('networks.id')) # Many to One style
-    network = orm.relationship('Network', backref = 'connectedInterfaces') # Many to One style
+    network = orm.relationship('Network', primaryjoin = "IpAddress.network_id == Network.id", backref = 'connectedInterfaces') # Many to One style
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id')) # Many to one style
     topology = orm.relationship('Topology', backref = 'ipAddresses')
     __table_attr__ = (sa.UniqueConstraint('addr', 'node_id', name = "uniqueAddressPerNode"))
@@ -37,13 +38,16 @@ class IpAddress(dissomniag.Base):
     classdocs
     """
     
-    def __init__(self, ipAddrOrNet, node):
+    def __init__(self, user, ipAddrOrNet, node = None, isDhcpAddress = False):
         session = dissomniag.Session()
         
         if type(ipAddrOrNet) == str:
             ipAddrOrNet = ipaddr.IPNetwork(ipAddrOrNet)
         
-        self.node = node
+        if node:
+            self.node = node
+        
+        self.isDhcpAddress = isDhcpAddress
         
         self.addr = str(ipAddrOrNet.ip)
         if (ipAddrOrNet.version == 4):
@@ -62,10 +66,12 @@ class IpAddress(dissomniag.Base):
                 found = False
             finally:
                 if found == False:
-                    self.network = Network(ipAddrOrNet, node)
+                    self.network = Network(user, ipAddrOrNet, node)
         session.add(self)
         session.commit()
         
+    def authUser(self, user):
+        return self.node.authUser(user)
     
     @staticmethod
     def parseIpv6Netmask(longNetmask):
@@ -92,7 +98,23 @@ class IpAddress(dissomniag.Base):
                     if value != '0':
                         raise NoIpv6Mask()
         return str(result)
-                        
+
+    @staticmethod
+    def deleteIpAddress(user, ipAddress, isAdministrative = False):
+        """
+        TODO: Implement with generateDeleteIpAddressJob
+        
+        Now operation only on DB
+        """
+        if isAdministrative:
+            session = dissomniag.Session()
+            
+            session.delete(ipAddress)
+            session.flush()
+        
+    @staticmethod
+    def generateDeleteIpAddressJob(user, ipAddress):
+        pass
                 
         
 

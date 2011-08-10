@@ -1,5 +1,6 @@
 from sqlalchemy import *
 from migrate import *
+import uuid
 import datetime
 
 meta = MetaData()
@@ -46,6 +47,7 @@ sshNodeKeys = Table('sshNodeKeys', meta,
 
 nodes = Table('nodes', meta,
            Column('id', Integer, primary_key = True),
+           Column('uuid', String(36), nullable = False, unique = True),
            Column('commonName', String(40), nullable = False, unique = True),
            Column('maintainanceIP_id', Integer, ForeignKey('ipAddresses.id'), unique = True),
            Column('sshKey_id', Integer, ForeignKey('sshNodeKeys.id')),
@@ -70,10 +72,19 @@ interfaces = Table('interfaces', meta,
 
 networks = Table('networks', meta,
            Column('id', Integer, primary_key = True),
+           Column('uuid', String(36), nullable = False, unique = True),
            Column('name', String, nullable = False),
            Column('netAddress', String(39), nullable = False),
            Column('netMask', String(39), nullable = False),
            Column('topology_id', Integer, ForeignKey('topologies.id')),
+           Column('dhcpAddress_id', Integer, ForeignKey('ipAddresses.id')),
+           Column('withQos', Boolean, nullable = False, default = False),
+           Column('inboundAverage', Integer),
+           Column('inboundPeak', Integer),
+           Column('inboundBurst', Integer),
+           Column('outboundAverage', Integer),
+           Column('outboundPeak', Integer),
+           Column('outboundBurst', Integer),
            Column('type', String(50)),
 )
 
@@ -92,7 +103,8 @@ ipAddresses = Table('ipAddresses', meta,
            Column('id', Integer, primary_key = True),
            Column('addr', String(39), nullable = False),
            Column('isV6', Boolean, nullable = False, default = False),
-           Column('node_id', Integer, ForeignKey('nodes.id'), nullable = False), #One to many style
+           Column('isDhcpAddress', Boolean, nullable = False, default = False),
+           Column('node_id', Integer, ForeignKey('nodes.id')), #One to many style
            Column('interface_id', Integer, ForeignKey('interfaces.id')), # One to many style
            Column('network_id', Integer, ForeignKey('networks.id')), # Many to One style
            Column('topology_id', Integer, ForeignKey('topologies.id')), #Many to One style

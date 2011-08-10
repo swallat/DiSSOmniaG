@@ -22,11 +22,35 @@ class Host(AbstractNode):
     """
     classdocs
     """
-    
-    def __init__(self, commonName, maintainanceIp, administrativeUserName = None):
-        pass
-    
-    
-    def addSelfGeneratedNetwork(self, name, ipNetwork):
-        pass
+    def __init__(self, user, commonName, maintainanceIP,
+                 sshKey = None, administrativeUserName = None):
+        if administrativeUserName != None:
+            self.administrativeUserName = administrativeUserName
+            
+        self.qemuConnector = "qemu+ssh://%s@%s/system?no_tty=1" % (self.administrativeUserName, maintainanceIP)
         
+        super(Host, self).__init__(user = user, commonName = commonName,
+                                   maintainanceIP = maintainanceIP, ssKey = sshKey,
+                                   administrativeUserName = administrativeUserName)
+        
+        
+    
+    
+    def addSelfGeneratedNetwork(self, user, name, ipNetwork):
+        pass
+    
+    def authUser(self, user):
+        if user.isAdmin:
+            return True
+        raise dissomniag.UnauthorizedFunctionCall()
+    
+    def checkConnectivity(self, user):
+        pass
+    
+    @staticmethod
+    def deleteNode(node):
+        pass
+    
+    @staticmethod
+    def generateDeleteNodeJob(node):
+        pass

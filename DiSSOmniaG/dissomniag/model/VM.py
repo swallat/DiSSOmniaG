@@ -31,7 +31,24 @@ class VM(AbstractNode):
     classdocs
     """
     
-class VMIdentity(VM):
+    def getLibVirtXML(self, user):
+        pass
+    
+    def authUser(self, user):
+        if user in self.topology.users or user.isAdmin:
+            return True
+        raise dissomniag.UnauthorizedFunctionCall()
+    
+    @staticmethod
+    def deleteNode(node):
+        pass
+    
+    @staticmethod
+    def generateDeleteNodeJob(node):
+        pass
+    
+    
+class VMIdentity(VM, dissomniag.Identity):
     isStarted = False
     """
     classdocs

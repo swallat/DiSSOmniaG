@@ -6,7 +6,12 @@ Created on 08.08.2011
 """
 import os, subprocess, shlex, logging
 from abc import abstractmethod
+import sqlalchemy as sa
+import sqlalchemy.orm as orm
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from twisted.conch.ssh import keys
+import random
+import string
 import dissomniag
 
 log = logging.getLogger("Identity")
@@ -22,6 +27,7 @@ class SSHKeyAddError(Exception):
 
 class Identity():
     isStarted = False
+    systemUserName = "<System>"
     
     """
     classdocs
@@ -37,6 +43,35 @@ class Identity():
     @abstractmethod
     def _tearDown(self):
         raise NotImplementedError()
+    
+    def getAdministrativeUser(self):
+        session = dissomniag.Session()
+        user = None
+        try: 
+            
+            user = session.query(dissomniag.auth.User).filter(dissomniag.auth.User.username == self.systemUserName).one()
+        except MultipleResultsFound:
+            one = False
+            users = session.query(dissomniag.auth.User).filter(dissomniag.auth.User.username == self.systemUserName).all()
+            for myUser in users:
+                if one == False:
+                    user = myUser
+                    one = True
+                    continue
+                else:
+                    session.delete(myUser)
+        except NoResultFound:
+            password = self.generateRandomPassword(length = 40)
+            user = dissomniag.auth.User(self.systemUserName, password = password, isAdmin = True,
+                    loginRPC = False, loginSSH = False, loginManhole = False,
+                    isHtpasswd = False)
+            session.add(user)
+            session.commit()
+        finally:
+            return user
+            
+    def generateRandomPassword(self, length = 20, chars = string.letters + string.digits):
+            return ''.join([random.choice(chars) for i in range(length)])
     
     
     def getRsaKeys(self, all = None):

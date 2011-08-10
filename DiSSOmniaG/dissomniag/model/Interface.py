@@ -7,7 +7,7 @@ Created on 05.08.2011
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-import ipaddr
+import ipaddr, random
 
 import dissomniag
 from dissomniag.model import *
@@ -21,21 +21,22 @@ class Interface(dissomniag.Base):
     
     __table_args_ = (sa.UniqueConstraint('node_id', 'name'))
     
-    
-    
     """
     classdocs
     """
     
-    def __init__(self, node, name, mac):
+    def __init__(self, user, node, name, mac):
         session = dissomniag.Session()
         self.node = node
         self.macAddress = mac
         self.name = name
         session.add(self)
         session.commit()
+            
+    def addIp(self, user, ipAddrOrNet):
         
-    def addIp(self, ipAddrOrNet):
+        self.authUser(user)
+        
         session = dissomniag.Session()
         if type(ipAddrOrNet) == str:
             ipAddrOrNet = ipaddr.IPNetwork(ipAddrOrNet)
@@ -59,19 +60,91 @@ class Interface(dissomniag.Base):
                         ip = myIp
                         one = True
                     else:
-                        session.delete(myIp) #Delete Invalid Interfaces
+                        IpAddress.deleteIpAddress(user, myIp) #Delete Invalid Interfaces
                 found = False
             except NoResultFound:
                 found = False
         finally:
             if found == False and ip == None:
-                ip = dissomniag.model.IpAddress(ipAddrOrNet, self.node)
+                ip = dissomniag.model.IpAddress(user, ipAddrOrNet, self.node)
                 self.ipAddresses.append(ip)
+                session.commit()
+                return ip
+            elif found == True and ip != None:
                 session.commit()
                 return ip
             else:
                 session.commit()
                 return None
-
+            
+    def getLibVirtXML(self, user):
+        pass
+    
+    def authUser(self, user):
+        return self.node.authUser(user)
+    
+    @staticmethod
+    def checkValidMac(mac):
+        splited = mac.split(":")
+        if len(splited) != 6:
+            raise dissomniag.NoValidMac()
+        for block in splited:
+            blockLength = 0
+            for value in block:
+                blockLength += 1
+                if blockLength > 2:
+                    raise dissomniag.NoValidMac()
+                if value not in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "A", "b", "B", "c", "C", "d", "D", "e", "E", "f", "F"]:
+                    raise dissomniag.NoValidMac()
+        return True
+    
+    @staticmethod
+    def getRandomMac():
+        found = False
+        session = dissomniag.Session()
+        mac = None
+        while not found:
+            mac = [ 0x00, 0x16, 0x3e,
+            random.randint(0x00, 0x7f),
+            random.randint(0x00, 0xff),
+            random.randint(0x00, 0xff) ]
+            
+            mac = ':'.join(map(lambda x: "%02x" % x, mac))
+            try:
+                session.query(Interface).filter(Interface.macAddress == mac).one()
+            except (NoResultFound, MultipleResultsFound):
+                found = True
+                break
+        return mac
+    
+    @staticmethod
+    def moveIpAddressesOfInterface(user, interfaceFrom, interfaceTo):
+        pass
+    
+    @staticmethod
+    def deleteInterface(user, interface, isAdministrative = False):
+        """
+        TODO: Implement with generateDeleteInterfaceJob
+        
+        Now operation only on DB
+        """
+        interface.authUser(user)
+        
+        if isAdministrative:
+            if interface.node.reDefineMaintainanceIPOnInterfaceDelete(user, interface):
+                session = dissomniag.Session()
+                for ipaddr in interface.ipAddresses:
+                    IpAddress.deleteIpAddress(ipaddr)
+                session.delete(interface)
+                return True
+            return False
+        
+    
+    @staticmethod
+    def generateDeleteInterfaceJob(user, interface):
+        pass
+        
+        
+            
 
         

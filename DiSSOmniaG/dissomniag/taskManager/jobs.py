@@ -243,6 +243,7 @@ class Job(threading.Thread):
                 session = dissomniag.Session()
                 self._setState(JobStates.RUNNING) 
                 session.commit()
+                self.context.parse()
             
             try:
                 self.trace("### RUNNING ###")
