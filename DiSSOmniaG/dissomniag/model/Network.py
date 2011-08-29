@@ -152,7 +152,8 @@ class generatedNetwork(Network):
         if ip in net:
             ipString = "%s/%s" % (self.ip, self.netMask)
             self.dhcpAddress = IpAddress(user, ipString, isDhcpAddress = True)
-        return self.dhcpAddress
+            return self.dhcpAddress
+        return None
          
     def getFreeAddress(self, user):
         self.authUser(user)
