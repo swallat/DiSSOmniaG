@@ -57,8 +57,6 @@ class AbstractNode(dissomniag.Base):
     id = sa.Column(sa.Integer, primary_key = True)
     uuid = sa.Column(sa.String(36), nullable = False, unique = True)
     commonName = sa.Column(sa.String(40), nullable = False, unique = True)
-    #maintainanceIP_id = sa.Column(sa.Integer, sa.ForeignKey('ipAddresses.id'), nullable = True)
-    #maintainanceIP = orm.relationship("IpAddress", primaryjoin = "AbstractNode.maintainanceIP_id == IpAddress.id")
     sshKey_id = sa.Column(sa.Integer, sa.ForeignKey('sshNodeKeys.id')) #One to One
     sshKey = orm.relationship("SSHNodeKey", backref = orm.backref("node", uselist = False))
     administrativeUserName = sa.Column(sa.String(), default = "root", nullable = False)
@@ -166,12 +164,18 @@ class AbstractNode(dissomniag.Base):
                     ip = dissomniag.model.IpAddress(user, ipAddrOrNet, self)
                     self.ipAddresses.append(ip)
                 if isMaintainanceIP:
-                    self.maintainanceIP = ip
+                    oldMaintainance = self.getMaintainanceIP()
+                    if oldMaintainance != None:
+                        oldMaintainance.isMaintainance = False
+                    ip.isMaintainance = True
                 session.commit()
                 return ip
             elif found == True and ip != None:
                 if isMaintainanceIP:
-                    self.maintainanceIP = ip
+                    oldMaintainance = self.getMaintainanceIP()
+                    if oldMaintainance != None:
+                        oldMaintainance.isMaintainance = False
+                    ip.isMaintainance = True
                 session.commit()
                 return ip
             else:
@@ -318,7 +322,7 @@ class AbstractNode(dissomniag.Base):
     def modMaintainandceIP(self, user, newIp, deleteOld = False):
         self.authUser(user)
         if deleteOld:
-            IpAddress.deleteIpAddress(user, self.maintainanceIp, isAdministrative = True)
+            IpAddress.deleteIpAddress(user, self.getMaintainanceIP(), isAdministrative = True)
             
         return self.addIp(user, newIp, isMaintainanceIP = True)
     
@@ -333,7 +337,7 @@ class AbstractNode(dissomniag.Base):
                 if myInter == interface:
                     continue
                 else:
-                    self.maintainanceIP = myInter.ipAddresses[0]
+                    myInter.ipAddresses[0].isMaintainance = True
                     return True
             return False
         else:
@@ -346,11 +350,17 @@ class AbstractNode(dissomniag.Base):
         self.authUser(user)
         
         session = dissomniag.Session()
-        if not JobStates.checkIn(state):
+        if not NodeState.checkIn(state):
             return False
         else:
             self.state = state
         session.commit()
+    
+    def getMaintainanceIP(self):
+        for ip in self.ipAddresses:
+            if ip.isMaintainance:
+                return ip
+        return None
     
     @staticmethod
     def deleteNode(user, node):

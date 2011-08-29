@@ -71,8 +71,6 @@ class generatedNetwork(Network):
     __mapper_args__ = {'polymorphic_identity': 'generatedNetwork'}
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     topology = orm.relationship("Topology", backref = "generatedNetworks")
-    #dhcpAddress_id = sa.Column(sa.Integer, sa.ForeignKey('ipAddresses.id'))
-    #dhcpAddress = orm.relationship("IpAddress", primaryjoin = "IpAddress.id == generatedNetwork.dhcpAddress_id")
     withQos = sa.Column(sa.Boolean, nullable = False, default = False)
     inboundAverage = sa.Column(sa.Integer)
     inboundPeak = sa.Column(sa.Integer)
@@ -149,10 +147,20 @@ class generatedNetwork(Network):
         net = ipaddr.IPNetwork(networkString)
         ipAddr = ".".join(ip)
         ip = ipaddr.IPAddress(ipAddr)
+        dhcpAddress = self.getDhcpServerAddress(user)
         if ip in net:
             ipString = "%s/%s" % (self.ip, self.netMask)
-            self.dhcpAddress = IpAddress(user, ipString, isDhcpAddress = True)
-            return self.dhcpAddress
+            if dhcpAddress != None:
+                dhcpAddress.isDhcpAddress = False
+            dhcpAddress = IpAddress(user, ipString, isDhcpAddress = True)
+            dhcpAddress.isDhcpAddress = True
+        return dhcpAddress
+    
+    def getDhcpServerAddress(self, user):
+        self.authUser(user)
+        for ip in self.ipAddresses:
+            if ip.isDhcpAddress:
+                return ip
         return None
          
     def getFreeAddress(self, user):

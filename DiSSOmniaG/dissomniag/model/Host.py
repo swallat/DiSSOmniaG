@@ -53,7 +53,7 @@ class Host(AbstractNode):
         
         context = dissomniag.taskManager.Context()
         context.add(self, "host")
-        job = dissomniag.taskManager.Job(context, dexcription = "Ping Host to check if it is up.", user = user)
+        job = dissomniag.taskManager.Job(context, description = "Ping Host to check if it is up.", user = user)
         job.addTask(dissomniag.tasks.HostTasks.CheckHostUpTask())
         dissomniag.taskManager.Dispatcher.addJob(user, job)
         

@@ -15,7 +15,8 @@ class Context(object):
     classdocs
     """
     
-    def parse(self):
+    def parse(self, user):
+        self.user = user
         session = dissomniag.Session()
         allObjects = dir(self)
         for obj in allObjects:
