@@ -22,9 +22,7 @@ class Host(AbstractNode):
     libvirtVersion = sa.Column(sa.String(10), nullable = True, default = None) #None (Not installed or not checked Yet) Else Version Number
     kvmUsable = sa.Column(sa.Boolean, nullable = True, default = None) #True False None (not checked yet)
     freeDiskspace = sa.Column(sa.String(20), nullable = True, default = None) #None (not checked yet) FreeDiskSpace
-    ramCapacity = sa.Column(sa.String(20), nullable = True, default = None) #None (not checked yet) ramCapacity
-    
-    
+    ramCapacity = sa.Column(sa.String(20), nullable = True, default = None) #None (not checked yet) ramCapacity  
     
     """
     classdocs
