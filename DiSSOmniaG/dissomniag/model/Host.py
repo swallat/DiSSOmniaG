@@ -17,6 +17,13 @@ class Host(AbstractNode):
     
     host_id = sa.Column('id', sa.Integer, sa.ForeignKey('nodes.id'), primary_key = True)
     qemuConnector = sa.Column(sa.String(100))
+    lastChecked = sa.Column(sa.DateTime, nullable = True, default = None)
+    configurationMissmatch = sa.Column(sa.Boolean, nullable = True, default = None)#True False None (Not checked Yet)
+    libvirtVersion = sa.Column(sa.String(10), nullable = True, default = None) #None (Not installed or not checked Yet) Else Version Number
+    kvmUsable = sa.Column(sa.Boolean, nullable = True, default = None) #True False None (not checked yet)
+    freeDiskspace = sa.Column(sa.String(20), nullable = True, default = None) #None (not checked yet) FreeDiskSpace
+    ramCapacity = sa.Column(sa.String(20), nullable = True, default = None) #None (not checked yet) ramCapacity
+    
     
     
     """
@@ -34,8 +41,7 @@ class Host(AbstractNode):
                                    administrativeUserName = administrativeUserName,
                                    state = dissomniag.model.NodeState.DOWN)
         
-        self.check(user)
-        self.initiateRemote(user)
+        self.checkPingable(user)
         
         
     
@@ -48,7 +54,8 @@ class Host(AbstractNode):
             return True
         raise dissomniag.UnauthorizedFunctionCall()
     
-    def check(self, user):
+    def checkPingable(self, user):
+        
         self.authUser(user)
         
         context = dissomniag.taskManager.Context()
@@ -56,9 +63,6 @@ class Host(AbstractNode):
         job = dissomniag.taskManager.Job(context, description = "Ping Host to check if it is up.", user = user)
         job.addTask(dissomniag.tasks.HostTasks.CheckHostUpTask())
         dissomniag.taskManager.Dispatcher.addJob(user, job)
-        
-    def initiateRemote(self, user):
-        pass
     
     @staticmethod
     def deleteNode(node):

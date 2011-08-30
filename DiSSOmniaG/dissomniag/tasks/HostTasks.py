@@ -13,9 +13,9 @@ class CheckHostUpTask(dissomniag.taskManager.AtomicTask):
         if not hasattr(self.context, "host") or  type(self.context.host) != dissomniag.model.Host:
             self.job.trace("CheckHostUpTask: In Context missing host object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
-        ip = self.context.host.getMaintainanceIP()
+        ip = str(self.context.host.getMaintainanceIP().addr)
         if dissomniag.utils.PingUtils.isIpPingable(ip):
-            self.context.host.changeState(dissomniag.model.NodeState.UP)
+            self.context.host.changeState(self.context.user, dissomniag.model.NodeState.UP)
         else:
             self.context.host.changeState(self.context.user, dissomniag.model.NodeState.DOWN)
     

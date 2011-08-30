@@ -59,6 +59,12 @@ nodes = Table('nodes', meta,
 hosts = Table('hosts', meta,
            Column('id', Integer, ForeignKey('nodes.id'), primary_key = True),
            Column('qemuConnector', String(100)),
+           Column('lastChecked', DateTime, nullable = True, default = None),
+           Column('configurationMissmatch', Boolean, nullable = True, default = None),
+           Column('libvirtVersion', String(10), nullable = True, default = None),
+           Column('kvmUsable', Boolean, nullable = True, default = None),
+           Column('freeDiskspace', String(20), nullable = True, default = None),
+           Column('ramCapacity', String(20), nullable = True, default = None),
 )
 
 interfaces = Table('interfaces', meta,

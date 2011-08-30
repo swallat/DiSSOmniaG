@@ -7,6 +7,7 @@ Created on 02.08.2011
 import logging, argparse
 from colorama import Fore, Style, Back
 import sys, time
+import getpass
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import dissomniag
@@ -290,4 +291,4 @@ class DummyTask(taskManager.AtomicTask):
     
     def revert(self):
         return True
-    
+        

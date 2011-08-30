@@ -191,11 +191,12 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
                 self.terminal.nextLine()
         if not quitting: self.showPrompt()
 
-    def do_help(self, cmd = ''):
+    def do_help(self, terminal, user, name, cmd = ''):
         "Get help on a command. Usage: help command"
         if cmd:
             func = self.getCommandFunc(cmd)
             if func:
+                self.terminal.write("Help for %s:" % cmd)
                 self.terminal.write(func.__doc__)
                 self.terminal.nextLine()
                 return
@@ -206,18 +207,18 @@ class SSHDiSSOmniaGProtocol(recvline.HistoricRecvLine):
         self.terminal.write("Commands: " + " ".join(commands))
         self.terminal.nextLine()
 
-    def do_echo(self, terminal, *args):
+    def do_echo(self, terminal, user, *args):
         "Echo a string. Usage: echo my line of text"
         self.terminal.write(" ".join(args))
         self.terminal.nextLine()
 
-    def do_quit(self, terminal, *args):
+    def do_quit(self, terminal, user, *args):
         "Ends your session. Usage: quit"
         self.terminal.write("Bye")
         self.terminal.nextLine()
         self.terminal.loseConnection()
 
-    def do_clear(self, terminal, *args):
+    def do_clear(self, terminal, user, *args):
         "Clears the screen. Usage: clear"
         self.terminal.reset()
 
@@ -299,14 +300,17 @@ class SSHDiSSOmniaGAvatar(avatar.ConchUser):
         self.channelLookup.update({'session':session.SSHSession})
 
     def openShell(self, protocol):
-        serverProtocol = insults.ServerProtocol(SSHDiSSOmniaGProtocol, self, self.api)
-        serverProtocol.makeConnection(protocol)
-        protocol.makeConnection(session.wrapProtocol(serverProtocol))
+        self.serverProtocol = insults.ServerProtocol(SSHDiSSOmniaGProtocol, self, self.api)
+        self.serverProtocol.makeConnection(protocol)
+        protocol.makeConnection(session.wrapProtocol(self.serverProtocol))
 
     def getPty(self, terminal, windowSize, attrs):
         return None
 
     def execCommand(self, protocol, cmd):
+        #self.protocol = protocol
+        #self.openShell(protocol)
+        #self.serverProtocol.write(cmd)
         raise NotImplementedError
         
     def closed(self):
