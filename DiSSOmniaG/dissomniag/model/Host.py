@@ -63,9 +63,38 @@ class Host(AbstractNode):
         dissomniag.taskManager.Dispatcher.addJob(user, job)
     
     @staticmethod
-    def deleteNode(node):
-        pass
+    def deleteHost(user, node):
+        if (type(node) != Host):
+            return False
+        
+        node.authUser(user)
+        #1. Delete all Topologies on Host
+        
+        session = dissomniag.Session()
+        try:
+            topologies = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.host == node).all()
+        except NoResultFound:
+            pass
+        
+        for topology in topologies:
+            dissomniag.model.Topology.deleteTopology(topology)
+        
+        context = dissomniag.taskManager.Context()
+        context.add(node, "host")    
+        job = dissomniag.taskManager.Job(context, description = "delete Host Job", user = user)
+        
+        #2. Delete all VM's
+        job.addTask(dissomniag.tasks.HostTasks.DeleteExistingVMsOnHost())
+        
+        #3. Delete all Nets
+        job.addTask(dissomniag.tasks.HostTasks.DeleteExistingNetsOnHost())
+        
+        #4. Delete Node
+        job.addTask(dissomniag.tasks.HostTasks.DeleteHost())
+        
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
     
     @staticmethod
-    def generateDeleteNodeJob(node):
-        pass
+    def deleteNode(user, node):
+        return Host.deleteHost(user, node)

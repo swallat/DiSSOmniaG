@@ -102,20 +102,18 @@ class IpAddress(dissomniag.Base):
 
     @staticmethod
     def deleteIpAddress(user, ipAddress, isAdministrative = False):
-        """
-        TODO: Implement with generateDeleteIpAddressJob
-        
-        Now operation only on DB
-        """
-        if isAdministrative:
-            session = dissomniag.Session()
-            
-            session.delete(ipAddress)
-            session.flush()
-        
+        session = dissomniag.Session()
+        session.delete(ipAddress)
+        session.flush()
+    
     @staticmethod
-    def generateDeleteIpAddressJob(user, ipAddress):
-        pass
+    def checkValidIpAddress(ipAddress):
+        try:
+            ipaddr.IPNetwork(ipAddress)
+        except ValueError:
+            return False
+        else:
+            return True
                 
         
 

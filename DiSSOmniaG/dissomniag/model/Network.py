@@ -53,19 +53,29 @@ class Network(dissomniag.Base):
         if node != None:
             self.nodes.append(node)
             session.commit()
-            
-    @staticmethod
-    def deleteNetwork(user, network):
-        pass
-    
-    @staticmethod
-    def generateDeleteNetworkJob(user, network):
-        pass
     
     def authUser(self, user):
         if user.isAdmin:
             return True
         raise dissomniag.UnauthorizedFunctionCall()
+    
+    @staticmethod
+    def deleteNetwork(user, network):
+        if network == None or not isinstance(network, Network):
+            return False
+        network.authUser(user)
+        
+        context = dissomniag.taskManager.Context()
+        context.add(network, "net")
+        job = dissomniag.taskManager.Job(context, description= "Delete a Network", user = user)
+        #1. Delete all associated IP Addresses that are not connected to an Interface
+        job.addTask(dissomniag.tasks.DeleteIpAddressesOnNetwork())
+    
+        #2. Delete Network
+        job.addTask(dissomniag.tasks.DeleteNetwork())
+        
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
 
 class generatedNetwork(Network):
     __mapper_args__ = {'polymorphic_identity': 'generatedNetwork'}
@@ -296,6 +306,27 @@ class generatedNetwork(Network):
             if user in self.topology.users:
                 return True
         return super(generatedNetwork, self).authUser(user)
+    
+    @staticmethod
+    def deleteNetwork(user, network):
+        if network == None or not isinstance(network, generatedNetwork):
+            return False
+        network.authUser(user)
+        
+        #1. Delete TopologyConnection
+        session = dissomniag.Session()
+        try:
+            connections = session.query(dissomniag.model.TopologyConnection).filter(dissomniag.model.TopologyConnection.viaGenNetwork == network).all()
+        except NoResultFound:
+            pass
+        else:
+            for connection in connections:
+                session.delete(connection)
+            session.commit()
+            
+        #2. Call Super delete Network
+        return Network.deleteNetwork(user, network)
+        
     
     @staticmethod
     def cleanUpGeneratedNetworks(user):

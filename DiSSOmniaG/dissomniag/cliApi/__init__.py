@@ -49,6 +49,14 @@ def stopJob(*args):
 def addDummyJob(*args):
     import ManageJobs
     ManageJobs.addDummyJob().call(*args)
+    
+def listHosts(*args):
+    import ManageHosts
+    ManageHosts.listHosts().call(*args)
+    
+def addHost(*args):
+    import ManageHosts
+    ManageHosts.addHost().call(*args)
 
 def testSubprocess(terminal, user, *args):
     import sys

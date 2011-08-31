@@ -367,10 +367,6 @@ class AbstractNode(dissomniag.Base):
         raise NotImplementedError()
     
     @staticmethod
-    def generateDeleteNodeJob(user, node):
-        raise NotImplementedError()
-    
-    @staticmethod
     def getNodeState(user, nodeId = None, nodeUUID = None, nodeName = None):
         if nodeId == None and nodeUUID == None and nodeName == None:
             raise dissomniag.LogicalError()

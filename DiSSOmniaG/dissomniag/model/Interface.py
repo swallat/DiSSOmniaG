@@ -123,26 +123,15 @@ class Interface(dissomniag.Base):
     
     @staticmethod
     def deleteInterface(user, interface, isAdministrative = False):
-        """
-        TODO: Implement with generateDeleteInterfaceJob
-        
-        Now operation only on DB
-        """
         interface.authUser(user)
-        
-        if isAdministrative:
-            if interface.node.reDefineMaintainanceIPOnInterfaceDelete(user, interface):
-                session = dissomniag.Session()
-                for ipaddr in interface.ipAddresses:
-                    dissomniag.model.IpAddress.deleteIpAddress(user, ipaddr)
-                session.delete(interface)
-                return True
-            return False
-        
-    
-    @staticmethod
-    def generateDeleteInterfaceJob(user, interface):
-        pass
+
+        if interface.node.reDefineMaintainanceIPOnInterfaceDelete(user, interface):
+            session = dissomniag.Session()
+            for ipaddr in interface.ipAddresses:
+                dissomniag.model.IpAddress.deleteIpAddress(user, ipaddr)
+            session.delete(interface)
+            return True
+        return False
         
         
             

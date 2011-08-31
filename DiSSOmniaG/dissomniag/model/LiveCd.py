@@ -22,5 +22,29 @@ class LiveCd(dissomniag.Base):
     """
     classdocs
     """
-
+    
+    def authUser(self, user):
+        if user.isAdmin:
+            return True
+        else:
+            return self.vm.authUser(user)
+    
+    @staticmethod
+    def deleteLiveCd(user, livecd):
+        if livecd == None or not isinstance(livecd, LiveCd):
+            return False
+        livecd.authUser(user)
+        
+        # Add Job for file system sanity
+        
+        session = dissomniag.Session()
+        
+        try:
+            session.delete(livecd)
+        except Exception:
+            failed = True
+        else:
+            session.commit()
+            failed = False
+        return not failed
 

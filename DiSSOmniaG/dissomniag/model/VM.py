@@ -25,7 +25,8 @@ class VM(AbstractNode):
     host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))
     host = orm.relationship("Host", primaryjoin = "VM.host_id == Host.host_id", backref = "virtualMachines")
     liveCd_id = sa.Column(sa.Integer, sa.ForeignKey('livecds.id'))
-    liveCd = orm.relationship("LiveCd", backref = orm.backref('livecds', uselist = False))
+    #liveCd = orm.relationship("LiveCd", backref = orm.backref('livecds', uselist = False))
+    liveCd = orm.relationship("LiveCd", backref = "vm")
     
     """
     classdocs
@@ -40,12 +41,49 @@ class VM(AbstractNode):
         raise dissomniag.UnauthorizedFunctionCall()
     
     @staticmethod
-    def deleteNode(node):
-        pass
+    def deleteVM(user, node):
+        if node == None or type(node) != VM:
+            return False
+        node.authUser(user)
+        
+        #1. Delete LiveCD
+        if node.liveCD != None and type(node.liveCd) == dissomniag.model.LiveCd:
+            dissomniag.model.LiveCd.deleteLiveCd(node.liveCd)
+
+        #2. Delete Interfaces
+        for interface in node.interfaces:
+            dissomniag.model.Interface.deleteInterface(user, interface)
+        
+        
+        context = dissomniag.taskManager.Context()
+        context.add(node, "vm")
+        context.add(node, "node")
+        job = dissomniag.taskManager.Job(context, description="Delete a VM", user = user)
+        #3. Delete IPAddresses
+        job.addTask(dissomniag.tasks.DeleteIpAddressesOnNode())
+        
+        #4. Delete VM
+        job.addTask(dissomniag.tasks.DeleteVM())
+        
+        #5. Delete all Topology Connection for this VM
+        session = dissomniag.Session()
+        
+        try:
+            connections = session.query(dissomniag.model.TopologyConnection).filter(sa.or_(dissomniag.model.TopologyConnection.fromVM == node, dissomniag.model.TopologyConnection.toVM == node)).all()
+        except NoResultFound:
+            pass
+        else:
+            for connection in connections:
+                session.delete(connection)
+            session.commit()
+        
+        dissomniag.taskManager.Dispatcher.addJob(user = user, job = job)
+        return True
+        
     
     @staticmethod
-    def generateDeleteNodeJob(node):
-        pass
+    def deleteNode(user, node):
+        return VM.deleteVM(user, node)
     
     
 class VMIdentity(VM, dissomniag.Identity):
