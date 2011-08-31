@@ -69,8 +69,8 @@ class DeleteTopology(dissomniag.taskManager.AtomicTask):
         if not hasattr(self.context, "topology") or  type(self.context.topology) != dissomniag.model.Topology:
             self.job.trace("CheckHostUpTask: In Context missing topology object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing topology object.")
-        if (self.context.topology.generatedNetworks != None and len(self.context.topology.generatedNetworks) != 0) or
-                (self.context.topology.virtualMachines != None and len(self.context.topology.virtualMachines != 0)):
+        if ((self.context.topology.generatedNetworks != None and len(self.context.topology.generatedNetworks) != 0) or
+                (self.context.topology.virtualMachines != None and len(self.context.topology.virtualMachines != 0))):
             self.job.trace("Topology %s cannot be deleted securely: Make sure that all networks and all VM's of the Topology are deleted.")
             raise dissomniag.taskManager.UnrevertableFailure("Not all VM's or Nets are deleted in Topology")
          
@@ -79,7 +79,7 @@ class DeleteTopology(dissomniag.taskManager.AtomicTask):
             session.delete(self.context.topology)
             session.commit()
             self.context.topology = None
-        except Exception,e 
+        except Exception, e: 
             raise dissomniag.taskManager.UnrevertableFailure("Cannot delete Topology. SqlalchemyError: %s" % e)
         
         return dissomniag.taskManager.TaskReturns.SUCCESS

@@ -57,6 +57,14 @@ def listHosts(*args):
 def addHost(*args):
     import ManageHosts
     ManageHosts.addHost().call(*args)
+    
+def modHost(*args):
+    import ManageHosts
+    ManageHosts.modHost().call(*args)
+    
+def delHost(*args):
+    import ManageHosts
+    ManageHosts.delHost().call(*args)
 
 def testSubprocess(terminal, user, *args):
     import sys

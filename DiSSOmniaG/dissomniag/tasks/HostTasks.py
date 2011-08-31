@@ -71,8 +71,7 @@ class DeleteHost(dissomniag.taskManager.AtomicTask):
             self.job.trace("CheckHostUpTask: In Context missing host object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
         
-        if (self.context.host.networks != None and len(self.context.host.networks) != 0) or 
-                    (self.context.host.virtualMachines != None and len(self.context.host.virtualMachines) != 0):
+        if ((self.context.host.networks != None and len(self.context.host.networks) != 0) or (self.context.host.virtualMachines != None and len(self.context.host.virtualMachines) != 0)):
              self.job.trace("Host %s cannot be deleted securely: Make sure that all networks and all VM's on the Host are deleted.")
              raise dissomniag.taskManager.UnrevertableFailure("Not all VM's or Nets are deleted on Host")
         try: 
@@ -87,3 +86,36 @@ class DeleteHost(dissomniag.taskManager.AtomicTask):
     
     def revert(self):
         raise dissomniag.taskManager.UnrevertableFailure()
+    
+class checkLibvirtVersionOnHost(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        pass
+    
+    def revert(self):
+        pass
+
+class checkKvmOnHost(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        pass
+    
+    def revert(self):
+        pass
+    
+class getFreeDiskSpaceOnHost(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        pass
+    
+    def revert(self):
+        pass
+    
+class getRamCapacityOnHost(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        pass
+    
+    def revert(self):
+        pass
+    

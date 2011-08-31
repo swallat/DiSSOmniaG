@@ -17,6 +17,7 @@ class Host(AbstractNode):
     
     host_id = sa.Column('id', sa.Integer, sa.ForeignKey('nodes.id'), primary_key = True)
     qemuConnector = sa.Column(sa.String(100))
+    bridgedInterfaceName = sa.Column(sa.String(10))
     lastChecked = sa.Column(sa.DateTime, nullable = True, default = None)
     configurationMissmatch = sa.Column(sa.Boolean, nullable = True, default = None)#True False None (Not checked Yet)
     libvirtVersion = sa.Column(sa.String(10), nullable = True, default = None) #None (Not installed or not checked Yet) Else Version Number
@@ -27,12 +28,14 @@ class Host(AbstractNode):
     """
     classdocs
     """
-    def __init__(self, user, commonName, maintainanceIP,
+    def __init__(self, user, commonName, maintainanceIP, bridgedInterfaceName,
                  sshKey = None, administrativeUserName = None):
         if administrativeUserName != None:
             self.administrativeUserName = administrativeUserName
             
         self.qemuConnector = "qemu+ssh://%s@%s/system?no_tty=1" % (self.administrativeUserName, maintainanceIP)
+        
+        self.bridgedInterfaceName = bridgedInterfaceName
         
         super(Host, self).__init__(user = user, commonName = commonName,
                                    maintainanceIP = maintainanceIP, sshKey = sshKey,
@@ -40,9 +43,7 @@ class Host(AbstractNode):
                                    state = dissomniag.model.NodeState.DOWN)
         
         self.checkPingable(user)
-        
-        
-    
+
     
     def addSelfGeneratedNetwork(self, user, name, ipNetwork = None):
         pass
@@ -61,10 +62,35 @@ class Host(AbstractNode):
         job = dissomniag.taskManager.Job(context, description = "Ping Host to check if it is up.", user = user)
         job.addTask(dissomniag.tasks.HostTasks.CheckHostUpTask())
         dissomniag.taskManager.Dispatcher.addJob(user, job)
-    
+        
+    def modBridgedInterfaceName(self, user, newName):
+        self.authUser(user)
+        if len(newName)>10:
+            return False
+        else:
+            session = dissomniag.Session()
+            self.bridgedInterfaceName = newName
+            session.commit()
+            return True
+        
+    def makeFullCheck(self, user):
+        self.authUser(user)
+        
+        context = dissomniag.taskManager.Context()
+        context.add(self, "host")
+        job = dissomniag.taskManager.Job(context, description = "Check Host Job", user = user)
+        
+        job.addTask(dissomniag.tasks.CheckHostUpTask())
+        job.addTask(dissomniag.tasks.checkLibvirtVersionOnHost())
+        job.addTask(dissomniag.tasks.checkKvmOnHost())
+        job.addTask(dissomniag.tasks.getFreeDiskSpaceOnHost())
+        job.addTask(dissomniag.tasks.getRamCapacityOnHost())
+        
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        
     @staticmethod
     def deleteHost(user, node):
-        if (type(node) != Host):
+        if not isinstance(node, Host):
             return False
         
         node.authUser(user)
