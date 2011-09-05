@@ -4,7 +4,7 @@ Created on 31.08.2011
 
 @author: Sebastian Wallat
 """
-import logging, argparse
+import logging, argparse, os
 from colorama import Fore, Style, Back
 import sys, time
 import getpass
@@ -92,6 +92,8 @@ class addHost(CliMethodABCClass.CliMethodABCClass):
         session.add(host)
         session.commit()
         
+        self.printSuccess("Host added. Make sure to add the SSH-Key %s to the admin user on the Host!" % os.path.abspath(dissomniag.config.dissomniag.rsaKeyPublic))
+        
         
 
 class modHost(CliMethodABCClass.CliMethodABCClass):
@@ -168,3 +170,21 @@ class checkHost(CliMethodABCClass.CliMethodABCClass):
         
         if not self.user.isAdmin:
             self.printError("Only Admin Users can delete Hosts!")
+            
+        parser = argparse.ArgumentParser(description = "Check a Host", prog = args[0])
+        parser.add_argument("commonName", action = "store")
+        
+        options = parser.parse_args(args[1:])
+        session = dissomniag.Session()
+        host = None
+        try:
+            host = session.query(dissomniag.model.Host).filter(dissomniag.model.Host.commonName == str(options.commonName)).one()
+        except (NoResultFound, MultipleResultsFound):
+            self.printError("The Host you have entered is not known or valid.")
+            return
+        
+        host.checkFull(self.user)
+        self.printSuccess("Checks started.")
+        
+            
+            

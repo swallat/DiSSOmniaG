@@ -4,6 +4,7 @@ Created on 02.09.2011
 
 @author: Sebastian Wallat
 """
+import os
 import shlex
 import subprocess
 import dissomniag
@@ -13,37 +14,48 @@ class SSHCommand(object):
     """
     classdocs
     """
-    SSH_CMD = shlex.split("ssh -q -oConnectTimeout=30 -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oPasswordAuthentication=false")
+    SSH_CMD = "ssh -q -oConnectTimeout=30 -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oPasswordAuthentication=false "
 
-    def __init__(self, cmd, hostOrIp, username = "root", keyfile = dissomniag.config.dissomniag.rsaKeyPrivate):
+    def __init__(self, cmd, hostOrIp, username = "root", keyfile = os.path.abspath(dissomniag.config.dissomniag.rsaKeyPrivate)):
         """
         Constructor
         """
         
-        self.cmd = shlex.split(cmd)
-        self.hostOrIp = hostOrIp
-        self.username = username
-        self.keyfile = keyfile
+        self.cmd = str(cmd)
+        self.hostOrIp = str(hostOrIp)
+        self.username = str(username)
+        self.keyfile = str(keyfile)
         
-    def _getFullCmdString(self):        
-        connectionString = shlex.split(self.username + "@" + self.hostOrIp)
-        return self.SSH_CMD + connectionString + self.cmd
+    def __repr__(self, *args, **kwargs):
+        return " ".join(self.get())
+         
+    def get(self):        
+        connectionString = "-\i " + self.keyfile + " " + self.username + "@" + self.hostOrIp + " "
+        returnMe = self.SSH_CMD + connectionString + self.cmd
+        return shlex.split(returnMe)
         
-    def run(self, redirectStdinTo = None, redirectStdoutTo = None, redirectStderrTo = None):
-        pass
+    def call(self):
+        return subprocess.call(self.get())
     
-    def close(self):
-        pass
-    
-    def returnCode(self):
-        pass
-    
-    def getOutput(self):
-        pass
-    
-    def callAndClose(self):
-        pass
+    def callAndGetOutput(self):
+        cmd = self.get()
+        self.proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+        self.output = self._readOutput(self.proc)
+        com = self.proc.communicate()[0]
+        if com != '':
+            self.output.append(com)
+        self.exitCode = self.proc.returncode
+        return self.exitCode, self.output
         
-    
+    def _readOutput(self, proc):
+        output = []
+        while True:
+            next = proc.stdout.readline()
+            if not next:
+                break
+            output.append(next.strip())
+        
+        return output
+        
         
         

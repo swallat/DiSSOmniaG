@@ -63,6 +63,19 @@ class Host(AbstractNode):
         job.addTask(dissomniag.tasks.HostTasks.CheckHostUpTask())
         dissomniag.taskManager.Dispatcher.addJob(user, job)
         
+    def checkFull(self, user):
+        
+        self.authUser(user)
+        
+        context = dissomniag.taskManager.Context()
+        context.add(self, "host")
+        job = dissomniag.taskManager.Job(context, description = "CheckUp all needed Parameters of a Host", user = user)
+        job.addTask(dissomniag.tasks.HostTasks.checkLibvirtVersionOnHost())
+        job.addTask(dissomniag.tasks.HostTasks.checkKvmOnHost())
+        job.addTask(dissomniag.tasks.HostTasks.getFreeDiskSpaceOnHost())
+        job.addTask(dissomniag.tasks.HostTasks.getRamCapacityOnHost())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)        
+        
     def modBridgedInterfaceName(self, user, newName):
         self.authUser(user)
         if len(newName)>10:
