@@ -183,8 +183,8 @@ class getRamCapacityOnHost(dissomniag.taskManager.AtomicTask):
         if code != 0:
             self.job.trace("getRamCapacityOnHost: Unable to get RAM Capacity.")
             return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
-        line = shlex.split(output[0])
-        self.context.host.ramCapacity = str(int(line[1])/1024) + "MB"
+        line = shlex.split(output[0]) #The first line is the only interesting line
+        self.context.host.ramCapacity = str(int(line[1])/1024) + "MB" # The second fieled in this line is interesting
         self.context.host.lastChecked = datetime.datetime.now()
         session = dissomniag.Session()
         session.flush()

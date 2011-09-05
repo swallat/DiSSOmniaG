@@ -132,7 +132,7 @@ class generatedNetwork(Network):
                 seen.append(int(re.search(numberPattern, str(names[0])).group[0]))
             seen = sorted(seen)
             found = False
-            last = None
+            last = 0
             for value in seen:
                 if last == None:
                     last = value
@@ -243,12 +243,14 @@ class generatedNetwork(Network):
         return True
     
     def getLibVirtXML(self, user):
+        self.authUser(user)
         root = lxml.etree.Element("network")
         name = lxml.etree.SubElement(root, "name")
         name.text = self.name
         uuid = lxml.etree.SubElement(root, "uuid")
         uuid.text = self.uuid
-        if self.withQos:
+        forward = lxml.etree.SubElement(root, "forward")
+        if self.withQos and self.host.libvirtVersion >= "0.9.4":
             bandwith = lxml.SubElement(root, 'bandwith')
             inbound = lxml.SubElement(bandwith, 'inbound')
             inboundAttrib = inbound.attrib
@@ -259,7 +261,33 @@ class generatedNetwork(Network):
             outboundAttrib = outbound.attrib
             outboundAttrib['average'] = str(self.outboundAverage)
             outboundAttrib['peak'] = str(self.outboundPeak)
-            outboundAttrib['burst'] = str(self.outboundBurst)      
+            outboundAttrib['burst'] = str(self.outboundBurst)
+        ip = lxml.etree.SubElement(root, "ip")
+        ipAttrib = ip.attrib
+        ipAttrib['address'] = self.getDhcpServerAddress.addr
+        ipAttrib['netmask'] = self.netMask
+        dhcp = lxml.etree.SubElement(ip, 'dhcp')
+        #range = lxml.etree.SubElement(dhcp, 'range')
+        #rangeAttrib = range.attrib
+        #rangeAttrib['start'] = 
+        #rangeAttrib['end'] = 
+        for ip in self.ipAddresses:
+            #Do not add Addresses with no Interface
+            if ip.interface == None or ip.node == None or ip.isV6:
+                continue
+            host = lxml.etree.SubElement(dhcp, 'host')
+            hostAttrib = host.attrib
+            hostAttrib['mac'] = ip.interface.macAddress
+            hostAttrib['name'] = ip.node.commonName
+            hostAttrib['ip'] = ip.addr
+            
+        return root
+            
+    def getLibVirtString(self, user):
+        self.authUser(user)
+        return lxml.etree.tostring(self.getLibVirtXML(user))
+        
+            
                 
     def setQos(self, user, inboundAvg, inboundPeak, inboundBurst, outboundAvg, outboundPeak, outboundBurst):
         self.authUser(user)
