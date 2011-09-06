@@ -39,10 +39,10 @@ class IpAddress(dissomniag.Base):
     classdocs
     """
     
-    def __init__(self, user, ipAddrOrNet, node = None, isDhcpAddress = False):
+    def __init__(self, user, ipAddrOrNet, node = None, isDhcpAddress = False, net = None):
         session = dissomniag.Session()
         
-        if type(ipAddrOrNet) == str:
+        if not isinstance(ipAddrOrNet, (ipaddr.IPv4Network, ipaddr.IPv6Network)):
             ipAddrOrNet = ipaddr.IPNetwork(ipAddrOrNet)
         
         if node:
@@ -56,7 +56,7 @@ class IpAddress(dissomniag.Base):
         elif (ipAddrOrNet.version == 6):
             self.isV6 = True
         
-        if (ipAddrOrNet.prefixlen < ipAddrOrNet.max_prefixlen):
+        if (ipAddrOrNet.prefixlen < ipAddrOrNet.max_prefixlen) and not net:
             found = False
             try:
                 networks = session.query(Network).filter(Network.netAddress == str(ipAddrOrNet.network)).filter(Network.netMask == str(ipAddrOrNet.netmask)).all()
@@ -68,6 +68,8 @@ class IpAddress(dissomniag.Base):
             finally:
                 if found == False:
                     self.network = Network(user, ipAddrOrNet, node)
+        elif isinstance(net, (dissomniag.model.Network, dissomniag.model.generatedNetwork)):
+            self.network = net
         session.add(self)
         session.commit()
         

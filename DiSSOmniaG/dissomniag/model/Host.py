@@ -33,7 +33,7 @@ class Host(AbstractNode):
         if administrativeUserName != None:
             self.administrativeUserName = administrativeUserName
             
-        self.qemuConnector = "qemu+ssh://%s@%s/system?no_tty=1" % (self.administrativeUserName, maintainanceIP)
+        self.qemuConnector = "qemu+ssh://%s@%s/system?no_tty=1,no_verify=1" % (self.administrativeUserName, maintainanceIP)
         
         self.bridgedInterfaceName = bridgedInterfaceName
         
@@ -78,7 +78,7 @@ class Host(AbstractNode):
         
     def modBridgedInterfaceName(self, user, newName):
         self.authUser(user)
-        if len(newName)>10:
+        if len(newName) > 10:
             return False
         else:
             session = dissomniag.Session()

@@ -14,6 +14,7 @@ import dissomniag.config as config
 log = logging.getLogger("dbAccess")
 
 engine = create_engine(config.db.db_string, echo = (True if config.db.maintainance else False))
+#engine = create_engine(config.db.db_string, echo = True)
 Session = scoped_session(sessionmaker())
 Session.configure(bind = engine)
 

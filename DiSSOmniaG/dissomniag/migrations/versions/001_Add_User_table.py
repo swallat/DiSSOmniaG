@@ -82,7 +82,13 @@ networks = Table('networks', meta,
            Column('name', String, nullable = False),
            Column('netAddress', String(39), nullable = False),
            Column('netMask', String(39), nullable = False),
+           Column('type', String(50), nullable = False),
+)
+
+genNetworks = Table('genNetworks', meta,
+           Column('id', Integer, ForeignKey('networks.id'), primary_key = True),
            Column('topology_id', Integer, ForeignKey('topologies.id')),
+           Column('state', Integer, CheckConstraint("0 <= state < 4", name = "genNetState"), nullable = True),
            Column('withQos', Boolean, nullable = False, default = False),
            Column('inboundAverage', Integer),
            Column('inboundPeak', Integer),
@@ -90,7 +96,6 @@ networks = Table('networks', meta,
            Column('outboundAverage', Integer),
            Column('outboundPeak', Integer),
            Column('outboundBurst', Integer),
-           Column('type', String(50)),
 )
 
 topologies = Table('topologies', meta,
@@ -179,6 +184,8 @@ def upgrade(migrate_engine):
     topologies.create()
     print("Migrate: Add Networks Table")
     networks.create()
+    print("Migrate: Add genNetworks Table")
+    genNetworks.create()
     print("Migrate: Add Node_Network Table")
     node_network.create()
     print("Migrate: Add ipAddresses Table")
@@ -201,6 +208,7 @@ def downgrade(migrate_engine):
     user_topology.drop()
     ipAddresses.drop()
     node_network.drop()
+    genNetworks.drop()
     networks.drop()
     topologies.drop()
     interfaces.drop()

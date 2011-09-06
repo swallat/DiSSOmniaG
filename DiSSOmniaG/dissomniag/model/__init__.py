@@ -1,4 +1,5 @@
 from Network import *
+from GeneratedNetwork import *
 from Interface import *
 from IpAddress import *
 from SSHNodeKey import *

@@ -44,12 +44,12 @@ class listHosts(CliMethodABCClass.CliMethodABCClass):
     def printHost(self, host):
         
         if host == None or type(host) != dissomniag.model.Host:
-            print( str(type(host)))
+            print(str(type(host)))
             print(str(dissomniag.model.Host == type(host)))
             return
         
-        print("%s \t\t%s     %s \t %s \t %s \t \t %s \t \t %s \t \t %s \t \t  %s \t \t %s \t \t %s" %
-              (str(host.commonName), str(dissomniag.model.NodeState.getStateName(host.state)), str(host.uuid),  str(host.getMaintainanceIP().addr), str(host.administrativeUserName), str(host.bridgedInterfaceName), str(host.lastChecked), str(host.libvirtVersion), str(host.kvmUsable), str(host.freeDiskspace), str(host.ramCapacity)))
+        print("%s \t\t%s     %s \t %s \t %s \t \t %s \t \t %s \t \t %s \t \t  %s \t \t %s \t \t %s" % 
+              (str(host.commonName), str(dissomniag.model.NodeState.getStateName(host.state)), str(host.uuid), str(host.getMaintainanceIP().addr), str(host.administrativeUserName), str(host.bridgedInterfaceName), str(host.lastChecked), str(host.libvirtVersion), str(host.kvmUsable), str(host.freeDiskspace), str(host.ramCapacity)))
         
         
             
@@ -88,6 +88,18 @@ class addHost(CliMethodABCClass.CliMethodABCClass):
             bridgeName = str(options.bridgeName)
         
         session = dissomniag.Session()
+        try:
+            found = session.query(dissomniag.model.Host).filter(dissomniag.model.Host.commonName == options.commonName).one()
+        except NoResultFound:
+            pass
+        except MultipleResultsFound:
+            self.printError("Query Inconsistency")
+            return
+        else:
+            if not found:
+                pass
+            self.printError("The hostname is already in use.")
+            return
         host = dissomniag.model.Host(self.user, commonName = options.commonName, maintainanceIP = options.ipAddress, administrativeUserName = adminUser, bridgedInterfaceName = bridgeName)
         session.add(host)
         session.commit()
@@ -106,7 +118,7 @@ class modHost(CliMethodABCClass.CliMethodABCClass):
             self.printError("Only Admin Users can modify Hosts!")
         
         parser = argparse.ArgumentParser(description = "Modify a Host", prog = args[0])
-        parser.add_argument("-i", "--ipAddress", dest = "ipAddress", action= "store", default = None)
+        parser.add_argument("-i", "--ipAddress", dest = "ipAddress", action = "store", default = None)
         parser.add_argument("-u", "--adminUser", dest = "adminUser", action = "store", default = None)
         parser.add_argument("-b", "--bridgeName", dest = "bridgeName", action = "store", default = None)
         parser.add_argument("commonName", action = "store")

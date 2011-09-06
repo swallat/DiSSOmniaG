@@ -70,6 +70,29 @@ def checkHost(*args):
     import ManageHosts
     ManageHosts.checkHost().call(*args)
 
+def nets(*args):
+    import ManageNets
+    ManageNets.nets().call(*args)
+
+def addNet(*args):
+    import ManageNets
+    ManageNets.addNet().call(*args)
+
+def delNet(*args):
+    import ManageNets
+    ManageNets.delNet().call(*args)
+    
+def startNet(*args):
+    import ManageNets
+    ManageNets.startNet().call(*args)
+
+def stopNet(*args):
+    import ManageNets
+    ManageNets.stopNet().call(*args)
+    
+def refreshNet(*args):
+    import ManageNets
+    ManageNets.refreshNet().call(*args)
 
 def testSubprocess(terminal, user, *args):
     import sys
