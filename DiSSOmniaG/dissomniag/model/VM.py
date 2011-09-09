@@ -21,7 +21,7 @@ class VM(AbstractNode):
     isHdCreated = sa.Column(sa.Boolean, default = False, nullable = False)
     useHD = sa.Column(sa.Boolean, default = False, nullable = False)
     enableVNC = sa.Column(sa.Boolean, default = False, nullable = False)
-    vncAddress = sa.Column(sa.String)
+    vncPort = sa.Column(sa.String)
     vncPassword = sa.Column(sa.String(40))
     dynamicAptList = sa.Column(sa.String)
     maintainanceMac = sa.Column(sa.String(17))
@@ -203,6 +203,13 @@ class VM(AbstractNode):
         inputAttrib = input.attrib
         inputAttrib["type"] = "mouse"
         inputAttrib["bus"] = "ps2"
+        
+        vnc = etree.SubElement(devices, "graphics")
+        vncAttrib = vnc.attrib
+        vncAttrib["type"] = "vnc"
+        vncAttrib["port"] = self.vncPort
+        vncAttrib["passwd"] = self.vncPassword
+        vncAttrib["keymap"] = "de"
         
         sound = etree.SubElement(devices, "sound")
         soundAttrib = sound.attrib
