@@ -50,9 +50,9 @@ def addDummyJob(*args):
     import ManageJobs
     ManageJobs.addDummyJob().call(*args)
     
-def listHosts(*args):
+def hosts(*args):
     import ManageHosts
-    ManageHosts.listHosts().call(*args)
+    ManageHosts.hosts().call(*args)
     
 def addHost(*args):
     import ManageHosts

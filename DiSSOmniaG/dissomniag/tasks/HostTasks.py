@@ -5,6 +5,8 @@ Created on 10.08.2011
 @author: Sebastian Wallat
 """
 import datetime
+import libvirt
+import os
 import shlex
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import dissomniag
@@ -147,7 +149,7 @@ class getFreeDiskSpaceOnHost(dissomniag.taskManager.AtomicTask):
         
         maintainanceIp = self.context.host.getMaintainanceIP().addr
         
-        folder = self.context.host.utilityFolder
+        folder = "/" #self.context.host.utilityFolder
         if folder == None:
             folder = "/"
         self.job.trace("getFreeDiskSpaceOnHost: (Host: %s) df -h %s" % (self.context.host.commonName, folder))
@@ -184,7 +186,7 @@ class getRamCapacityOnHost(dissomniag.taskManager.AtomicTask):
             self.job.trace("getRamCapacityOnHost: Unable to get RAM Capacity.")
             return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
         line = shlex.split(output[0]) #The first line is the only interesting line
-        self.context.host.ramCapacity = str(int(line[1])/1024) + "MB" # The second fieled in this line is interesting
+        self.context.host.ramCapacity = str(int(line[1]) / 1024) + "MB" # The second fieled in this line is interesting
         self.context.host.lastChecked = datetime.datetime.now()
         session = dissomniag.Session()
         session.flush()
@@ -192,4 +194,83 @@ class getRamCapacityOnHost(dissomniag.taskManager.AtomicTask):
     
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+class checkUtilityDirectory(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "host") or  type(self.context.host) != dissomniag.model.Host:
+            self.job.trace("checkUtilityDirectory: In Context missing host object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
+        
+        session = dissomniag.Session()
+        self.success = False
+        self.job.trace("IN CHECK UTILITY DIRECTORY")
+        
+        maintainanceIp = self.context.host.getMaintainanceIP().addr
+        self.job.trace("UtilityFolder: %s" % self.context.host.utilityFolder)
+        checkUtilityFolderExistsCmd = dissomniag.utils.SSHCommand("[ -d '%s' ]" % self.context.host.utilityFolder, hostOrIp = maintainanceIp, username = self.context.host.administrativeUserName)
+        code, output = checkUtilityFolderExistsCmd.callAndGetOutput()
+        if code != 0:
+            #Directory does not exists. Try to create it.
+            fullpath = os.path.join(self.context.host.utilityFolder, dissomniag.config.hostConfig.vmSubdirectory)
+            self.job.trace("Make Utility Directory! %s" % fullpath)
+            createUtilityFolderCmd = dissomniag.utils.SSHCommand("mkdir -p %s" % fullpath, hostOrIp = maintainanceIp, username = self.context.host.administrativeUserName)
+            code, output = createUtilityFolderCmd.callAndGetOutput()
+            if code != 0 :
+                self.job.trace("createUtilityFolder: Unable To create Utility Folder.")
+                self.context.host.configurationMissmatch = True
+                session.flush()
+                self.success = False
+                raise dissomniag.taskManager.UnrevertableFailure("Could not operate on Host!")
+        #everything is ok.
+        self.context.host.configurationMissmatch = False
+        session.flush()
+        self.success = True
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+    def revert(self):
+        if self.success == True:
+            if not hasattr(self.context, "host") or  type(self.context.host) != dissomniag.model.Host:
+                self.job.trace("checkUtilityDirectory: In Context missing host object.")
+                raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
+            maintainanceIp = self.context.host.getMaintainanceIP().addr
+            
+            deleteCmd = dissomniag.utils.SSHCommand("rm -rf %s" % self.context.host.utilityFolder, hostOrIp = maintainanceIp, user = self.context.host.administrativeUserName)
+            code, output = deleteCmd.callAndGetOutput()
+            if code != 0:
+                self.job.trace("checkUtilityDirectory: Cannot revert! Output: %s" % output)
+                raise dissomniag.taskManager.TaskFailed("Could not revert task Check Utility Folder! (Could not delete it!)")
+            return dissomniag.taskManager.TaskReturns.SUCCESS
+        
+class gatherLibvirtCapabilities(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "host") or  type(self.context.host) != dissomniag.model.Host:
+            self.job.trace("gatherLibvirtCapabilities: In Context missing host object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
+        
+        try:
+            con = libvirt.open(str(self.context.host.qemuConnector))
+        except libvirt.libvirtError:
+            raise dissomniag.taskManager.TaskFailed("Could Not Connect to Libvirt Host!")
+        
+        try:
+            self.context.host.libvirtCapabilities = con.getCapabilities()
+        except libvirt.libvirtError:
+            return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
+        
+        session = dissomniag.Session()
+        session.flush()
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+             
+    
+    def revert(self):
+        if not hasattr(self.context, "host") or  type(self.context.host) != dissomniag.model.Host:
+            self.job.trace("gatherLibvirtCapabilities: In Context missing host object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
+        self.context.host.libvirtCapabilities = None
+        session = dissomniag.Session()
+        session.flush()
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+        
     

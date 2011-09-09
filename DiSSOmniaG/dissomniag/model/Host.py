@@ -23,7 +23,8 @@ class Host(AbstractNode):
     libvirtVersion = sa.Column(sa.String(10), nullable = True, default = None) #None (Not installed or not checked Yet) Else Version Number
     kvmUsable = sa.Column(sa.Boolean, nullable = True, default = None) #True False None (not checked yet)
     freeDiskspace = sa.Column(sa.String(20), nullable = True, default = None) #None (not checked yet) FreeDiskSpace
-    ramCapacity = sa.Column(sa.String(20), nullable = True, default = None) #None (not checked yet) ramCapacity  
+    ramCapacity = sa.Column(sa.String(20), nullable = True, default = None) #None (not checked yet) ramCapacity
+    libvirtCapabilities = sa.Column(sa.String, nullable = True, default = None)
     
     """
     classdocs
@@ -37,9 +38,12 @@ class Host(AbstractNode):
         
         self.bridgedInterfaceName = bridgedInterfaceName
         
+        utilityFolder = dissomniag.config.hostConfig.hostFolder
+        
         super(Host, self).__init__(user = user, commonName = commonName,
                                    maintainanceIP = maintainanceIP, sshKey = sshKey,
                                    administrativeUserName = administrativeUserName,
+                                   utilityFolder = utilityFolder,
                                    state = dissomniag.model.NodeState.DOWN)
         
         self.checkPingable(user)
@@ -72,8 +76,10 @@ class Host(AbstractNode):
         job = dissomniag.taskManager.Job(context, description = "CheckUp all needed Parameters of a Host", user = user)
         job.addTask(dissomniag.tasks.HostTasks.checkLibvirtVersionOnHost())
         job.addTask(dissomniag.tasks.HostTasks.checkKvmOnHost())
+        job.addTask(dissomniag.tasks.HostTasks.checkUtilityDirectory())
         job.addTask(dissomniag.tasks.HostTasks.getFreeDiskSpaceOnHost())
         job.addTask(dissomniag.tasks.HostTasks.getRamCapacityOnHost())
+        job.addTask(dissomniag.tasks.HostTasks.gatherLibvirtCapabilities())
         dissomniag.taskManager.Dispatcher.addJob(user, job)        
         
     def modBridgedInterfaceName(self, user, newName):

@@ -112,3 +112,12 @@ class dispatcher(ParseSection):
         return self
     
 dispatcher = dispatcher(config, "DISPATCHER").parse()
+
+class hostConfig(ParseSection):
+    
+    def parse(self):
+        self.hostFolder = self.parseOption(self.sectionName, "hostFolder", "/var/lib/dissomniag/")
+        self.vmSubdirectory = self.parseOption(self.sectionName, "vmSubDirectory", "vms/")
+        return self
+
+hostConfig = hostConfig(config, "HOST_CONFIG").parse()

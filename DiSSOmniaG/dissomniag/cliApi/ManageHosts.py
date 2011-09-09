@@ -16,7 +16,7 @@ from dissomniag.utils import CliMethodABCClass
 log = logging.getLogger("cliApi.ManageHosts")
 
 
-class listHosts(CliMethodABCClass.CliMethodABCClass):
+class hosts(CliMethodABCClass.CliMethodABCClass):
     
     def implementation(self, *args):
         sys.stdout = self.terminal
@@ -26,8 +26,12 @@ class listHosts(CliMethodABCClass.CliMethodABCClass):
             self.printError("Only Admin Users can add Hosts!")
             return
         
+        parser = argparse.ArgumentParser(description = 'List All Hosts', prog = args[0])
+        parser.add_argument("-c", "--withCapabilities", dest = "withCap", action = "store_true", default = False)
+        
+        options = parser.parse_args(args[1:])
+        
         session = dissomniag.Session()
-        self.printHeading()
         hosts = None
         try:
             hosts = session.query(dissomniag.model.Host).all()
@@ -35,23 +39,31 @@ class listHosts(CliMethodABCClass.CliMethodABCClass):
             pass
         
         for host in hosts:
-            self.printHost(host)
-                
-    def printHeading(self):
-        self.printInfo("CommonName: \t State:     UUID: \t\t\t\t MaintainanceIP: AdminUser: \t BridgedInterfaceName: \t lastChecked: \t libvirt Version: kvmUsable: \t freeDiskspace: ramCapacity: \t")
-        self.printInfo("=============================================================================================================================================================================")
-                
-    def printHost(self, host):
+            self.printHost(host, withCap = options.withCap)
+    
+                    
+    def printHost(self, host, withCap = False):
         
         if host == None or type(host) != dissomniag.model.Host:
             print(str(type(host)))
             print(str(dissomniag.model.Host == type(host)))
             return
         
-        print("%s \t\t%s     %s \t %s \t %s \t \t %s \t \t %s \t \t %s \t \t  %s \t \t %s \t \t %s" % 
-              (str(host.commonName), str(dissomniag.model.NodeState.getStateName(host.state)), str(host.uuid), str(host.getMaintainanceIP().addr), str(host.administrativeUserName), str(host.bridgedInterfaceName), str(host.lastChecked), str(host.libvirtVersion), str(host.kvmUsable), str(host.freeDiskspace), str(host.ramCapacity)))
-        
-        
+        print("Common Name: %s" % str(host.commonName))
+        print("State: %s" % str(dissomniag.model.NodeState.getStateName(host.state)))
+        print("UUID: %s" % str(host.uuid))
+        print("MaintainanceIP: %s" % str(host.getMaintainanceIP().addr))
+        print("AdministrativeUserName: %s" % str(host.administrativeUserName))
+        print("BridgedInterfaceName: %s" % str(host.bridgedInterfaceName))
+        print("lastChecked: %s" % str(host.lastChecked))
+        print("Libvirt Version: %s" % str(host.libvirtVersion))
+        print("KVMUsable: %s" % str(host.kvmUsable))
+        print("FreeDiskspace: %s" % str(host.freeDiskspace))
+        print("RamCapacity: %s" % str(host.ramCapacity))
+        print("ConfigurarionMissmatch: %s" % str(host.configurationMissmatch))
+        if withCap:
+            print("LibVirtCapabilities: \n %s" % str(host.libvirtCapabilities))
+        print("\n")
             
         
         

@@ -29,7 +29,7 @@ class SSHCommand(object):
     def __repr__(self, *args, **kwargs):
         return " ".join(self.get())
          
-    def get(self):        
+    def get(self):
         connectionString = "-\i " + self.keyfile + " " + self.username + "@" + self.hostOrIp + " "
         returnMe = self.SSH_CMD + connectionString + self.cmd
         return shlex.split(returnMe)
