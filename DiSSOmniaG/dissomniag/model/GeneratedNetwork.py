@@ -160,11 +160,11 @@ class generatedNetwork(Network):
         found = False
         foundIp = None
         for ip in net.iterhosts():
-            print ip
+            #print ip
             if self.checkFreeAddress(user, ip):
                 found = True
                 foundIp = str(ip)
-                print "FoundIp: %s" % foundIp
+                #print "FoundIp: %s" % foundIp
                 break
             
         if found:

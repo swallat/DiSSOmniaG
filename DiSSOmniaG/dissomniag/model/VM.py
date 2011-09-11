@@ -6,6 +6,7 @@ Created on 05.08.2011
 """
 import lxml
 from lxml import etree
+import os
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
@@ -36,10 +37,17 @@ class VM(AbstractNode):
     classdocs
     """
     
-    def __init__(self):
+    def __init__(self, user, commonName, host):
         
         self.maintainanceMac = dissomniag.model.Interface.getRandomMac()
-    
+        
+        if host != None and isinstance(host, dissomniag.model.Host):
+            self.host = host
+        
+        super(VM, self).__init__(user, commonName, state = dissomniag.model.NodeState.NOT_CREATED)
+        self.vncPort = self.getFreeVNCPortOnHost(user, host)
+        session = dissomniag.Session()    
+        session.commit()
     
     def getLibVirtXML(self, user):
         self.authUser(user)
@@ -49,11 +57,11 @@ class VM(AbstractNode):
         name = etree.SubElement(domain, "name")
         name.text = self.commonName
         uuid = etree.SubElement(domain, "uuid")
-        uuid.text = self.uuid
+        uuid.text = str(self.uuid)
         memory = etree.SubElement(domain, "memory")
-        memory.text = self.getRamSize
+        memory.text = str(self.getRamSize(user))
         currentMemory = etree.SubElement(domain, "currentMemory")
-        currentMemory.text = self.getRamSize
+        currentMemory.text = str(self.getRamSize(user))
         vcpu = etree.SubElement(domain, "vcpu")
         vcpu.text = "1"
         
@@ -90,7 +98,7 @@ class VM(AbstractNode):
         devices = etree.SubElement(domain, "devices")
         
         emulator = etree.SubElement(devices, "emulator")
-        emulator.text = self.getEmulator(user)
+        emulator.text = str(self.getEmulator(user))
         
         #1. Insert cdrom drive
         cdromDisk = etree.SubElement(devices, "disk")
@@ -105,7 +113,7 @@ class VM(AbstractNode):
         
         cdromSource = etree.SubElement(cdromDisk, "source")
         cdromSourceAttrib = cdromSource.attrib
-        cdromSourceAttrib["file"] = self.getPathToCdImage(user)
+        cdromSourceAttrib["file"] = str(self.getPathToCdImage(user))
         
         cdromTarget = etree.SubElement(cdromDisk, "target")
         cdromTargetAttrib = cdromTarget.attrib
@@ -128,7 +136,7 @@ class VM(AbstractNode):
             
             hdSource = etree.SubElement(hdDisk, "source")
             hdSourceAttrib = hdSource.attrib
-            hdSourceAttrib["file"] = self.getPathToHdImage(user)
+            hdSourceAttrib["file"] = str(self.getPathToHdImage(user))
             
             hdTarget = etree.SubElement(hdDisk, "target")
             hdTargetAttrib = hdTarget.attrib
@@ -144,11 +152,11 @@ class VM(AbstractNode):
         
         bridgeIfMac = etree.SubElement(bridgeInterface, "mac")
         bridgeIfMacAttrib = bridgeIfMac.attrib
-        bridgeIfMacAttrib["address"] = self.maintainanceMac
+        bridgeIfMacAttrib["address"] = str(self.maintainanceMac)
         
         bridgeIfSource = etree.SubElement(bridgeInterface, "source")
         bridgeIfSourceAttrib = bridgeIfSource.attrib
-        bridgeIfSourceAttrib["bridge"] = self.host.bridgedInterfaceName
+        bridgeIfSourceAttrib["bridge"] = str(self.host.bridgedInterfaceName)
         
         bridgeIfModel = etree.SubElement(bridgeInterface, "model")
         bridgeIfModelAttrib = bridgeIfModel.attrib
@@ -158,10 +166,10 @@ class VM(AbstractNode):
         
         for interface in self.interfaces:
             
-            if interface.ip == None or \
-                interface.ip.network == None or \
-                not isinstance(interface.ip.network, dissomniag.model.generatedNetwork) or \
-                interface.ip.network.state != dissomniag.mode.GenNetworkStates.CREATED:
+            if interface.ipAddresses == [] or \
+                interface.ipAddresses[0].network == None or \
+                not isinstance(interface.ipAddresses[0].network, dissomniag.model.generatedNetwork) or \
+                interface.ipAddresses[0].network.state != dissomniag.model.GenNetworkState.CREATED:
                 
                 continue
             
@@ -175,7 +183,7 @@ class VM(AbstractNode):
             
             interfSource = etree.SubElement(interf, "source")
             interfSourceAttrib = interfSource.attrib
-            interfSourceAttrib["network"] = interface.ip.network.name
+            interfSourceAttrib["network"] = interface.ipAddresses[0].network.name
             
             interfModel = etree.SubElement(interf, "model")
             interfModelAttrib = interfModel.attrib
@@ -207,8 +215,8 @@ class VM(AbstractNode):
         vnc = etree.SubElement(devices, "graphics")
         vncAttrib = vnc.attrib
         vncAttrib["type"] = "vnc"
-        vncAttrib["port"] = self.vncPort
-        vncAttrib["passwd"] = self.vncPassword
+        vncAttrib["port"] = str(self.vncPort)
+        vncAttrib["passwd"] = str(self.vncPassword)
         vncAttrib["keymap"] = "de"
         
         sound = etree.SubElement(devices, "sound")
@@ -226,7 +234,7 @@ class VM(AbstractNode):
     
     def getLibVirtString(self, user):
         self.authUser(user)
-        return etree.tostring(self.getLibVirtXml(user), pretty_print = True)
+        return etree.tostring(self.getLibVirtXML(user), pretty_print = True)
     
     def getRamSize(self, user):
         self.authUser(user)
@@ -246,13 +254,12 @@ class VM(AbstractNode):
         return str(ram)
     
     def getHdSize(self, user):
-        pass
-        
+        pass       
     
     def getUtilityFolder(self, user):
         self.authUser(user)
         
-        allVmsFolder = os.path.join(self.utilityFolder, dissomniag.config.hostConfig.vmSubdirectory)
+        allVmsFolder = os.path.join(self.host.utilityFolder, dissomniag.config.hostConfig.vmSubdirectory)
         vmFolder = os.path.join(allVmsFolder, self.commonName)
         return vmFolder
     
@@ -276,10 +283,45 @@ class VM(AbstractNode):
         return "/usr/bin/kvm"
     
     def authUser(self, user):
-        if user in self.topology.users or user.isAdmin:
+        if user.isAdmin or (self.topology != None and user in self.topology.users):
             return True
         raise dissomniag.UnauthorizedFunctionCall()
     
+    def getFreeVNCPortOnHost(self, user, host):
+        self.authUser(user)
+        selectablePort = 4004
+        seen = []
+        vmsOnHost = host.virtualMachines
+        
+        for vm in vmsOnHost:
+            if vm.vncPort != None:
+                seen.append(int(vm.vncPort))
+        
+        selected = False
+        
+        while not selected:
+            if not selectablePort in seen:
+                selected = True
+                break
+            else:
+                selectablePort = selectablePort + 1
+        
+        return str(selectablePort)
+    
+    def addInterfaceToNet(self, user, net):
+        self.authUser(user)
+        if not isinstance(net, dissomniag.model.generatedNetwork):
+            raise TypeError("The net object is not a generatedNetwork.")
+        
+        if not self.host in net.nodes:
+            raise TypeError("The net object does not belong to the current host.")
+        addrs = []
+        addrs.append(net.getFreeAddress(user))
+        interfaceName = Interface.getFreeName(user, self)
+        self.addInterface(user, interfaceName, ipAddresses = addrs, net = net)
+        
+        
+        
     @staticmethod
     def deleteVM(user, node):
         if node == None or type(node) != VM:

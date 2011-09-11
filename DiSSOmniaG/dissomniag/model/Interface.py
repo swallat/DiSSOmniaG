@@ -21,11 +21,12 @@ class Interface(dissomniag.Base):
     
     __table_args_ = (sa.UniqueConstraint('node_id', 'name'))
     
+    namePrefix = "eth"
     """
     classdocs
     """
     
-    def __init__(self, user, node, name, mac):
+    def __init__(self, user, node, name = None, mac = None):
         session = dissomniag.Session()
         self.node = node
         self.macAddress = mac
@@ -33,7 +34,7 @@ class Interface(dissomniag.Base):
         session.add(self)
         session.commit()
             
-    def addIp(self, user, ipAddrOrNet):
+    def addIp(self, user, ipAddrOrNet, net = None):
         
         self.authUser(user)
         
@@ -66,7 +67,7 @@ class Interface(dissomniag.Base):
                 found = False
         finally:
             if found == False and ip == None:
-                ip = dissomniag.model.IpAddress(user, ipAddrOrNet, self.node)
+                ip = dissomniag.model.IpAddress(user, ipAddrOrNet, self.node, net = net)
                 self.ipAddresses.append(ip)
                 session.commit()
                 return ip
@@ -82,6 +83,47 @@ class Interface(dissomniag.Base):
     
     def authUser(self, user):
         return self.node.authUser(user)
+    
+    @staticmethod
+    def getFreeName(user, node):
+        node.authUser(user)
+        
+        name = None
+        existingNames = []
+        numberPattern = "([1-9]?[0-9]*)$"
+        for interface in node.interfaces:
+            existingNames.append(str(interface.name))
+            
+        
+        if not existingNames:
+            name = ("%s%d" % (Interface.namePrefix, 0))
+        else:
+            seen = []
+            for names in existingNames:
+                seen.append(int(re.search(numberPattern, names).groups()[0]))
+            seen = sorted(seen)
+            found = False
+            last = None
+            for value in seen:
+                if last == None: 
+                    last = value
+                    if value == 1:
+                        last = 0
+                        found = True
+                        break
+                    continue
+                elif last == (value - 1): 
+                    last = value
+                    continue 
+                else:
+                    found = True
+                    last = (value - 1) 
+                    break
+            if not found:
+                last = last + 1
+            
+            name = ("%s%d" % (Interface.namePrefix, last))
+        return name
     
     @staticmethod
     def checkValidMac(mac):

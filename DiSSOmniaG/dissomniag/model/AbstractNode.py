@@ -110,7 +110,7 @@ class AbstractNode(dissomniag.Base):
             self.maintainanceIP = self.ipAddresses[0]
         
             
-    def addIp(self, user, ipAddrOrNet, isMaintainanceIP = False, interface = None):
+    def addIp(self, user, ipAddrOrNet, isMaintainanceIP = False, interface = None, net = None):
         """
         Add a Ip to a Node
         By setting an Interface, you specify the interface to which the Ip should belong.
@@ -159,9 +159,9 @@ class AbstractNode(dissomniag.Base):
         finally:
             if found == False and ip == None:
                 if interface != None and interface in self.interfaces:
-                    ip = interface.addIp(user, ipAddrOrNet)
+                    ip = interface.addIp(user, ipAddrOrNet, net = net)
                 else:
-                    ip = dissomniag.model.IpAddress(user, ipAddrOrNet, self)
+                    ip = dissomniag.model.IpAddress(user, ipAddrOrNet, self, net = net)
                     self.ipAddresses.append(ip)
                 if isMaintainanceIP:
                     oldMaintainance = self.getMaintainanceIP()
@@ -236,12 +236,12 @@ class AbstractNode(dissomniag.Base):
             if myInt != None:
                 self.interfaces.append(myInt)
                 savedInterfaces.append(myInt)
-            # Delete unused Interfaces
-            for interface in self.interfaces:
-                if not (interface in savedInterfaces):
-                    Interface.deleteInterface(user, interface, isAdministrative = True)
+        # Delete unused Interfaces
+        for interface in self.interfaces:
+            if not (interface in savedInterfaces):
+                Interface.deleteInterface(user, interface, isAdministrative = True)
     
-    def addInterface(self, user, name, mac = None, ipAddresses = []):
+    def addInterface(self, user, name, mac = None, ipAddresses = [], net = None):
         """
         This method adds an interface to the current node with the name = "name".
         If no Mac Address is provided, a new one is generated.
@@ -284,15 +284,15 @@ class AbstractNode(dissomniag.Base):
                     Interface.deleteInterface(user, inter, isAdministrative = True)             
         finally:
             if interface == None:
-                interface = Interface(self, user, name, mac)
+                interface = Interface(user, self, name, mac)
                 self.interfaces.append(interface)
                 
             for ipAddr in ipAddresses:
-                interface.addIP(user, ipAddr)     
+                interface.addIp(user, ipAddr, net = net)     
             try:
-                equalNamedInterfaces = session.quer(Interface).filter(Interface.name == name).filter(Interface.node == self).all()
+                equalNamedInterfaces = session.query(Interface).filter(Interface.name == name).filter(Interface.node == self).all()
                 for namedInterface in equalNamedInterfaces:
-                    if namedInterface.mac != mac:
+                    if namedInterface.macAddress != mac:
                         #Delete all Equally named Interfaces
                         Interface.deleteInterface(user, namedInterface, isAdministrative = True)
             except NoResultFound:
@@ -336,9 +336,12 @@ class AbstractNode(dissomniag.Base):
             for myInter in self.interfaces:
                 if myInter == interface:
                     continue
+                elif not myInter.ipAddresses:
+                    continue
                 else:
-                    myInter.ipAddresses[0].isMaintainance = True
-                    return True
+                    if myInter.ipAddresses:
+                        myInter.ipAddresses[0].isMaintainance = True
+                        return True
             return False
         else:
             return True
