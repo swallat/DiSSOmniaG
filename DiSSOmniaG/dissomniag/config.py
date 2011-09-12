@@ -47,6 +47,7 @@ class dissomniag(ParseSection):
         self.configDir = self.parseOption(self.sectionName, "configDir", ".")
         self.rsaKeyPrivate = self.parseOption(self.sectionName, "rsaKey", "ssh_key")
         self.rsaKeyPublic = self.parseOption(self.sectionName, "rsaKeyPub", "ssh_key.pub")
+        self.utilityFolder = self.parseOption(self.sectionName, "utilityFolder", "/var/lib/dissomniag/server/")
         return self
 dissomniag = dissomniag(config, "dissomniag").parse()
 
@@ -116,7 +117,7 @@ dispatcher = dispatcher(config, "DISPATCHER").parse()
 class hostConfig(ParseSection):
     
     def parse(self):
-        self.hostFolder = self.parseOption(self.sectionName, "hostFolder", "/var/lib/dissomniag/")
+        self.hostFolder = self.parseOption(self.sectionName, "hostFolder", "/var/lib/dissomniag/host/")
         self.vmSubdirectory = self.parseOption(self.sectionName, "vmSubDirectory", "vms/")
         return self
 

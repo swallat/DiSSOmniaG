@@ -25,7 +25,6 @@ class VM(AbstractNode):
     vncPort = sa.Column(sa.String)
     vncPassword = sa.Column(sa.String(40))
     dynamicAptList = sa.Column(sa.String)
-    maintainanceMac = sa.Column(sa.String(17))
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))
     host = orm.relationship("Host", primaryjoin = "VM.host_id == Host.host_id", backref = "virtualMachines")
@@ -39,13 +38,15 @@ class VM(AbstractNode):
     
     def __init__(self, user, commonName, host):
         
-        self.maintainanceMac = dissomniag.model.Interface.getRandomMac()
-        
         if host != None and isinstance(host, dissomniag.model.Host):
             self.host = host
         
         super(VM, self).__init__(user, commonName, state = dissomniag.model.NodeState.NOT_CREATED)
         self.vncPort = self.getFreeVNCPortOnHost(user, host)
+        
+        interface = self.addInterface(user, "maintain")
+        interface.maintainanceInterface = True
+        
         session = dissomniag.Session()    
         session.commit()
     
@@ -145,6 +146,7 @@ class VM(AbstractNode):
             
         
         #3. Insert maintainance network interface
+        maintainanceInterface = self.getMaintainanceInterface(user)
         
         bridgeInterface = etree.SubElement(devices, "interface")
         bridgeInterfaceAttrib = bridgeInterface.attrib
@@ -152,7 +154,7 @@ class VM(AbstractNode):
         
         bridgeIfMac = etree.SubElement(bridgeInterface, "mac")
         bridgeIfMacAttrib = bridgeIfMac.attrib
-        bridgeIfMacAttrib["address"] = str(self.maintainanceMac)
+        bridgeIfMacAttrib["address"] = str(maintainanceInterface.macAddress)
         
         bridgeIfSource = etree.SubElement(bridgeInterface, "source")
         bridgeIfSourceAttrib = bridgeIfSource.attrib
@@ -317,8 +319,18 @@ class VM(AbstractNode):
             raise TypeError("The net object does not belong to the current host.")
         addrs = []
         addrs.append(net.getFreeAddress(user))
+        
         interfaceName = Interface.getFreeName(user, self)
+        
         self.addInterface(user, interfaceName, ipAddresses = addrs, net = net)
+    
+    def getMaintainanceInterface(self, user):
+        self.authUser(user)
+        
+        for interface in self.interfaces:
+            if interface.maintainanceInterface:
+                return interface
+        return None
         
     def start(self, user):
         self.authUser(user)
@@ -338,7 +350,7 @@ class VM(AbstractNode):
         dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
     
-    def status(self, user):
+    def refresh(self, user):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add(self, "vm")
@@ -369,13 +381,13 @@ class VM(AbstractNode):
         
         
     @staticmethod
-    def deleteVM(user, node):
-        if node == None or type(node) != VM:
+    def deleteVm(user, node):
+        if node == None or not isinstance(node, VM):
             return False
         node.authUser(user)
         
         #1. Delete LiveCD
-        if node.liveCD != None and type(node.liveCd) == dissomniag.model.LiveCd:
+        if node.liveCd != None and type(node.liveCd) == dissomniag.model.LiveCd:
             dissomniag.model.LiveCd.deleteLiveCd(node.liveCd)
 
         #2. Delete Interfaces

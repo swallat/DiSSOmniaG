@@ -10,6 +10,25 @@ import sqlalchemy.orm as orm
 import dissomniag
 from dissomniag.model import *
 
+class LiveCdEnvironment(dissomniag.utils.SingletonMixin):
+    
+    usable = False
+    errorInfo = []
+    
+    def makeInitialChecks(self):
+        pass
+    
+    def getErrorInfo(self):
+        if self.usable == True:
+            return None
+        else:
+            returnMe = ""
+            if self.errorInfo == []:
+                returnMe = "Not Initialized"
+            else:
+                for line in self.errorInfo:
+                    returnMe += str(line)
+
 class LiveCd(dissomniag.Base):
     __tablename__ = 'livecds'
     id = sa.Column(sa.Integer, primary_key = True)

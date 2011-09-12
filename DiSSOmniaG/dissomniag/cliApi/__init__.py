@@ -93,7 +93,34 @@ def stopNet(*args):
 def refreshNet(*args):
     import ManageNets
     ManageNets.refreshNet().call(*args)
+    
+def vms(*args):
+    import ManageVms
+    ManageVms.vms().call(*args)
 
+def addVm(*args):
+    import ManageVms
+    ManageVms.addVm().call(*args)
+
+def delVm(*args):
+    import ManageVms
+    ManageVms.delVm().call(*args)
+    
+def startVm(*args):
+    import ManageVms
+    ManageVms.startVm().call(*args)
+
+def stopVm(*args):
+    import ManageVms
+    ManageVms.stopVm().call(*args)
+    
+def refreshVm(*args):
+    import ManageVms
+    ManageVms.refreshVm().call(*args)
+    
+def vmAddInterface(*args):
+    import ManageVms
+    ManageVms.vmAddInterface().call(*args)
 def testSubprocess(terminal, user, *args):
     import sys
     sys.stdout = terminal

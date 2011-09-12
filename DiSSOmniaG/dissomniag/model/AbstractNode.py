@@ -332,7 +332,7 @@ class AbstractNode(dissomniag.Base):
     
     def reDefineMaintainanceIPOnInterfaceDelete(self, user, interface):
         self.authUser(user)
-        if self.maintainanceIP.interface == interface:
+        if hasattr(self, "maintainanceIP") and self.maintainanceIP != None and self.maintainanceIP.interface == interface:
             for myInter in self.interfaces:
                 if myInter == interface:
                     continue

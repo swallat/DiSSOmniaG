@@ -18,6 +18,7 @@ class Interface(dissomniag.Base):
     node_id = sa.Column(sa.Integer, sa.ForeignKey('nodes.id'), nullable = False) #One to many style
     name = sa.Column(sa.String(20), nullable = False)
     macAddress = sa.Column(sa.String(17), nullable = False, unique = True)
+    maintainanceInterface = sa.Column(sa.Boolean, nullable = False, default = False)
     
     __table_args_ = (sa.UniqueConstraint('node_id', 'name'))
     
@@ -100,7 +101,10 @@ class Interface(dissomniag.Base):
         else:
             seen = []
             for names in existingNames:
-                seen.append(int(re.search(numberPattern, names).groups()[0]))
+                result = re.search(numberPattern, names).groups()
+                if result[0] != '':
+                    seen.append(int(result[0]))
+            
             seen = sorted(seen)
             found = False
             last = None
@@ -119,6 +123,9 @@ class Interface(dissomniag.Base):
                     found = True
                     last = (value - 1) 
                     break
+            if last == None:
+                last = 0
+                found = True
             if not found:
                 last = last + 1
             

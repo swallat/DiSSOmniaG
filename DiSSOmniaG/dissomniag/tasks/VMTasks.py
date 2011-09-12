@@ -4,6 +4,7 @@ Created on 31.08.2011
 
 @author: Sebastian Wallat
 """
+import libvirt
 import sqlalchemy as sa
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
@@ -26,6 +27,7 @@ class DeleteVM(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.UnrevertableFailure("Not all IPs, Interfaces or the LiveCD are deleted of the VM.")
         
         try:
+            session = dissomniag.Session()
             session.delete(vm)
             session.commit()
             self.context.vm = None
@@ -44,21 +46,21 @@ class createVMOnHost(dissomniag.taskManager.AtomicTask):
     success = False
     
     def run(self):
-        if not hasattr(self.context, "vm") or not isinstance(self.context.net, dissomniag.model.VM):
+        if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
             self.job.trace("createVM: In Context missing net object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
         
         try:
-            con = libvirt.open(str(self.context.vm.host(self.job.getUser()).qemuConnector))
+            con = libvirt.open(str(self.context.vm.host.qemuConnector))
         except libvirt.libvirtError:
             raise dissomniag.taskManager.TaskFailed("Could Not Connect to Libvirt Host!")
         
         try:
-            vm = con.createXML(self.context.vm.getLibVirtString(self.job.getUser()))
+            vm = con.createXML(self.context.vm.getLibVirtString(self.job.getUser()), 0)
         except libvirt.libvirtError:
             self.job.trace("CreateVM: Could not create vm. The network is already created or there is an error.")
             try:
-                vm = con.lookupByName(self.context.vm.name)
+                vm = con.lookupByName(self.context.vm.commonName)
             except libvirt.libvirtError:
                 self.job.trace("CreateVM: Could not create a vm.")
                 self.context.vm.state = dissomniag.model.NodeState.CREATION_ERROR
@@ -78,16 +80,16 @@ class createVMOnHost(dissomniag.taskManager.AtomicTask):
     
     def revert(self):
         if self.success:
-            if not hasattr(self.context, "vm") or not isinstance(self.context.net, dissomniag.model.VM):
+            if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
                 self.job.trace("createVM: In Context missing net object.")
                 raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
             try:
-                con = libvirt.open(str(self.context.vm.host(self.job.getUser()).qemuConnector))
+                con = libvirt.open(str(self.context.vm.host.qemuConnector))
             except libvirt.libvirtError:
                 raise dissomniag.taskManager.TaskFailed("Could Not Connect to Libvirt Host!")
             
             try:
-                vm = con.lookupByName(self.context.vm.name)
+                vm = con.lookupByName(self.context.vm.commonName)
             except libvirt.libvirtError:
                 self.job.trace("CreateNetwork: Could not find network.")
                 self.context.vm.state = dissomniag.model.NodeState.CREATION_ERROR
@@ -121,17 +123,17 @@ Destroy and undefine network on Host
 class destroyVMOnHost(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if not hasattr(self.context, "vm") or not isinstance(self.context.net, dissomniag.model.VM):
+        if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
             self.job.trace("destroyVM: In Context missing net object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
         
         try:
-            con = libvirt.open(str(self.context.vm.host(self.job.getUser()).qemuConnector))
+            con = libvirt.open(str(self.context.vm.host.qemuConnector))
         except libvirt.libvirtError:
             raise dissomniag.taskManager.TaskFailed("Could Not Connect to Libvirt Host!")
         
         try:
-            vm = con.lookupByName(self.context.vm.name)
+            vm = con.lookupByName(self.context.vm.commonName)
         except libvirt.libvirtError:
             self.job.trace("destroyVMOnHost: Could not find VM on host.")
         else:
@@ -151,18 +153,18 @@ class destroyVMOnHost(dissomniag.taskManager.AtomicTask):
 class statusVM(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if not hasattr(self.context, "vm") or not isinstance(self.context.net, dissomniag.model.VM):
+        if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
             self.job.trace("statusVM: In Context missing net object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
         session = dissomniag.Session()
         con = None
         try:
-            con = libvirt.open(str(self.context.vm.host(self.job.getUser()).qemuConnector))
+            con = libvirt.open(str(self.context.vm.host.qemuConnector))
         except libvirt.libvirtError:
             raise dissomniag.taskManager.TaskFailed("Could Not Connect to Libvirt Host!")
         
         try:
-            vm = con.lookupByName(self.context.vm.name)
+            vm = con.lookupByName(self.context.vm.commonName)
         except libvirt.libvirtError:
             if self.context.vm.state == dissomniag.model.NodeState.NOT_CREATED:
                 return dissomniag.taskManager.TaskReturns.SUCCESS

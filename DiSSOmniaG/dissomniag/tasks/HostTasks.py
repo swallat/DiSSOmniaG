@@ -235,7 +235,7 @@ class checkUtilityDirectory(dissomniag.taskManager.AtomicTask):
                 raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
             maintainanceIp = self.context.host.getMaintainanceIP().addr
             
-            deleteCmd = dissomniag.utils.SSHCommand("rm -rf %s" % self.context.host.utilityFolder, hostOrIp = maintainanceIp, user = self.context.host.administrativeUserName)
+            deleteCmd = dissomniag.utils.SSHCommand("rm -rf %s" % self.context.host.utilityFolder, hostOrIp = maintainanceIp, username = self.context.host.administrativeUserName)
             code, output = deleteCmd.callAndGetOutput()
             if code != 0:
                 self.job.trace("checkUtilityDirectory: Cannot revert! Output: %s" % output)
