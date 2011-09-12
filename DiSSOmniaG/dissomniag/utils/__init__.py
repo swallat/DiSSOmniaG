@@ -5,4 +5,5 @@ from wrapper import *
 import PingUtils
 from cmdHelpers import *
 from SSHCommand import *
+from SingletonMixin import *
 

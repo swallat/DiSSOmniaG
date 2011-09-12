@@ -10,7 +10,7 @@ import sqlalchemy.orm as orm
 import dissomniag
 from dissomniag.model import *
 
-class LiveCdEnvironment(dissomniag.utils.SingletonMixin):
+class LiveCdEnvironment(dissomniag.utils.Singleton):
     
     usable = False
     errorInfo = []

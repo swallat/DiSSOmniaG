@@ -94,7 +94,7 @@ class Identity():
         rsaKey = keys.Key.fromString(privateKeyString)
         publicKeyString = file(sshPublicKey, 'r').read()
         
-        self._checkRsaKeyAdded(sshPrivateKey, publicKeyString)
+        #self._checkRsaKeyAdded(sshPrivateKey, publicKeyString)
         if all:
             return sshPrivateKey, privateKeyString, sshPublicKey, publicKeyString
         else:
