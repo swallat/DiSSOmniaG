@@ -320,6 +320,52 @@ class VM(AbstractNode):
         interfaceName = Interface.getFreeName(user, self)
         self.addInterface(user, interfaceName, ipAddresses = addrs, net = net)
         
+    def start(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Start a VM", user = user)
+        job.addTask(dissomniag.tasks.createVMOnHost())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
+    
+    def stop(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Stop a VM", user = user)
+        job.addTask(dissomniag.tasks.destroyVMOnHost())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
+    
+    def status(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Refresh a VM", user = user)
+        job.addTask(dissomniag.tasks.statusVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
+    
+    """
+    After status check. Get the vm in a consitent state.
+    """
+    def operate(self, user):
+        if self.state == dissomniag.model.NodeState.RUNTIME_ERROR:
+            context = dissomniag.taskManager.Context()
+            context.add(self, "vm")
+            job = dissomniag.taskManager.Job(context, "Consisteny Operation: Delete VM", user)
+            job.addTask(dissomniag.tasks.destroyVMkOnHost())
+            dissomniag.taskManager.Dispatcher.addJob(user, job)
+            
+        elif self.state == dissomniag.model.NodeState.CREATION_ERROR:
+            context = dissomniag.taskManager.Context()
+            context.add(self, "vm")
+            job = dissomniag.taskManager.Job(context, "Consisteny Operation: Try to create vm", user)
+            job.addTask(dissomniag.tasks.createVMOnHost())
+            dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
+        
         
         
     @staticmethod
