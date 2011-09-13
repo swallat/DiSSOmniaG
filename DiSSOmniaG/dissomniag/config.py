@@ -5,7 +5,7 @@ Created on 19.07.2011
 @author: Sebastian Wallat
 """
 from abc import ABCMeta, abstractmethod
-
+import pwd, grp, os
 import ConfigParser
 
 config = ConfigParser.SafeConfigParser()
@@ -47,7 +47,14 @@ class dissomniag(ParseSection):
         self.configDir = self.parseOption(self.sectionName, "configDir", ".")
         self.rsaKeyPrivate = self.parseOption(self.sectionName, "rsaKey", "ssh_key")
         self.rsaKeyPublic = self.parseOption(self.sectionName, "rsaKeyPub", "ssh_key.pub")
-        self.utilityFolder = self.parseOption(self.sectionName, "utilityFolder", "/var/lib/dissomniag/server/")
+        self.utilityFolder = self.parseOption(self.sectionName, "utilityFolder", "/var/lib/dissomniag/")
+        self.serverFolder = os.path.join(self.utilityFolder, "server/")
+        self.liveCdPatternDirectory = self.parseOption(self.sectionName, "liveCdPatternDirectory", "Pattern")
+        self.user = self.parseOption(self.sectionName, "user", "sw")
+        self.group = self.parseOption(self.sectionName, "group", "sw")
+        self.userId = pwd.getpwnam(self.user).pw_uid
+        self.groupId = grp.getgrnam(self.group).gr_gid
+        
         return self
 dissomniag = dissomniag(config, "dissomniag").parse()
 

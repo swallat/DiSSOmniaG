@@ -416,6 +416,8 @@ class Job(threading.Thread):
             self._reFetchInfoObj()
             if self.infoObj.trace == None:
                 self.infoObj.trace = traceMessage + "\n"
+            elif traceMessage == None:
+                self.infoObj.trace += "\n"
             else:
                 self.infoObj.trace += traceMessage + "\n"
             

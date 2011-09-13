@@ -34,7 +34,7 @@ class Host(AbstractNode):
         if administrativeUserName != None:
             self.administrativeUserName = administrativeUserName
             
-        self.qemuConnector = "qemu+ssh://%s@%s/system?no_tty=1,no_verify=1" % (self.administrativeUserName, maintainanceIP)
+        self.qemuConnector = "qemu+ssh://%s@%s/system?no_verify=1,no_tty=1" % (self.administrativeUserName, maintainanceIP)
         
         self.bridgedInterfaceName = bridgedInterfaceName
         

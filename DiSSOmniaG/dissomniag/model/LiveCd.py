@@ -4,6 +4,7 @@ Created on 05.08.2011
 
 @author: Sebastian Wallat
 """
+
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
@@ -14,6 +15,7 @@ class LiveCdEnvironment(dissomniag.utils.Singleton):
     
     usable = False
     errorInfo = []
+    prepared = False
     
     def makeInitialChecks(self):
         pass
@@ -28,6 +30,7 @@ class LiveCdEnvironment(dissomniag.utils.Singleton):
             else:
                 for line in self.errorInfo:
                     returnMe += str(line)
+            return returnMe
 
 class LiveCd(dissomniag.Base):
     __tablename__ = 'livecds'

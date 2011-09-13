@@ -5,6 +5,7 @@ Created on 08.08.2011
 @author: Sebastian Wallat
 """
 import os, subprocess, shlex, logging
+import pwd
 from abc import abstractmethod
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
@@ -13,6 +14,7 @@ from twisted.conch.ssh import keys
 import random
 import string
 import dissomniag
+import os
 
 log = logging.getLogger("Identity")
 
@@ -75,6 +77,11 @@ class Identity():
     
     
     def getRsaKeys(self, all = None):
+        uidBefore = os.geteuid()
+        os.seteuid(0)
+        gidBefore = os.getgid()
+        os.setegid(0)
+        self._prepareSSHEnvironment()
         sshPrivateKey = os.path.join(dissomniag.config.dissomniag.configDir, dissomniag.config.dissomniag.rsaKeyPrivate)
         sshPrivateKey = os.path.abspath(sshPrivateKey)
         sshPublicKey = os.path.join(dissomniag.config.dissomniag.configDir, dissomniag.config.dissomniag.rsaKeyPublic)
@@ -94,7 +101,9 @@ class Identity():
         rsaKey = keys.Key.fromString(privateKeyString)
         publicKeyString = file(sshPublicKey, 'r').read()
         
-        #self._checkRsaKeyAdded(sshPrivateKey, publicKeyString)
+        self._checkRsaKeyAdded(sshPrivateKey, publicKeyString)
+        os.setegid(gidBefore)
+        os.seteuid(uidBefore)
         if all:
             return sshPrivateKey, privateKeyString, sshPublicKey, publicKeyString
         else:
@@ -125,6 +134,26 @@ class Identity():
         else:
             log.debug("SSH Key added to environment")
         
+    def _prepareSSHEnvironment(self):
+        proc = subprocess.Popen("ssh-agent", stdout = subprocess.PIPE,
+                                            stderr = subprocess.STDOUT)
+        lines = []
+        while True:
+            line = proc.stdout.readline()
+            if not line:
+                break
+            lines.append(line)
+            
+        for line in lines:
+            commands = line.split(";")
+            if len(commands) == 1 and commands[0] == '1':
+                continue
+            for command in commands:
+                pointers = command.split("=")
+                if len(pointers) != 2:
+                    continue
+                log.info(command)
+                os.environ[pointers[0]] = pointers[1]
             
 
 identity = None
@@ -145,7 +174,22 @@ def getIdentity():
     
     return identity
 
+def getRoot():
+    os.seteuid(0)
+    os.setegid(0)
+
+def resetPermissions():
+    os.setegid(dissomniag.config.dissomniag.groupId)
+    os.seteuid(dissomniag.config.dissomniag.userId)
+    
+    
+def checkProgrammUserAndGroup():
+        if os.getuid() != 0:
+            raise OSError("The System must be started ad root.")
+        resetPermissions()
+
 def start():
+    checkProgrammUserAndGroup()
     dissomniag.init()
     getIdentity().start()
 
