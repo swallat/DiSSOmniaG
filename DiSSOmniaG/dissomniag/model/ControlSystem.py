@@ -118,7 +118,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         job.addTask(dissomniag.tasks.LiveCdEnvironmentChecks())
         job.addTask(dissomniag.tasks.CheckLiveCdEnvironmentPrepared())
         job.addTask(dissomniag.tasks.PrepareLiveCdEnvironment())
-        dissomniag.taskManager.Dispatcher.addJob(self.user, job)
+        dissomniag.taskManager.Dispatcher.addJobIndependent(self.user, job)
         
         #print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
         log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)

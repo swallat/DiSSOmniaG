@@ -5,6 +5,8 @@ Created on 27.07.2011
 @author: Sebastian Wallat
 """
 import logging
+import subprocess
+import shlex
 from abc import ABCMeta, abstractmethod
 from _pyio import __metaclass__
 
@@ -82,4 +84,23 @@ class AtomicTask:
     @abstractmethod   
     def revert(self):
         raise NotImplementedError()
+    
+    def multiLog(self, msg, log = None):
+        if log != None:
+            log.info(msg)
+        self.job.trace(msg)
         
+    def callSubprocessAndLog(self, cmd, log = log):
+        cmd = shlex.split(cmd)
+        proc = subprocess.Popen(cmd, stdout = subprocess.PIPE,
+                                     stderr = subprocess.STDOUT)
+        
+        while True:
+            line = proc.stdout.readline()
+            if not line:
+                break
+            self.multiLog(line, log)
+        
+        self.stdout, self.stderr = proc.communicate()
+        
+        return proc

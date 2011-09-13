@@ -7,7 +7,11 @@ Created on 02.09.2011
 import os
 import shlex
 import subprocess
+import logging
+
 import dissomniag
+
+log = logging.getLogger("utils.SSHCommand")
 
 class SSHCommand(object):
     
