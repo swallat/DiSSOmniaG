@@ -97,6 +97,7 @@ class AtomicTask:
         
         while True:
             line = proc.stdout.readline()
+            line = line.strip()
             if not line:
                 break
             self.multiLog(line, log)

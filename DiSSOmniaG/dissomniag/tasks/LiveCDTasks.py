@@ -4,7 +4,7 @@ Created on 31.08.2011
 
 @author: Sebastian Wallat
 """
-import os, shutil, subprocess, shlex
+import os, shutil, subprocess, shlex, re, platform
 import apt
 import dissomniag
 
@@ -131,6 +131,178 @@ class CheckLiveCdEnvironmentPrepared(dissomniag.taskManager.AtomicTask):
     
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+class InteractWithLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
+    
+    def __init__(self, prepareFolder, chrootFolder, infoObj):
+        self.chrootFolder = chrootFolder
+        self.log = log
+        self.infoObj = infoObj
+        
+    def multiLog(self, msg, log = log):
+        super(PrepareLiveCdEnvironment, self).multiLog(msg, log)
+        self.infoObj.errorInfo.append(msg)
+    
+    def run(self):
+        raise NotImplementedError()
+    
+    def revert(self):
+        raise NotImplementedError()
+        
+    def prepareChroot(self):
+        # a) Mount /dev
+        devDir = os.path.join(self.chrootFolder, "dev")
+        cmd = "mount --bind /dev %s" % devDir
+        self.multiLog("Running %s" % cmd)
+        
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Could not mount /dev.")
+            dissomniag.resetPermissions()
+            raise dissomniag.taskManager.TaskFailed("Could not mount /dev.")
+        
+        # b) copy /etc/hosts
+        
+        try:
+            shutil.copy2("/etc/hosts", os.path.join(self.chrootFolder, "etc/"))
+        except IOError, e:
+            self.multiLog("Could not copy /etc/hosts. %s" % e)
+            dissomniag.resetPermissions()
+            raise dissomniag.taskManager.TaskFailed("Could not copy /etc/hosts. %s" % e)
+        
+        # c) copy /etc/resolv.conf
+        
+        try:
+            shutil.copy2("/etc/resolv.conf", os.path.join(self.chrootFolder, "etc/"))
+        except IOError, e:
+            self.multiLog("Could not copy /etc/resolv.conf. %s" % e)
+            dissomniag.resetPermissions()
+            raise dissomniag.taskManager.TaskFailed("Could not copy /etc/resolv.conf. %s" % e)
+        
+        # d) copy /etc/apt/sources.list
+        
+        try:
+            shutil.copy2("/etc/apt/sources.list", os.path.join(self.chrootFolder, "etc/apt/"))
+        except IOError, e:
+            self.multiLog("Could not copy /etc/apt/sources.list. %s" % e)
+            dissomniag.resetPermissions()
+            raise dissomniag.taskManager.TaskFailed("Could not copy /etc/apt/sources.list. %s" % e)
+        
+        
+        # e) mount /proc in chroot Environment
+        
+        cmd = "chroot %s mount none -t proc /proc" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Could not mount /proc.")
+            dissomniag.resetPermissions()
+            raise dissomniag.taskManager.TaskFailed("Could not mount /proc.")
+        
+        # f) mount /sys in chroot Environment
+        
+        cmd = "chroot %s mount none -t sysfs /sys" % self.chrootFolder
+        log.info("Running %s" % cmd)
+        
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Could not mount /sys.")
+            dissomniag.resetPermissions()
+            raise dissomniag.taskManager.TaskFailed("Could not mount /sys.")
+        
+        # g) mount /dev/pts in chroot Environment
+        
+        cmd = "chroot %s mount none -t devpts /dev/pts" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Could not mount /dev/pts.")
+            dissomniag.resetPermissions()
+            raise dissomniag.taskManager.TaskFailed("Could not mount /dev/pts.")
+        return True
+    
+    def cleanupChroot(self):
+        
+        #1. Delete Machine Id
+        cmd = "chroot %s rm /var/lib/dbus/machine-id" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+        
+        #2. Remove /sbin/initctl
+        cmd = "chroot %s dpkg-divert --rename --remove /sbin/initctl" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+        
+        #3. Make apt-clean
+        cmd = "chroot %s apt-get clean" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+            
+        #4. Delete /tmp
+        cmd = "chroot %s rm -rf /tmp/*" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+            
+        #5. Remove /etc/resolv.conf
+        cmd = "chroot %s rm /etc/resolv.conf" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+            
+        #6. Umount /proc
+        cmd = "chroot %s umount -lf /proc" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+            
+        #7. Umount /sys
+        cmd = "chroot %s umount -lf /sys" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+            
+        #8. Umount /dev/pts
+        cmd = "chroot %s umount -lf /dev/pts" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+            
+        #9. Umount /dev
+        cmd = "umount -l %s/dev" % self.chrootFolder
+        self.multiLog("Running %s" % cmd)
+        proc = self.callSubprocessAndLog(cmd, log)
+        
+        if proc.returncode != 0:
+            self.multiLog("Cmd Failure %s Returncode: %d" % (cmd, proc.returncode), log)
+            
+        self.multiLog("Cleanup completed.")
+        return True
 
 class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
     
@@ -145,26 +317,28 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
     def checkIfPatternFolderExists(self):
         if os.access(self.patternFolder, os.F_OK):
             try:
-                dissomniag.getRoot()
                 shutil.rmtree(self.patternFolder)
             except OSError, e:
                 self.multiLog("Could not delete Pattern folder. %s" % e)
                 self.infoObj.usable = False
-                raise dissomniag.taskManager.UnrevertableFailure()
-            finally:
                 dissomniag.resetPermissions()
+                raise dissomniag.taskManager.UnrevertableFailure()
+                
             
         try:
             os.mkdir(self.patternFolder)
             os.chown(self.patternFolder,
                      dissomniag.config.dissomniag.userId,
                      dissomniag.config.dissomniag.groupId)
-        except OSError:
-            self.multiLog("Could not LiveCD pattern folder.")
+        except OSError, e:
+            self.multiLog("Could not create LiveCD pattern folder. %s" % e)
             self.infoObj.usable = False
+            dissomniag.resetPermissions()
             raise dissomniag.taskManager.UnrevertableFailure()
+            
     
     def createChrootFolder(self):
+        
         if os.access(self.chrootFolder, os.F_OK):
             shutil.rmtree(self.patternFolder)
             
@@ -174,15 +348,17 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                      dissomniag.config.dissomniag.userId,
                      dissomniag.config.dissomniag.groupId)
         except OSError:
-            self.multiLog("Could not LiveCD pattern folder.")
+            self.multiLog("Could not create chroot folder.")
             self.infoObj.usable = False
+            dissomniag.resetPermissions()
             raise dissomniag.taskManager.UnrevertableFailure()
         
     def debootStrap(self):
         arch = "amd64"
-        release = "stable"
+        release = platform.dist()[2]
+        mirror = "ftp://ftp.hosteurope.de/mirror/archive.ubuntu.com/"
 
-        debootCmd = "debootstrap --arch=%s %s %s" % (arch, release, self.chrootFolder)
+        debootCmd = "debootstrap --arch=%s %s %s %s" % (arch, release, self.chrootFolder, mirror)
         self.multiLog("Running %s" % debootCmd)
         
         dissomniag.getRoot()
@@ -271,14 +447,15 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             
         self.multiLog("Cleanup completed.")
         
-    def callStandardOnCmdHandler(self, cmd, cmdHandler):
+    def callStandardOnCmdHandler(self, cmd, cmdHandler, doYes = False, ignoreError = False):
         self.multiLog("Running %s" % cmd, log)
-        ret = cmdHandler.callCmd(cmd)
+        ret, output = cmdHandler.callCmd(cmd, doYes)
         if ret != 0:
             self.multiLog("Cannot %s" % cmd, log)
-            dissomniag.resetPermissions()
-            cmdHandler.close()
-            raise dissomniag.taskManager.TaskFailed("Cannot %s" % cmd)
+            if not ignoreError:
+                dissomniag.resetPermissions()
+                cmdHandler.close()
+                raise dissomniag.taskManager.TaskFailed("Cannot %s" % cmd)
         
         
     def run(self):
@@ -291,19 +468,20 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         #1. Check if Pattern folder exists. 
         #    True: Delete, and recreate it
         #    False: just create it
-        
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder,
                                 dissomniag.config.dissomniag.liveCdPatternDirectory)
-        
-        #self.checkIfPatternFolderExists()
+        self.chrootFolder = os.path.join(self.patternFolder, "chroot")
+        dissomniag.getRoot()
+        self.cleanUp()
+        #raise dissomniag.taskManager.TaskFailed()
+        self.checkIfPatternFolderExists()
         
         #2. Create chroot folder
-        self.chrootFolder = os.path.join(self.patternFolder, "chroot")
-        #self.createChrootFolder()
         
-        raise dissomniag.taskManager.TaskFailed()
+        self.createChrootFolder()
+        
         #3. Debootstrab in chroot directory
-        #self.debootStrap()
+        self.debootStrap()
         
         #4. Prepare the chroot folder to install packages
         
@@ -388,46 +566,70 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         
         # Create SubprocessCommand
         cmdHandler = dissomniag.utils.InteractiveCommand("chroot %s" % self.chrootFolder, log)
-        cmdHandler.init()
         
         # a) export HOME
         self.callStandardOnCmdHandler("export HOME=/root", cmdHandler)
         
+        self.callStandardOnCmdHandler('export DEBIAN_FRONTEND="noninteractive"', cmdHandler) 
         # b) export LC_ALL
-        self.callStandardOnCmdHandler("export LC_ALL=de_DE.utf8", cmdHandler)
-        
+        self.callStandardOnCmdHandler("export LC_ALL=C", cmdHandler)
         # c) export LANG
-        self.callStandardOnCmdHandler("export LANG=de_DE.utf8", cmdHandler)
+        self.callStandardOnCmdHandler("export LANG=C", cmdHandler)
+        self.callStandardOnCmdHandler("export LANGUAGE=C", cmdHandler)
         
-        # d) add apt key
-        self.callStandardOnCmdHandler("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 12345678", cmdHandler)
+        # d) getKeys to Install
+        cmd = "apt-get -y --force-yes update"
+        self.multiLog("Running %s" % cmd, log)
+        ret, output = cmdHandler.callCmd(cmd, doYes = True)
+        if output == [] and ret != 0:
+            self.multiLog("Cannot %s" % cmd, log)
+            dissomniag.resetPermissions()
+            cmdHandler.close()
+            raise dissomniag.taskManager.TaskFailed("Cannot %s" % cmd)
         
-        # e) add apt update
-        self.callStandardOnCmdHandler("apt-get update", cmdHandler)
+        keysToInstall = []
+        keyPattern = 'W: GPG error:.* NO_PUBKEY (.*)'
+        for line in output:
+            if 'NO_PUBKEY' in line:
+                m = re.search(keyPattern, line)
+                if m:
+                    keysToInstall.append(m.group(1))
+        
+        for key in keysToInstall:
+            self.callStandardOnCmdHandler("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % key, cmdHandler)
+        
+        # e) add apt update and install pgp keys
+        
+        self.callStandardOnCmdHandler("apt-get -y --force-yes -q update", cmdHandler)
         
         # f) add install dbus
-        self.callStandardOnCmdHandler("apt-get install --yes dbus", cmdHandler)
+        self.callStandardOnCmdHandler("apt-get -y --force-yes -q install dbus aptitude", cmdHandler, ignoreError = True)
         
         # g) create dbus uuid
-        self.callStandardOnCmdHandler("dbus-uuidgen > /var/lib/dbus/machine-id", cmdHandler)
+        self.callStandardOnCmdHandler("dbus-uuidgen > /var/lib/dbus/machine-id", cmdHandler, ignoreError = True)
         
         # h) create add /sbin/initctl
-        self.callStandardOnCmdHandler("dpkg-divert --local --rename --add /sbin/initctl", cmdHandler)
+        self.callStandardOnCmdHandler("dpkg-divert --local --rename --add /sbin/initctl", cmdHandler, ignoreError = True)
         
         # i) Install standard environment
-        self.callStandardOnCmdHandler("apt-get install --yes ubuntu-standard casper lupin-casper", cmdHandler)
+        self.callStandardOnCmdHandler("aptitude -y -q -f  install ubuntu-standard casper lupin-casper", cmdHandler, ignoreError = True)
         
         # j) Install additions a
-        self.callStandardOnCmdHandler("apt-get install --yes discover1 laptop-detect os-prober", cmdHandler)
+        self.callStandardOnCmdHandler("aptitude -y -q -f install discover laptop-detect os-prober", cmdHandler, ignoreError = True)
         
         # k) Install additions b
-        self.callStandardOnCmdHandler("apt-get install --yes linux-generic", cmdHandler)
+        self.callStandardOnCmdHandler("aptitude -y -q -f  install linux-generic", cmdHandler, ignoreError = True)
         
         # l) Install additions c
-        self.callStandardOnCmdHandler("apt-get install --yes grub2 plymouth-x11", cmdHandler)
+        self.callStandardOnCmdHandler("aptitude -y -q -f  install grub2 plymouth-x11", cmdHandler, ignoreError = True)
         
         # m) Install additions d
-        self.callStandardOnCmdHandler("apt-get install --yes ubuntu-desktop language-selector language-pack-de language-pack-de-base language-support-de", cmdHandler)
+        self.callStandardOnCmdHandler("aptitude -y -q -f  install ubuntu-desktop language-selector language-pack-de language-pack-de-base language-support-de", cmdHandler, ignoreError = True)
+        
+        self.callStandardOnCmdHandler("aptitude -y -q -f  install ipython python3-all vim guake wireshark acpi nttcp openssh-server traceroute git-core git-svn", cmdHandler, ignoreError = True)
+
+        self.callStandardOnCmdHandler("aptitude -y -q -f  install build-essential gcc g++ bison flex perl tcl-dev tk-dev blt libxml2-dev zlib1g-dev openjdk-6-jre doxygen graphviz openmpi-bin libopenmpi-dev libpcap-dev", cmdHandler, ignoreError = True)
+
         
         # n) Close cmdHandler
         cmdHandler.close()
@@ -435,12 +637,13 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         #6. Leave the chroot environment and cleanup
         self.cleanUp()
         
+        #7. Mark environment as Prepared
+        preparedFile = os.path.join(self.patternFolder, "CHECKED")
+        file = open(preparedFile, 'w')
+        file.write("CHECKED")
+        file.clode()
+        
         dissomniag.resetPermissions()
-        
-        
-            
-        
-        
     
     def revert(self):
         

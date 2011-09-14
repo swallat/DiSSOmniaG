@@ -420,6 +420,7 @@ class Job(threading.Thread):
                 self.infoObj.trace += "\n"
             else:
                 self.infoObj.trace += traceMessage + "\n"
+                
             
     
     def getTrace(self):
