@@ -624,7 +624,10 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         self.callStandardOnCmdHandler("aptitude -y -q -f  install grub2 plymouth-x11", cmdHandler, ignoreError = True)
         
         # m) Install additions d
-        self.callStandardOnCmdHandler("aptitude -y -q -f  install ubuntu-desktop language-selector language-pack-de language-pack-de-base language-support-de", cmdHandler, ignoreError = True)
+        self.callStandardOnCmdHandler("aptitude -y -q -f  install ubuntu-desktop", cmdHandler, ignoreError = True)
+        
+        self.callStandardOnCmdHandler("aptitude -y -q -f  install language-selector language-pack-de language-pack-de-base language-support-de", cmdHandler, ignoreError = True)
+
         
         self.callStandardOnCmdHandler("aptitude -y -q -f  install ipython python3-all vim guake wireshark acpi nttcp openssh-server traceroute git-core git-svn", cmdHandler, ignoreError = True)
 
