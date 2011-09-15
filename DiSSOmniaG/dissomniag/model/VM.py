@@ -192,22 +192,22 @@ class VM(AbstractNode):
             interfModelAttrib["type"] = "virtio"
             
         
-        serial = etree.SubElement(devices, "serial")
-        serialAttrib = serial.attrib
-        serialAttrib["type"] = "pty"
+        #serial = etree.SubElement(devices, "serial")
+        #serialAttrib = serial.attrib
+        #serialAttrib["type"] = "pty"
         
-        serialTarget = etree.SubElement(serial, "target")
-        serialTargetAttrib = serialTarget.attrib
-        serialTargetAttrib["port"] = "0"
+        #serialTarget = etree.SubElement(serial, "target")
+        #serialTargetAttrib = serialTarget.attrib
+        #serialTargetAttrib["port"] = "0"
         
-        console = etree.SubElement(devices, "console")
-        consoleAttrib = console.attrib
-        consoleAttrib["type"] = "pty"
+        #console = etree.SubElement(devices, "console")
+        #consoleAttrib = console.attrib
+        #consoleAttrib["type"] = "pty"
         
-        consoleTarget = etree.SubElement(console, "target")
-        consoleTargetAttrib = consoleTarget.attrib
-        consoleTargetAttrib["type"] = "serial"
-        consoleTargetAttrib["port"] = "0"
+        #consoleTarget = etree.SubElement(console, "target")
+        #consoleTargetAttrib = consoleTarget.attrib
+        #consoleTargetAttrib["type"] = "serial"
+        #consoleTargetAttrib["port"] = "0"
         
         input = etree.SubElement(devices, "input")
         inputAttrib = input.attrib

@@ -644,7 +644,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         preparedFile = os.path.join(self.patternFolder, "CHECKED")
         file = open(preparedFile, 'w')
         file.write("CHECKED")
-        file.clode()
+        file.close()
         
         dissomniag.resetPermissions()
     
