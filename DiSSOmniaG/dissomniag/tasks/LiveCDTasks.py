@@ -336,7 +336,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                 dissomniag.resetPermissions()
                 
                 self.cleanUp()
-    
+
     def revert(self):
         
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder,

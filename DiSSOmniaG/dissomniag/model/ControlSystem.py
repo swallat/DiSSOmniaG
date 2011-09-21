@@ -108,11 +108,11 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         starts The server
         """
         
-        log.info("Securly rollback Session")
-        try:
-            dissomniag.Session().rollback()
-        except Exception:
-            pass
+        #log.info("Securly rollback Session")
+        #try:
+        #    dissomniag.Session().rollback()
+        #except Exception:
+        #    pass
         
         log.info("Starting Dispatcher")
         dissomniag.taskManager.Dispatcher.startDispatcher()

@@ -420,6 +420,9 @@ class Job(threading.Thread):
         """
         with self.writeProperty:
             self._reFetchInfoObj()
+            #try:
+            #    self.infoObj.trace == None
+            #except InvalidRequestError:
             if self.infoObj.trace == None:
                 self.infoObj.trace = traceMessage + "\n"
             elif traceMessage == None:
