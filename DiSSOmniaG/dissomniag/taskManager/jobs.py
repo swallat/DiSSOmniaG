@@ -398,6 +398,12 @@ class Job(threading.Thread):
         with self.writeProperty:
             self.state = JobStates.CANCELLED
     
+    def jobCallIsCancelled(self):
+        if self._getStatePrivate() == JobStates.CANCELLED:
+            return True
+        else:
+            return False
+        
     def cancelBeforeStartup(self):
         with self.runningLock:
             session = dissomniag.Session()

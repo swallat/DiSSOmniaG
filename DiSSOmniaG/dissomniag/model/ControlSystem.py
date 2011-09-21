@@ -99,7 +99,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         else:
             return False    
     
-    def start(self):
+    def run(self):
         if not self.isStarted:
             self.isStarted = True
         else:

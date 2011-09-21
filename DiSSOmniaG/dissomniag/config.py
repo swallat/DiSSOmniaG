@@ -44,18 +44,23 @@ class dissomniag(ParseSection):
     def parse(self):
         self.isCentral = self.bool(self.parseOption(self.sectionName, "isCentral", "True"))
         self.centralIp = self.parseOption(self.sectionName, "CentralSystemIP", "None")
-        self.configDir = self.parseOption(self.sectionName, "configDir", ".")
+        self.configDir = self.parseOption(self.sectionName, "configDir", os.getcwd())
+        self.executableDir = self.parseOption(self.sectionName, "execDir", os.getcwd())
         self.rsaKeyPrivate = self.parseOption(self.sectionName, "rsaKey", "ssh_key")
         self.rsaKeyPublic = self.parseOption(self.sectionName, "rsaKeyPub", "ssh_key.pub")
         self.utilityFolder = self.parseOption(self.sectionName, "utilityFolder", "/var/lib/dissomniag/")
         self.serverFolder = os.path.join(self.utilityFolder, "server/")
-        self.liveCdPatternDirectory = self.parseOption(self.sectionName, "liveCdPatternDirectory", "Pattern")
+        self.liveCdPatternDirectory = self.parseOption(self.sectionName, "liveCdPatternDirectory", "pattern")
+        self.patternLockFile = self.parseOption(self.sectionName, "patternLockFile", "pattern")
         self.user = self.parseOption(self.sectionName, "user", "sw")
         self.group = self.parseOption(self.sectionName, "group", "sw")
         self.userId = pwd.getpwnam(self.user).pw_uid
         self.groupId = grp.getgrnam(self.group).gr_gid
-        
+        self.staticFolder = os.path.join(os.getcwd(), "static/")
+        self.staticLiveFolder = os.path.join(self.staticFolder, "live/")
+        self.pidFile = os.path.join(self.executableDir, "dissomniag.pid")
         return self
+    
 dissomniag = dissomniag(config, "dissomniag").parse()
 
 class server(ParseSection):
@@ -85,9 +90,8 @@ class db(ParseSection):
     
     def parse(self):
         self.maintainance = self.bool(self.parseOption(self.sectionName, "Maintainance", "False"))
-        self.db_file = self.parseOption(self.sectionName, "db_file", "dissomniag.db")
+        self.db_file = self.parseOption(self.sectionName, "db_file", str(os.path.abspath("dissomniag.db")))
         self.db_string = str("%s:///%s" % ("sqlite", self.db_file))
-        import os
         self.migrate_repository = str(os.path.abspath("dissomniag/migrations/"))
         return self
     
@@ -105,7 +109,7 @@ htpasswd = htpasswd(config, "HTPASSWD").parse()
 class log(ParseSection):
     
     def parse(self):
-        self.logDir = self.parseOption(self.sectionName, "logDir", "log/")
+        self.logDir = self.parseOption(self.sectionName, "logDir", os.path.join(os.getcwd(), "log/"))
         self.debugFilename = self.parseOption(self.sectionName, "debugFilename", "dissomniag_DEBUG.log")
         self.warningFilename = self.parseOption(self.sectionName, "warningFilename", "dissomniag_WARNING.log")
         self.toStdOut = self.bool(self.parseOption(self.sectionName, "toStdOut", "True"))

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+lb config noauto \
+	--apt aptitude \
+	--architecture amd64 \
+	--packages-lists 'gnome-desktop' \
+	--bootappend-live "locales=de_DE.UTF-8 keyboard-layouts=de" \
+	--language de \
+	--syslinux-timeout 1 \
+	"${@}"
+

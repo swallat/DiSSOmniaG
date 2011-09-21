@@ -27,7 +27,7 @@ class SSHKeyGenError(Exception):
 class SSHKeyAddError(Exception):
     pass
 
-class Identity():
+class Identity:
     isStarted = False
     systemUserName = "<System>"
     
@@ -36,7 +36,7 @@ class Identity():
     """
     
     @abstractmethod
-    def start(self):
+    def run(self):
         if not self.isStarted:
             self.isStarted = True
         else:
@@ -174,6 +174,12 @@ def getIdentity():
     
     return identity
 
+def getDaemon():
+    pidFile = dissomniag.config.dissomniag.pidFile
+    daemon = dissomniag.Daemon(pidFile)
+    setattr(daemon, "run", dissomniag.Identity.run)
+    return daemon
+
 def getRoot():
     os.seteuid(0)
     os.setegid(0)
@@ -182,6 +188,25 @@ def resetPermissions():
     os.setegid(dissomniag.config.dissomniag.groupId)
     os.seteuid(dissomniag.config.dissomniag.userId)
     
+savedWorkingDir = os.getcwd()
+
+def chDir(chDirTo):
+    global savedWorkingDir
+    savedWorkingDir = os.getcwd()
+    try:
+        os.chdir(chDirTo)
+        return True
+    except IOError:
+        return False
+    
+def resetDir():
+    global savedWorkingDir
+    try:
+        os.chdir(savedWorkingDir)
+        return True
+    except IOError:
+        return False
+    
     
 def checkProgrammUserAndGroup():
         if os.getuid() != 0:
@@ -189,9 +214,21 @@ def checkProgrammUserAndGroup():
         resetPermissions()
 
 def start():
-    checkProgrammUserAndGroup()
+    daemon = getDaemon()
+    daemon.start()
+
+def run():
+    dissomniag.checkProgrammUserAndGroup()
     dissomniag.init()
-    getIdentity().start()
+    dissomniag.getIdentity().run()
+    
+def stop():
+    daemon = getDaemon()
+    daemon.stop()
+
+def restart():
+    daemon = getDaemon()
+    daemon.restart()
 
 
         
