@@ -44,8 +44,8 @@ class dissomniag(ParseSection):
     def parse(self):
         self.isCentral = self.bool(self.parseOption(self.sectionName, "isCentral", "True"))
         self.centralIp = self.parseOption(self.sectionName, "CentralSystemIP", "None")
-        self.configDir = self.parseOption(self.sectionName, "configDir", os.getcwd())
-        self.executableDir = self.parseOption(self.sectionName, "execDir", os.getcwd())
+        self.configDir = self.parseOption(self.sectionName, "configDir", "/home/sw/git/BachelorCoding/DiSSOmniaG/")
+        self.execDir = self.parseOption(self.sectionName, "execDir", "/home/sw/git/BachelorCoding/DiSSOmniaG/")
         self.rsaKeyPrivate = self.parseOption(self.sectionName, "rsaKey", "ssh_key")
         self.rsaKeyPublic = self.parseOption(self.sectionName, "rsaKeyPub", "ssh_key.pub")
         self.utilityFolder = self.parseOption(self.sectionName, "utilityFolder", "/var/lib/dissomniag/")
@@ -58,7 +58,7 @@ class dissomniag(ParseSection):
         self.groupId = grp.getgrnam(self.group).gr_gid
         self.staticFolder = os.path.join(os.getcwd(), "static/")
         self.staticLiveFolder = os.path.join(self.staticFolder, "live/")
-        self.pidFile = os.path.join(self.executableDir, "dissomniag.pid")
+        self.pidFile = os.path.join(self.execDir, "dissomniag.pid")
         return self
     
 dissomniag = dissomniag(config, "dissomniag").parse()
@@ -90,9 +90,9 @@ class db(ParseSection):
     
     def parse(self):
         self.maintainance = self.bool(self.parseOption(self.sectionName, "Maintainance", "False"))
-        self.db_file = self.parseOption(self.sectionName, "db_file", str(os.path.abspath("dissomniag.db")))
+        self.db_file = self.parseOption(self.sectionName, "db_file", os.path.join(dissomniag.execDir, "dissomniag.db"))
         self.db_string = str("%s:///%s" % ("sqlite", self.db_file))
-        self.migrate_repository = str(os.path.abspath("dissomniag/migrations/"))
+        self.migrate_repository = os.path.join(dissomniag.execDir, "dissomniag/migrations/")
         return self
     
 db = db(config, "DB").parse()

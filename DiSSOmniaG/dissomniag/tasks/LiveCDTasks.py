@@ -132,12 +132,6 @@ class CheckLiveCdEnvironmentPrepared(dissomniag.taskManager.AtomicTask):
         stageDirectory = os.path.join(self.patternFolder, ".stage/")
         stageDirectoryExists = os.access(stageDirectory, os.F_OK)
         
-        if stageDirectoryExists:
-            binaryIso = os.path.join(stageDirectory, "binary_iso")
-            binaryIsoExists = os.access(binaryIso, os.F_OK)
-        else:
-            binaryIsoExists = False
-        
         configDirectory = os.path.join(self.patternFolder, "config/")
         configDirectoryExists = os.access(configDirectory, os.F_OK)
         
@@ -156,10 +150,10 @@ class CheckLiveCdEnvironmentPrepared(dissomniag.taskManager.AtomicTask):
         chrootDirectoryExists = os.access(chrootDirectory, os.F_OK)
         
         
-        if checkedFileExists and stageDirectoryExists and configDirectoryExists and autoDirectoryExists and chrootDirectoryExists and binLocalIncEmpty and binaryIsoExists:
+        if checkedFileExists and stageDirectoryExists and configDirectoryExists and autoDirectoryExists and chrootDirectoryExists and binLocalIncEmpty: 
             self.infoObj.prepared = True
         else:
-                self.infoObj.prepared = False
+            self.infoObj.prepared = False
             
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
@@ -329,6 +323,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                 myFile = open(preparedFile, 'w')
                 myFile.write("CHECKED")
                 myFile.close()
+                self.infoObj.usable = True
                 self.returnSuccess()
         finally:
                 if not dissomniag.resetDir():

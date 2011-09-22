@@ -174,12 +174,6 @@ def getIdentity():
     
     return identity
 
-def getDaemon():
-    pidFile = dissomniag.config.dissomniag.pidFile
-    daemon = dissomniag.Daemon(pidFile)
-    setattr(daemon, "run", dissomniag.Identity.run)
-    return daemon
-
 def getRoot():
     os.seteuid(0)
     os.setegid(0)
@@ -209,26 +203,18 @@ def resetDir():
     
     
 def checkProgrammUserAndGroup():
+        log.info("In checkProgrammUserAndGroup")
         if os.getuid() != 0:
             raise OSError("The System must be started ad root.")
         resetPermissions()
 
-def start():
-    daemon = getDaemon()
-    daemon.start()
-
+    
 def run():
+    
     dissomniag.checkProgrammUserAndGroup()
+    os.chdir(dissomniag.config.dissomniag.execDir)
     dissomniag.init()
     dissomniag.getIdentity().run()
-    
-def stop():
-    daemon = getDaemon()
-    daemon.stop()
-
-def restart():
-    daemon = getDaemon()
-    daemon.restart()
 
 
         
