@@ -20,6 +20,9 @@ noWget=0
 omnetDownload=http://omnetpp.org/download/release/$omnetTarball
 inetDownload=http://omnetpp.org/download/contrib/models/$inetTarball
 
+adduser --home /home/user --quiet --gecos ,,,, --disabled-password $user
+usermod -G sudo,$user $user
+
 if [ ! -d $omnetHome ]
 then
   mkdir -p ${omnetHome}
@@ -66,8 +69,6 @@ then
     echo "No wget installed"
     noWget=1
 fi
-
-su $user
 
 if [ ! -e $pathToOmnetTarball ]
 then
