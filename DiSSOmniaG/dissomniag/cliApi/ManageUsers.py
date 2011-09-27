@@ -5,7 +5,7 @@ Created on 23.07.2011
 @author: Sebastian Wallat
 """
 import logging
-import argparse, getpass
+import argparse
 from colorama import Fore, Style, Back
 import sys
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound

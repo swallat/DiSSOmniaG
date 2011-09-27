@@ -14,8 +14,6 @@ import config
 # It can be found under following URL:
 #  http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 #===============================================================================
-
-
  
 class Daemon:
         """
@@ -23,11 +21,12 @@ class Daemon:
        
         Usage: subclass the Daemon class and override the run() method
         """
-        def __init__(self, pidfile, stdin = '/dev/null', stdout = '/dev/null', stderr = '/dev/null'):
+        def __init__(self, pidfile, stdin = '/dev/null', stdout = '/dev/null', stderr = '/dev/null', debug = False):
                 self.stdin = stdin
                 self.stdout = stdout
                 self.stderr = stderr
                 self.pidfile = pidfile
+                self.debug = debug
        
         def daemonize(self):
                 """
@@ -141,19 +140,29 @@ class Daemon:
                 You should override this method when you subclass Daemon. It will be called after the process has been
                 daemonized by start() or restart().
                 """
+                
+#===============================================================================
+# End of extraction.
+# It can be found under following URL:
+#  http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
+#===============================================================================
 
 
 class DissomniagDaemon(Daemon):
     
     def run(self):
-        myFile = open("/home/sw/git/BachelorCoding/DiSSOmniaG/info.file", "a+")
-        myFile.write("In run")
-        myFile.flush()
-        sys.stdout = myFile
-        sys.stderr = myFile
+        if self.debug:
+            myFile = open("/home/sw/git/BachelorCoding/DiSSOmniaG/info.file", "a+")
+            myFile.write("In run")
+            myFile.flush()
+            sys.stdout = myFile
+            sys.stderr = myFile
+        
         import dissomniag
         dissomniag.run()
-        myFile.close()
+        
+        if self.debug:
+            myFile.close()
     
 def printUsage():
     print("DiSSOmniag Starter.")

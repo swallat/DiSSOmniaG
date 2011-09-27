@@ -1,7 +1,6 @@
-#include <gnome-full>
+#include <gnome-desktop>
 
-# Standard packages
+
 apache2 apache2-mpm-prefork aptitude git-core git-svn build-essentialvim guake wireshark nttcp openssh-server python3-all acpi traceroute vim
 
-# Omnet packages
 gcc g++ bison flex perl tcl-dev tk-dev blt libxml2-dev zlib1g-dev openjdk-6-jre doxygen graphviz openmpi-bin libopenmpi-dev libpcap-dev
