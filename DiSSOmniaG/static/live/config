@@ -3,7 +3,7 @@
 lb config noauto \
 	--apt aptitude \
 	--architecture amd64 \
-	--packages-lists 'gnome-desktop dissomniag' \
+	--packages-lists 'gnome dissomniag' \
 	--bootappend-live "locales=de_DE.UTF-8 keyboard-layouts=de" \
 	--language de \
 	--syslinux-timeout 1 \

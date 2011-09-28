@@ -135,6 +135,7 @@ liveCds = Table('livecds', meta,
            Column('staticAptList', String),
            Column('pxeInternalPath', String),
            Column('pxeExternalPath', String),
+           Column('user_id', Integer, ForeignKey('users.id')),
 )
 
 vms = Table('vms', meta,

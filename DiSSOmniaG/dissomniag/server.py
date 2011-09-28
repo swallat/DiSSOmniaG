@@ -85,12 +85,12 @@ class APIServer(xmlrpc.XMLRPC):
             return function(*(args))
         except xmlrpc.Fault, exc:
             #fault.log(exc)
-            raise
+            raise exc
         except Exception, exc:
             #fault.log(exc)
             #self.logger.log("Exception: %s" % exc, user = user.name)
             #raise fault.wrap(exc)
-            raise
+            raise exc
 
     def render(self, request):
         username = request.getUser()

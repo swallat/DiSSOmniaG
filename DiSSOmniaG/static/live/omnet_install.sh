@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+#set -e
 
 # Uncomment to debug
 #set -n
@@ -22,6 +22,8 @@ inetDownload=http://omnetpp.org/download/contrib/models/$inetTarball
 
 adduser --home /home/$user --quiet --gecos ,,,, --disabled-password $user
 usermod -G sudo,$user $user
+
+aptitude install -y gcc g++ bison flex perl tcl-dev tk-dev blt libxml2-dev zlib1g-dev openjdk-6-jre doxygen graphviz openmpi-bin libopenmpi-dev libpcap-dev
 
 if [ ! -d $omnetHome ]
 then
@@ -82,13 +84,16 @@ else
 fi
 
 tar xvf $omnetTarball
-mv omnetpp-4.1 $omnetHome/omnet
+#cp omnetpp-4.1 $omnetHome/omnet
 
 rm $omnetTarball
 
-mv omnet/* ./
+mv omnet*/* ./
+#/bin/bash /root/
+#DISPLAY=:0.0 && ./configure
+#export DISPLAY=:0.0 && ./configure
+NO_TCL=True ./configure
 
-./configure
 if (($?))
 then
     echo './configure failed'
@@ -123,9 +128,8 @@ fi
 
 tar xvf $inetTarball
 mv inet/* ./
-mv inet/.* ./
 rm -rf inet
-rm -f $inetTarball
+#rm -f $inetTarball
 
 mv Makefile Makefile.bak
 sed '
@@ -134,15 +138,16 @@ sed '
 ' Makefile.bak > Makefile && rm Makefile.bak
 
 make makefiles
-cd src
-mv Makefile Makefile.bak && sed '
-/HAVE_PCAP=no/ c\
-#HAVE_PCAP=no
-' Makefile.bak > Makefile && rm Makefile.bak
+#cd src
+#mv Makefile Makefile.bak && sed '
+#/HAVE_PCAP=no/ c\
+##HAVE_PCAP=no
+#' Makefile.bak > Makefile && rm Makefile.bak
 
-cd ,,
+#cd ..
 
 make
+/bin/bash
 if (($?))
 then
     echo "make Inet failed"

@@ -1,4 +1,4 @@
-#include <gnome-desktop>
+#include <gnome>
 
 
 apache2 apache2-mpm-prefork aptitude git-core git-svn build-essentialvim guake wireshark nttcp openssh-server python3-all acpi traceroute vim

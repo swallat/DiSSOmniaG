@@ -1,7 +1,5 @@
 import os, logging, sys
 
-
-
 import config
 
 import utils.Logging

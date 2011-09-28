@@ -10,6 +10,7 @@ import sqlalchemy.orm as orm
 
 import dissomniag
 from dissomniag.model import *
+from dissomniag.auth import User
 
 class LiveCdEnvironment(dissomniag.utils.Singleton):
     
@@ -39,11 +40,18 @@ class LiveCd(dissomniag.Base):
     staticAptList = sa.Column(sa.String)
     pxeInternalPath = sa.Column(sa.String)
     pxeExternalPath = sa.Column(sa.String)
-    
+    user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id')) # Many to one style
+    user = orm.relationship('User', backref = 'liveCd')
     
     """
     classdocs
     """
+    
+    def _generateRPCUser(self):
+        pass
+    
+    def _deleteRPCUser(self):
+        pass
     
     def authUser(self, user):
         if user.isAdmin:
