@@ -14,3 +14,5 @@ LiveCdTestEnvironment/binary.packages
 LiveCdTestEnvironment/binary.list
 LiveCdTestEnvironment/binary/*
 LiveCdTestEnvironment/cache/*
+LiveCdTestEnvironment/.stage/*
+LiveCdTestEnvironment/.lock
