@@ -10,5 +10,7 @@ docs/log/*
 DiSSOmniaG_liveClient/log/*
 LiveCdTestEnvironment/chroot/*
 LiveCdTestEnvironment/*.iso
+LiveCdTestEnvironment/binary.packages
+LiveCdTestEnvironment/binary.list
 LiveCdTestEnvironment/binary/*
 LiveCdTestEnvironment/cache/*
