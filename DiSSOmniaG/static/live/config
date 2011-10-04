@@ -2,10 +2,12 @@
 
 lb config noauto \
 	--apt aptitude \
-	--architecture amd64 \
+	--architecture i386 \
 	--packages-lists 'gnome dissomniag' \
 	--bootappend-live "locales=de_DE.UTF-8 keyboard-layouts=de" \
 	--language de \
 	--syslinux-timeout 1 \
+	--debian-installer false \
+	--debian-installer-gui false \
 	"${@}"
 

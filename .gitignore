@@ -8,3 +8,7 @@ DiSSOmniaG/log/*
 docs/build/*
 docs/log/*
 DiSSOmniaG_liveClient/log/*
+LiveCdTestEnvironment/chroot/*
+LiveCdTestEnvironment/*.iso
+LiveCdTestEnvironment/binary/*
+LiveCdTestEnvironment/cache/*

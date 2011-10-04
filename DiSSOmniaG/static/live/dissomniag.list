@@ -1,6 +1,6 @@
 #include <gnome>
 
 
-apache2 apache2-mpm-prefork aptitude git-core git-svn build-essentialvim guake wireshark nttcp openssh-server python3-all acpi traceroute vim
+iceweasel apache2 apache2-mpm-prefork aptitude git-core git-svn build-essentialvim guake wireshark nttcp openssh-server python3-all acpi traceroute vim python-netifaces python-m2crypto python-crypto python-twisted
 
 gcc g++ bison flex perl tcl-dev tk-dev blt libxml2-dev zlib1g-dev openjdk-6-jre doxygen graphviz openmpi-bin libopenmpi-dev libpcap-dev

@@ -7,6 +7,7 @@ Created on 05.08.2011
 
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+from lxml import etree
 
 import dissomniag
 from dissomniag.model import *
@@ -42,6 +43,7 @@ class LiveCd(dissomniag.Base):
     pxeExternalPath = sa.Column(sa.String)
     user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id')) # Many to one style
     user = orm.relationship('User', backref = 'liveCd')
+    plainPassword = sa.Column(sa.String)
     
     """
     classdocs
@@ -58,6 +60,23 @@ class LiveCd(dissomniag.Base):
             return True
         else:
             return self.vm.authUser(user)
+        
+    def getInfoXML(self, user):
+        self.authUser(user)
+        liveInfo = etree.Element("liveInfo")
+        password = etree.SubElement(liveInfo, "password")
+        password.text = str(self.plainPassword)
+        uuid = etree.SubElement(liveInfo, "uuid")
+        uuid.text = str(self.vm.uuid)
+        serverIp = etree.SubElement(liveInfo, "serverIp")
+        serverIp.text = str(dissomniag.getIdentity().getMaintainanceIP())
+        for interface in self.vm.interfaces:
+            inter = etree.SubElement(liveInfo, "interface")
+            name = etree.SubElement(inter, "name")
+            name.text = str(interface.name)
+            mac = etree.SubElement(inter, "mac")
+            mac.text = str(interface.macAddress)            
+        
     
     @staticmethod
     def deleteLiveCd(user, livecd):
