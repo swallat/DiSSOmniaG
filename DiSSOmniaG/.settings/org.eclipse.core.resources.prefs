@@ -1,4 +1,4 @@
-#Thu Sep 22 14:04:52 CEST 2011
+#Thu Oct 06 17:23:00 CEST 2011
 eclipse.preferences.version=1
 encoding//dissomniag/Identity.py=utf-8
 encoding//dissomniag/MathClasses.py=utf-8
@@ -50,4 +50,4 @@ encoding//dissomniag/utils/SubprocessCommand.py=utf-8
 encoding//dissomniag/utils/cmdHelpers.py=utf-8
 encoding//dissomniag/utils/wrapper.py=utf-8
 encoding/config.py=utf-8
-encoding/run.py=utf-8
+encoding/dissomniag.py=utf-8

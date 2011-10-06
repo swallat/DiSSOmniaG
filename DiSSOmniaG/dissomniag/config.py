@@ -58,7 +58,7 @@ class dissomniag(ParseSection):
         self.groupId = grp.getgrnam(self.group).gr_gid
         self.staticFolder = os.path.join(os.getcwd(), "static/")
         self.staticLiveFolder = os.path.join(self.staticFolder, "live/")
-        self.pidFile = os.path.join(self.execDir, "dissomniag.pid")
+        self.pidFile = "/var/run/dissomniag.pid"
         return self
     
 dissomniag = dissomniag(config, "dissomniag").parse()
