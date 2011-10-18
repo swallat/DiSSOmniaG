@@ -1,0 +1,18 @@
+#!/bin/sh
+cwd=$(pwd)
+
+cd ../
+
+tar cvzpf DissomniagLive.tgz DiSSOmniaG_liveClient/
+rm $cwd/config/binary_local-includes/DissomniagLive.tgz
+#rm $cwd/binary/DissomniagLive.tgz
+mv DissomniagLive.tgz $cwd/config/binary_local-includes/
+cp DiSSOmniaG/static/live/init.d/dissomniag_live $cwd/config/binary_local-includes/
+
+cd $cwd
+echo $cwd
+
+rm .stage/binary_includes
+rm .stage/binary_local-includes
+rm .stage/binary_checksums
+rm .stage/binary_iso

@@ -7,6 +7,7 @@ Created on 31.08.2011
 import os, shutil, subprocess, shlex, re, platform
 import lockfile
 import apt
+import tarfile
 import dissomniag
 
 import logging
@@ -68,31 +69,6 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
             liveBuild = cache["live-build"]
             if not liveBuild.is_installed:
                 liveBuild.markInstall()
-                execInstall = True
-                
-            debootstrap = cache["debootstrap"]
-            if not debootstrap.is_installed:
-                debootstrap.markInstall()
-                execInstall = True
-                
-            syslinux = cache["syslinux"]
-            if not syslinux.is_installed:
-                syslinux.markInstall()
-                execInstall = True
-                
-            squashfsTools = cache["squashfs-tools"]
-            if not squashfsTools.is_installed:
-                squashfsTools.markInstall()
-                execInstall = True
-                
-            genisoimage = cache["genisoimage"]
-            if not genisoimage.is_installed:
-                genisoimage.markInstall()
-                execInstall = True
-            
-            sbm = cache["sbm"]
-            if not sbm.is_installed:
-                sbm.markInstall()
                 execInstall = True
         except KeyError:
             self.infoObj.errorInfo.append("A apt package is not available!")
@@ -203,11 +179,30 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         self.multiLog("exec %s" % cmd)
         ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
         
+    def installLiveDaemon(self, patternFolder):
+        
+        """
+        1. Copy Files
+        """
+        tarBall = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "liveDaemon/dissomniagLive.tar.gz")
+        chrootLocalIncludesFolder = os.path.join(patternFolder, "config/chroot_local-includes")
+        targetTarBall = os.path.join(chrootLocalIncludesFolder, "dissomniagLive.tar.gz")
+        try:
+            shutil.copy2(tarBall, chrootLocalIncludesFolder)
+        except OSError:
+            self.multiLog("Cannot copy Live Daemon Tarball", log)
+            raise dissomniag.taskManager.TaskFailed()
+        with tarfile.open(targetTarBall, "r|gz") as tar:
+            tar.extractall(path = chrootLocalIncludesFolder)
+        try:
+            os.remove(targetTarBall)
+        except OSError:
+            self.multiLog("Cannot delete LiveDaemon Tarball", log)
+        
         
     def cleanUp(self):
         
-        self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder,
-                                dissomniag.config.dissomniag.liveCdPatternDirectory)
+        self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
         dissomniag.getRoot()
         
         self.stageDir = os.path.join(self.patternFolder, ".stage")
@@ -266,9 +261,27 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             
             with self.mylock:
                 
-                #4. Make auto Directory
+                #3a. Make auto Directory and link config files
                 self.autoFolder = os.path.join(self.patternFolder, "auto/")
-                #5. Init debian live environment
+                try:
+                    os.makedirs(self.autoFolder)
+                except OSError:
+                    self.multiLog("Cannot create AutoFolder")
+                    raise dissomniag.taskManager.TaskFailed()
+                
+                staticAutoFolder = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "auto")
+                infiles = os.listdir(staticAutoFolder)
+                for myfile in infiles:
+                    try:
+                        print os.path.join(staticAutoFolder, myfile)
+                        print os.path.join(self.autoFolder, myfile)
+                        os.symlink(os.path.join(staticAutoFolder, myfile), os.path.join(self.autoFolder, myfile))
+                    except OSError:
+                        self.multiLog("Cannot Symlink %s" % myfile , log)
+                        if myfile == "config":
+                            raise dissomniag.taskManager.TaskFailed()
+                        
+                #3b. Create initial stucture
                 cmd = "lb config"
                 self.multiLog("running %s" % cmd)
                 ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
@@ -277,28 +290,52 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                     dissomniag.resetPermissions()
                     raise dissomniag.taskManager.TaskFailed()
                 
-                #6. Copy conif.sh
-                configFile = os.path.join(dissomniag.config.dissomniag.staticLiveFolder,
-                                          "config")
+                #3c. Copy dissomniag packagelist
+                packageListFile = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "dissomniag.list")
+                chrootLocalPackagesListFolder = os.path.join(self.patternFolder, "config/chroot_local-packageslists")
                 try:
-                    shutil.copy2(configFile, self.autoFolder)
-                except OSError, e:
-                    self.multiLog("Could not copy LiveCD config file. %s" % e)
-                    self.infoObj.usable = False
-                    raise dissomniag.taskManager.UnrevertableFailure()
+                    os.symlink(os.path.abspath(packageListFile), os.path.join(chrootLocalPackagesListFolder, "dissomniag.list"))
+                except OSError:
+                    self.multiLog("Cannot Symlink dissomniag.list")
+                    raise dissomniag.taskManager.TaskFailed()
                 
+                #3d. Copy all chroot_local files
+                chrootLocalFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "chroot_local-includes")
+                listings = os.listdir(chrootLocalFilesDir)
+                for infile in listings:
+                    try:
+                        shutil.copytree(os.path.join(chrootLocalFilesDir, infile), os.path.join(self.patternFolder, "config/chroot_local-includes/" + infile), symlinks = True)
+                    except OSError:
+                        src = os.path.join(chrootLocalFilesDir, infile)
+                        dst = os.path.join(self.patternFolder, "config/chroot_local-includes/" + infile)
+                        self.multiLog("Cannot copy an chroot_local-include, src= %s , dst= %s" % (src,dst), log)
+                
+                #3e. Copy all chroot_local hooks
+                hooksFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "hooks")
+                listings = os.listdir(hooksFilesDir)
+                for infile in listings:
+                    try:
+                        shutil.copy2(os.path.join(hooksFilesDir, infile), os.path.join(self.patternFolder, "config/chroot_local-hooks/"))
+                    except OSError:
+                        self.multiLog("Cannot copy an chroot_local-hook")
+                
+                #4. Install Live Daemon
+                
+                self.installLiveDaemon(self.patternFolder)
+                
+                #5. Copy needed files. (like OMNeT binaries)
+                  
+                #6. Init debian live environment
                 cmd = "lb config"
                 self.multiLog("running %s" % cmd)
                 ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
                 if ret != 0:
                     self.multiLog("LB Config error")
                     dissomniag.resetPermissions()
-                    raise dissomniag.taskManager.TaskFailed()                
-                
-                #..... Insert other steps ....
+                    raise dissomniag.taskManager.TaskFailed() 
                 
                 #7. Make initial Build
-                # Try 10 times
+                # Try 10 times (Solves some repository connection timeout problems)
                 cmd = "lb build"
                 self.multiLog("Make initial Build", log)
                 success = False

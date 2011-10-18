@@ -1,0 +1,12 @@
+#!/bin/sh
+
+lb config noauto \
+	--distribution stable \
+    --apt aptitude \
+	--architecture i386 \
+	--packages-lists 'gnome dissomniag' \
+	--bootappend-live "locales=de_DE.UTF-8 keyboard-layouts=de" \
+	--language de \
+	--syslinux-timeout 1 \
+	--username user
+	"${@}"
