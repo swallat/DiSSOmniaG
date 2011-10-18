@@ -98,8 +98,9 @@ class Identity:
                 
         
         privateKeyString = file(sshPrivateKey, 'r').read()
-        rsaKey = keys.Key.fromString(privateKeyString)
+        privateKey = keys.Key.fromString(privateKeyString)
         publicKeyString = file(sshPublicKey, 'r').read()
+        publicKey = keys.Key.fromString(publicKeyString)
         
         self._checkRsaKeyAdded(sshPrivateKey, publicKeyString)
         os.setegid(gidBefore)
@@ -107,7 +108,7 @@ class Identity:
         if all:
             return sshPrivateKey, privateKeyString, sshPublicKey, publicKeyString
         else:
-            return publicKeyString, rsaKey
+            return publicKey, privateKey
     
     def _checkRsaKeyAdded(self, privateKeyFd, publicKeyString):
         proc = subprocess.Popen(shlex.split("ssh-add -L"),

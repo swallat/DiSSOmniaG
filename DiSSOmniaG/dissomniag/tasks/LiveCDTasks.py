@@ -66,36 +66,36 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
         execInstall = False
         try:
             liveBuild = cache["live-build"]
-            if not liveBuild.isInstalled:
+            if not liveBuild.is_installed:
                 liveBuild.markInstall()
                 execInstall = True
                 
             debootstrap = cache["debootstrap"]
-            if not debootstrap.isInstalled:
+            if not debootstrap.is_installed:
                 debootstrap.markInstall()
                 execInstall = True
                 
             syslinux = cache["syslinux"]
-            if not syslinux.isInstalled:
+            if not syslinux.is_installed:
                 syslinux.markInstall()
                 execInstall = True
                 
             squashfsTools = cache["squashfs-tools"]
-            if not squashfsTools.isInstalled:
+            if not squashfsTools.is_installed:
                 squashfsTools.markInstall()
                 execInstall = True
                 
             genisoimage = cache["genisoimage"]
-            if not genisoimage.isInstalled:
+            if not genisoimage.is_installed:
                 genisoimage.markInstall()
                 execInstall = True
             
             sbm = cache["sbm"]
-            if not sbm.isInstalled:
+            if not sbm.is_installed:
                 sbm.markInstall()
                 execInstall = True
         except KeyError:
-            self.infoObj.error.append("A apt package is not available!")
+            self.infoObj.errorInfo.append("A apt package is not available!")
             self.infoObj.usable = False
             self.job.trace(self.infoObj.getErrorInfo())
             dissomniag.resetPermissions()

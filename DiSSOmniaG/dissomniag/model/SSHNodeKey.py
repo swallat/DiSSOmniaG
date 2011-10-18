@@ -11,9 +11,9 @@ from dissomniag.model import *
 class SSHNodeKey(dissomniag.Base):
     __tablename__ = "sshNodeKeys"
     id = sa.Column(sa.Integer, primary_key = True)
-    privateKey = sa.Column(sa.Binary(1000), unique = True, nullable = True)
+    privateKey = sa.Column(sa.LargeBinary(1000), unique = True, nullable = True)
     privateKeyFile = sa.Column(sa.String, nullable = True)
-    publicKey = sa.Column(sa.Binary(1000), unique = True, nullable = True)
+    publicKey = sa.Column(sa.LargeBinary(1000), unique = True, nullable = True)
     publicKeyFile = sa.Column(sa.String, nullable = True)
     """
     classdocs

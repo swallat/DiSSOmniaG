@@ -18,7 +18,7 @@ users = Table('users', meta,
 
 public_keys = Table('public_keys', meta,
                     Column('id', Integer, primary_key = True),
-                    Column('publicKey', Binary(1000), nullable = False, unique = True),
+                    Column('publicKey', LargeBinary(1000), nullable = False, unique = True),
 )
 
 user_publickey = Table('user_publickey', meta,
@@ -39,9 +39,9 @@ jobs = Table('jobs', meta,
  
 sshNodeKeys = Table('sshNodeKeys', meta,
            Column('id', Integer, primary_key = True),
-           Column('privateKey', Binary(1000), unique = True, nullable = True),
+           Column('privateKey', LargeBinary(1000), unique = True, nullable = True),
            Column('privateKeyFile', String, nullable = True),
-           Column('publicKey', Binary(1000), unique = True, nullable = True),
+           Column('publicKey', LargeBinary(1000), unique = True, nullable = True),
            Column('publicKeyFile', String, nullable = True),
 )
 

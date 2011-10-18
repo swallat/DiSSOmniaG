@@ -336,18 +336,20 @@ def getRSAKeys():
         print "Generating RSA keypair..."
         from Crypto.PublicKey import RSA
         KEY_LENGTH = 1024
-        rsaKey = keys.Key(RSA.generate(KEY_LENGTH))
-        publicKeyString = rsaKey.public().toString('OPENSSH')
-        privateKeyString = rsaKey.toString('OPENSSH')
+        privateKey = keys.Key(RSA.generate(KEY_LENGTH))
+        publicKeyString = privateKey.public().toString('OPENSSH')
+        privateKeyString = privateKey.toString('OPENSSH')
+        publicKey = keys.Key.fromString(publicKeyString)
         #save keys for next time
         file('public.key', 'w+b').write(publicKeyString)
         file('private.key', 'w+b').write(privateKeyString)
         print "done."
     else:
         privateKeyString = file('private.key', 'r').read()
-        rsaKey = keys.Key.fromString(privateKeyString)
+        privateKey = keys.Key.fromString(privateKeyString)
         publicKeyString = file('public.key', 'r').read()
-    return publicKeyString, rsaKey
+        publicKey = keys.Key.fromString(publicKeyString)
+    return publicKey, privateKey
 
 class DiSSOmniaGSSHFactory(factory.SSHFactory):
     pass

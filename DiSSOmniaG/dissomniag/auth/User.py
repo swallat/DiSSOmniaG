@@ -7,7 +7,7 @@ Created on 22.07.2011
 import logging
 import time, atexit, datetime, crypt, string, random, sys
 from twisted.conch.ssh import keys
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Table, Binary
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Table, LargeBinary
 from sqlalchemy.orm import relationship 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
@@ -222,7 +222,7 @@ class PublicKey(Base):
     __tablename__ = "public_keys"
     
     id = Column(Integer, primary_key = True)
-    publicKey = Column(Binary(1000), nullable = False, unique = True)
+    publicKey = Column(LargeBinary(1000), nullable = False, unique = True)
     
     def __init__(self, publicKey):
         self.publicKey = publicKey
