@@ -1,0 +1,13 @@
+<liveInfo>
+  <password>password</password>
+  <uuid>00fe4af8-b97f-4cfe-b958-46b4ffb1cc6c</uuid>
+  <serverIp>192.168.1.1</serverIp>
+  <interface>
+    <name>labamba</name>
+    <mac>52:54:00:bf:16:7c</mac>
+  </interface>
+  <interface>
+    <name>eth1</name>
+    <mac>00:00:00:00:00:11</mac>
+  </interface>
+</liveInfo>
