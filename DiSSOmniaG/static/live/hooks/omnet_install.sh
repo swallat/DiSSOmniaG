@@ -13,6 +13,6 @@ user=user
 adduser --home /home/$user --quiet --gecos ,,,, --disabled-password $user
 usermod -G sudo,$user $user
 
-ln -s /usr/share/dissomniag-live/dissomniagLive.py /usr/sbin/dissomniag_live
+ln -s /usr/share/dissomniag-live/dissomniag_live.py /usr/sbin/dissomniag_live
 
 update-rc.d dissomniag_live defaults 99
