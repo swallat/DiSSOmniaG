@@ -291,7 +291,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                     raise dissomniag.taskManager.TaskFailed()
                 
                 #3c. Copy dissomniag packagelist
-                packageListFile = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "dissomniag.list")
+                packageListFile = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "packagesLists/dissomniag.list")
                 chrootLocalPackagesListFolder = os.path.join(self.patternFolder, "config/chroot_local-packageslists")
                 try:
                     os.symlink(os.path.abspath(packageListFile), os.path.join(chrootLocalPackagesListFolder, "dissomniag.list"))
