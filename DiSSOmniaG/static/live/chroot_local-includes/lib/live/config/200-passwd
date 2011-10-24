@@ -1,0 +1,17 @@
+#!/bin/bash
+
+myPassword = mkpasswd b00tloader
+# For Testing
+myPassword = "b00tloader"
+
+passwd root << EOF
+$myPassword
+$myPassword
+EOF
+
+passwd student << EOF
+$myPassword
+$myPassword
+EOF
+
+exit 0
