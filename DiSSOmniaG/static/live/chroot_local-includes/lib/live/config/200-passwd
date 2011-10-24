@@ -1,8 +1,8 @@
 #!/bin/bash
 
-myPassword = mkpasswd b00tloader
+myPassword=mkpasswd b00tloader
 # For Testing
-myPassword = "b00tloader"
+myPassword="b00tloader"
 
 passwd root << EOF
 $myPassword
