@@ -137,6 +137,7 @@ liveCds = Table('livecds', meta,
            Column('pxeExternalPath', String),
            Column('user_id', Integer, ForeignKey('users.id')),
            Column('plainPassword', String),
+           Column('versioningHash', String(64), nullable = True),
 )
 
 vms = Table('vms', meta,

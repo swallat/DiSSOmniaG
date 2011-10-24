@@ -8,6 +8,7 @@ Created on 05.08.2011
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from lxml import etree
+import hashlib
 
 import dissomniag
 from dissomniag.model import *
@@ -18,6 +19,7 @@ class LiveCdEnvironment(dissomniag.utils.Singleton):
     usable = False
     errorInfo = []
     prepared = False
+    lifeInfoFilename = "liveInfo.xml"
     
     def makeInitialChecks(self):
         pass
@@ -44,6 +46,7 @@ class LiveCd(dissomniag.Base):
     user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id')) # Many to one style
     user = orm.relationship('User', backref = 'liveCd')
     plainPassword = sa.Column(sa.String)
+    versioningHash = sa.Column(sa.String(64), nullable = True)
     
     """
     classdocs
@@ -60,6 +63,12 @@ class LiveCd(dissomniag.Base):
             return True
         else:
             return self.vm.authUser(user)
+    
+    def getInfoXMLwithVersionongHash(self, user):
+        self.authUser(user)
+        xml = self.getInfoXML(user)
+        return xml, self.hashConfig(user, xml)
+        
         
     def getInfoXML(self, user):
         self.authUser(user)
@@ -75,7 +84,25 @@ class LiveCd(dissomniag.Base):
             name = etree.SubElement(inter, "name")
             name.text = str(interface.name)
             mac = etree.SubElement(inter, "mac")
-            mac.text = str(interface.macAddress)            
+            mac.text = str(interface.macAddress)
+        return etree.tostring(liveInfo, pretty_print=True)
+            
+    def hashConfig(self, user, xml=None):
+        self.authUser(user)
+        myHash = hashlib.sha256()
+        if xml == None:
+            hash.update(self.getInfoXML(user))
+        else:
+            hash.update(xml)
+        self.versioningHash = myHash.hexdigist()
+        return self.versioningHash
+        
+    
+    def checkIfImageIsPrepared(self):
+        pass
+                
+    def generateLiveImage(self):            
+        pass
         
     
     @staticmethod

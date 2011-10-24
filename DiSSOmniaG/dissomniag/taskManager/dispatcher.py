@@ -7,6 +7,7 @@ Created on 27.07.2011
 import threading
 import Queue
 import logging
+import collections
 
 import dissomniag.utils as utils
 
@@ -16,6 +17,127 @@ log = logging.getLogger("dissomniag.taskManager.dispatcher")#
 class dispatcherStates:
     RUNNING = "running"
     CANCELLED = "cancelled"
+    
+class SynchronizedJobHelper(object):
+    
+    def __init__(self, syncObj, dispatcher):
+        self.syncObj = syncObj
+        self.jobQueue = Queue.Queue()
+        self.jobRunning = None
+        self.isRunning = False
+        self.lock = threading.RLock()
+        self.jobIds = []
+        self.dispatcher = dispatcher
+        self.cancelled = False
+    
+    def add(self, job):
+        with self.lock:
+            self.jobIds.append(job.id)
+            self.jobQueue.put_nowait(job)
+            
+    def run(self):
+        if not self.isRunning:
+            return self.runNext()
+        else:
+            return True
+    
+    def runNext(self):
+        with self.lock:
+            try:
+                self.jobRunning = self.jobQueue.get_nowait()
+            except Queue.Empty:
+                self.isRunning = False;
+                self.jobRunning = None
+                return False
+            else:
+                self.isRunning = True
+                self.jobRunning.start(self.dispatcher)
+                return True              
+        
+    def finishRunningJob(self):
+        """
+        Called when Job finished itself.
+        """
+        with self.lock:
+            self.jobIds.remove(self.jobRunning.id)
+            return True
+    
+    def isJobIn(self, jobId):
+        with self.lock:
+            if jobId in self.jobIds:
+                return True
+            else:
+                return False
+        
+    def getJob(self, jobId):
+        with self.lock:
+            if self.isJobIn(jobId) != True:
+                return None
+            else:
+                if self.jobRunning != None and self.jobRunning.id == jobId:
+                    return self.jobRunning
+                else:
+                    tmpJobQueue = Queue.Queue()
+                    returnJob = None
+                    queueEmpty = False
+                    while not queueEmpty:
+                        try:
+                            job = self.jobQueue.get_nowait()
+                            if job.id == jobId:
+                                returnJob = job
+                            tmpJobQueue.put_nowait(job)
+                        except Queue.Empty:
+                            queueEmpty = True
+                            break
+                        
+                    self.jobQueue = tmpJobQueue
+                    return returnJob
+
+    def cancelList(self):
+        with self.lock:
+            self.cancelled
+            self.cancelRunningJob()
+            queueEmpty = False
+            while not queueEmpty:
+                try:
+                    job = self.jobQueue.get_nowait()
+                    job.cancelBeforeStartup()
+                    self.jobIds.remove(job.id)
+                except Queue.Empty:
+                    queueEmpty = True
+                    break
+    
+    def cancelRunningJob(self):
+        with self.lock:
+            if self.isRunning and self.jobRunning != None:
+                self.jobRunning.cancel()
+    
+    def cancelQueuedJob(self, jobId):
+        with self.lock:
+            if self.isJobIn(jobId) != True:
+                return False
+            else:
+                tmpJobQueue = Queue.Queue()
+                jobCancelled = False
+                queueEmpty = False
+                while not queueEmpty:
+                    try:
+                        job = self.jobQueue.get_nowait()
+                        if job.id == jobId:
+                            job.cancelBeforeStartup()
+                            jobCancelled = True
+                            self.jobIds.remove(jobId) # Remove Job From JobId
+                        else:
+                            tmpJobQueue.put_nowait(job)
+                    except Queue.Empty:
+                        queueEmpty = True
+                    
+                    self.jobQueue = tmpJobQueue
+                return jobCancelled
+                            
+                        
+            
+        
 
 class Dispatcher(threading.Thread):
     """
@@ -65,6 +187,10 @@ class Dispatcher(threading.Thread):
             self.independentJobArrived = False
             self.jobsFinished = False
             self.jobIdsToCancel = []
+            self.synchronizedJobLists = {}
+            self.arrivedSyncJobInfo = Queue.Queue()
+            self.synchronizedJobsArrived = False
+            self.syncRunNext = []
             self.cancelCondition = threading.Condition()
     
     def run(self):
@@ -138,7 +264,20 @@ class Dispatcher(threading.Thread):
                     log.debug("New independent job arrived in dispatcher.")
                     self.independentJobArrived = False
                     self._handleIndependentJobsArrived()
-                
+                    
+                if self.synchronizedJobsArrived:
+                    """
+                    Some synchronized Jobs arrived and can be handled
+                    concurrently to the jobs in the standard input Queue and the
+                    independent Job Queue.
+                    
+                    :caution:
+                    
+                        More than one Job could be arrived
+                    """
+                    log.debug("New synchronized job arrived in dispatcher.")
+                    self.synchronizedJobsArrived = False
+                    self._handleSynchronizedJobsArrived()
         
         #End while
         log.info("Dispatcher cleaned up")
@@ -173,7 +312,22 @@ class Dispatcher(threading.Thread):
                 except Queue.Empty:
                     independentQueueCleanedUp = True
                     break
-                 
+                
+            """
+            Clean up synchronized Input Queue
+            """
+            syncQueueCleanedUp = False
+            while not syncQueueCleanedUp:
+                try:
+                    obj = self.arrivedSyncJobInfo.get_nowait()
+                    job = obj["job"]
+                    job.cancelBeforeStartup()
+                except Queue.Empty:
+                    syncQueueCleanedUp = True
+                    break
+                except KeyError:
+                    continue
+            
             """
             Cancel all running Jobs
             """
@@ -183,21 +337,31 @@ class Dispatcher(threading.Thread):
             
             for job in self.independentJobList:
                 job.cancel()
+                
+            for syncObj, info in self.synchronizedJobLists.items():
+                info.cancelList()
             
-            """
-            Wait until all Jobs have finished correctly.
-            Must be outside of a Lock!!
-            """
-            listBefore = self.finishedJobList
-            while not self._compareJobLists() and self.independentJobList != []:
-                with self.condition:
-                    self.condition.wait(timeout = 10000)
-                    """
-                    The Timeout makes sure, that the Program exits.
-                    """
-                    if listBefore == self.finishedJobList: 
-                        break
-        
+        """
+        Wait until all Jobs have finished correctly.
+        Must be outside of a Lock!!
+        """
+        listBefore = self.finishedJobList
+        while not self._compareJobLists() and self.independentJobList != [] and self._checkAllSyncListsStopped():
+            with self.condition:
+                self.condition.wait(timeout = 10000)
+                """
+                The Timeout makes sure, that the Program exits.
+                """
+                if listBefore == self.finishedJobList: 
+                    break
+
+    def _checkAllSyncListsStopped(self):
+        with self.condition:
+            for syncObj, info in self.synchronizedJobLists.items():
+                if info.isRunning:
+                    return False
+            return True
+
     def _handleJobsArrived(self):
         with self.condition:
             if self._compareJobLists():
@@ -219,9 +383,36 @@ class Dispatcher(threading.Thread):
                         if job not in self.independentJobList:
                             self.independentJobList.append(job)
                             job.start(self)
+                            
+    def _handleSynchronizedJobsArrived(self):
+        with self.condition:
+            queueEmpty = False
+            while not queueEmpty:
+                try:
+                    info = self.arrivedSyncJobInfo.get_nowait()
+                    syncObj = info["syncObj"]
+                    job = info["job"]
+                    try:
+                        syncObjInfo = self.synchronizedJobLists[syncObj]
+                        syncObjInfo.add(job)
+                    except KeyError:
+                        syncObjInfo = SynchronizedJobHelper(syncObj, self) # Add Dispatcher to call
+                        syncObjInfo.add(job)
+                        self.synchronizedJobLists[syncObj] = syncObjInfo
+                    finally:
+                        syncObjInfo.run()
+                except Queue.Empty:
+                    queueEmpty = True
+                    break
+                except KeyError:
+                    continue
     
     def _handleJobsFinished(self):
         with self.condition:
+            for info in self.syncRunNext:
+                info.runNext()
+            self.syncRunNext = []
+            
             if self._compareJobLists():
                 log.info("All Jobs in Concurrent List completed")
                 self._startUpNewJobs()
@@ -232,6 +423,21 @@ class Dispatcher(threading.Thread):
         with self.condition:
             
             for id in self.jobIdsToCancel:
+                """
+                If Job is a Running Synchronized Job
+                """
+                continueMe = False
+                for syncObj, info in self.synchronizedJobLists.items():
+                    if info.isJobIn(id) and info.jobRunning.id == id:
+                        info.cancelRunningJob()
+                        continueMe = True
+                        break
+                if continueMe:
+                    continue
+                
+                """
+                Else look general.
+                """
                 job = self._getJobRunning(id)
                 if job != None:
                     job.cancel()
@@ -250,11 +456,18 @@ class Dispatcher(threading.Thread):
             for job in self.independentJobList:
                 if job.getId() == id:
                     return job
-                
+            for sync, info in self.synchronizedJobLists.items():
+                if info.isJobIn(id):
+                    returnJob = info.getJob(id)
+                    if returnJob == info.jobRunning:
+                        return returnJob    
             return None
         
     def _cancelQueuedJob(self, id):
         with self.condition:
+            if self._cancelSynchronizedQueuedJob(id):
+                return True
+            
             replacementQueue = None
             queueEmpty = False
             found = False
@@ -316,6 +529,13 @@ class Dispatcher(threading.Thread):
                 replacement.append(job)
             return found, replacement
         
+    def _cancelSynchronizedQueuedJob(self, id) :
+        for syncObj, info in self.synchronizedJobLists.items():
+            if info.isJobIn(id):
+                info.cancelQueuedJob(id)
+                return True
+        return False
+        
     def _startUpNewJobs(self):
         with self.condition:
             try:
@@ -365,7 +585,19 @@ class Dispatcher(threading.Thread):
             self.independentQueue.put_nowait(job)
             self.independentJobArrived = True
             log.debug("Independent Job arrived in Dispatcher %d" % job.getId())
-            self.condition.notifyAll()  
+            self.condition.notifyAll()
+    
+    def _addJobSynchronized(self, syncObj, job):
+        with self.condition:
+            assert job != None
+            assert syncObj != None and isinstance(syncObj, collections.Hashable)
+            syncObjInfo = {"syncObj":syncObj, "job":job}
+            
+            self.arrivedSyncJobInfo.put_nowait(syncObjInfo)
+            self.synchronizedJobsArrived = True
+            
+            log.debug("Synchronized Job arrived in Dispatcher %d" % job.getId())
+            self.condition.notifyAll()
     
     def _cancelJob(self, jobId):
         with self.condition:
@@ -420,6 +652,12 @@ class Dispatcher(threading.Thread):
                     independentQueueEmpty = True
             self.independentQueue = replacementIndependentQueue
             
+        if returnJob == None:
+            #Get Job in Sync Job Lists
+            for syncObj, info in self.synchronizedJobLists.items():
+                if info.isJobIn(jobId):
+                    returnJob = info.getJob(jobId)
+            
         return returnJob      
     
     def jobFinished(self, job):
@@ -431,7 +669,17 @@ class Dispatcher(threading.Thread):
                 self.condition.notifyAll()
             elif job in self.independentJobList:
                 with self.independentJobListLock:
-                    self.independentJobList.remove(job)        
+                    self.independentJobList.remove(job)
+            else:
+                found = False
+                for syncObj, info in self.synchronizedJobLists.items():
+                    if info.isJobIn(job.id):
+                        info.finishRunningJob()
+                        self.syncRunNext.append(info)
+                        found = True
+                if found:
+                    self.jobsFinished = True
+                    self.condition.notifyAll()
 
     @staticmethod
     def startDispatcher():
@@ -475,6 +723,17 @@ class Dispatcher(threading.Thread):
             Use this method to add a job, if you want future consistency.
             """
             return Dispatcher()._addJobIndependent(job)
+    
+    @staticmethod
+    def addJobSyncronized(user, syncObj, job):
+        with Dispatcher.staticLock:
+            """
+            For future use added. If we want more than one dispatcher
+            the dispatching process must be controlled by a single instance.
+            
+            Use this method to add a job, if you want future consistency.
+            """
+            return Dispatcher()._addJobSynchronized(syncObj, job)
     
     @staticmethod
     def cancelJob(user, jobId):
