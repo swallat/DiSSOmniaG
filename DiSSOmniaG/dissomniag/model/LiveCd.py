@@ -40,9 +40,9 @@ class LiveCd(dissomniag.Base):
     __tablename__ = 'livecds'
     id = sa.Column(sa.Integer, primary_key = True)
     buildDir = sa.Column(sa.String, nullable = False)
-    staticAptList = sa.Column(sa.String)
-    pxeInternalPath = sa.Column(sa.String)
-    pxeExternalPath = sa.Column(sa.String)
+    #staticAptList = sa.Column(sa.String)
+    #pxeInternalPath = sa.Column(sa.String)
+    #pxeExternalPath = sa.Column(sa.String)
     user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id')) # Many to one style
     user = orm.relationship('User', backref = 'liveCd')
     plainPassword = sa.Column(sa.String)

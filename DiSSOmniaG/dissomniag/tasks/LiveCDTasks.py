@@ -141,6 +141,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
     def multiLog(self, msg, log = log):
         super(PrepareLiveCdEnvironment, self).multiLog(msg, log)
         self.infoObj.errorInfo.append(msg)
+        dissomniag.Session().flush()
     
     def returnSuccess(self):
         self.multiLog("LiveCD Environment prepared!")
