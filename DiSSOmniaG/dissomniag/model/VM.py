@@ -114,7 +114,7 @@ class VM(AbstractNode):
         
         cdromSource = etree.SubElement(cdromDisk, "source")
         cdromSourceAttrib = cdromSource.attrib
-        cdromSourceAttrib["file"] = str(self.getPathToCdImage(user))
+        cdromSourceAttrib["file"] = str(self.getRemotePathToCdImage(user))
         
         cdromTarget = etree.SubElement(cdromDisk, "target")
         cdromTargetAttrib = cdromTarget.attrib
@@ -258,21 +258,31 @@ class VM(AbstractNode):
     def getHdSize(self, user):
         pass       
     
-    def getUtilityFolder(self, user):
+    def getRemoteUtilityFolder(self, user):
         self.authUser(user)
         
         allVmsFolder = os.path.join(self.host.utilityFolder, dissomniag.config.hostConfig.vmSubdirectory)
         vmFolder = os.path.join(allVmsFolder, self.commonName)
         return vmFolder
     
-    def getPathToCdImage(self, user):
+    def getLocalUtilityFolder(self, user):
+        self.authUser(self.user)
+        vmFolder = os.path.join(dissomniag.config.dissomniag.vmsFolder, self.commonName)
+        return vmFolder
+    
+    def getRemotePathToCdImage(self, user):
         self.authUser(user)
         
         folder = self.getUtilityFolder(user)
-        ###
-        # ToDo: Edit Name to LiveCd Image Name
-        ###
-        return os.path.join(folder, "LiveCd.iso")
+        return os.path.join(folder, self.getImageName())
+    
+    def getLocalPathToCdImage(self, user):
+        self.authUser(user)
+        return os.path.join(self.getLocalUtilityFolder(user), self.getImageName(user))
+    
+    def getImageName(self, user):
+        self.authUser(user)
+        return ("%s_%s.iso" % (self.name, self.uuid))
     
     def getPathToHdImage(self, user):
         self.authUser(user)

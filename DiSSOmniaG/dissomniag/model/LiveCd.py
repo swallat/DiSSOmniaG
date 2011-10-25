@@ -40,17 +40,19 @@ class LiveCd(dissomniag.Base):
     __tablename__ = 'livecds'
     id = sa.Column(sa.Integer, primary_key = True)
     buildDir = sa.Column(sa.String, nullable = False)
-    #staticAptList = sa.Column(sa.String)
-    #pxeInternalPath = sa.Column(sa.String)
-    #pxeExternalPath = sa.Column(sa.String)
     user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id')) # Many to one style
     user = orm.relationship('User', backref = 'liveCd')
     plainPassword = sa.Column(sa.String)
+    imageCreated = sa.Column(sa.Boolean, default = False)
     versioningHash = sa.Column(sa.String(64), nullable = True)
     
     """
     classdocs
     """
+    
+    def __init__(self, vm):
+        self.vm = vm
+        dissomniag.Session().commit()
     
     def _generateRPCUser(self):
         pass
@@ -96,12 +98,14 @@ class LiveCd(dissomniag.Base):
             hash.update(xml)
         self.versioningHash = myHash.hexdigist()
         return self.versioningHash
+    
+    def prepareLiveImage(self, user):
+        self.authUser(user)
+        
+        
         
     
     def checkIfImageIsPrepared(self):
-        pass
-                
-    def generateLiveImage(self):            
         pass
         
     

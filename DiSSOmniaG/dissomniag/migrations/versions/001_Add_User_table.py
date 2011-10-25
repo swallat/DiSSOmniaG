@@ -132,11 +132,9 @@ user_topology = Table('user_topology', meta,
 liveCds = Table('livecds', meta,
            Column('id', Integer, primary_key = True),
            Column('buildDir', String, nullable = False),
-           Column('staticAptList', String),
-           Column('pxeInternalPath', String),
-           Column('pxeExternalPath', String),
            Column('user_id', Integer, ForeignKey('users.id')),
            Column('plainPassword', String),
+           Column('imageCreated', Boolean, default = False),
            Column('versioningHash', String(64), nullable = True),
 )
 

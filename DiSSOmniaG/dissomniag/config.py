@@ -50,6 +50,7 @@ class dissomniag(ParseSection):
         self.rsaKeyPublic = self.parseOption(self.sectionName, "rsaKeyPub", "ssh_key.pub")
         self.utilityFolder = self.parseOption(self.sectionName, "utilityFolder", "/var/lib/dissomniag/")
         self.serverFolder = os.path.join(self.utilityFolder, "server/")
+        self.vmsFolder = os.path.join(self.serverFolder, "vms")
         self.liveCdPatternDirectory = self.parseOption(self.sectionName, "liveCdPatternDirectory", "pattern")
         self.patternLockFile = self.parseOption(self.sectionName, "patternLockFile", "pattern")
         self.user = self.parseOption(self.sectionName, "user", "sw")

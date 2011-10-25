@@ -32,6 +32,10 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
                 os.chown(dissomniag.config.dissomniag.serverFolder,
                          dissomniag.config.dissomniag.userId,
                          dissomniag.config.dissomniag.groupId)
+                os.mkdir(dissomniag.config.dissomniag.vmsFolder)
+                os.chown(dissomniag.config.dissomniag.vmsFolder,
+                         dissomniag.config.dissomniag.userId,
+                         dissomniag.config.dissomniag.groupId)
             except OSError, e:
                 self.infoObj.errorInfo.append("Could not create utility folder. %s" % e)
                 self.infoObj.usable = False
@@ -49,6 +53,12 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
         
         if not os.access(dissomniag.config.dissomniag.serverFolder, os.W_OK):
             self.infoObj.errorInfo.append("Server Folder is not writable.")
+            self.infoObj.usable = False
+            self.job.trace(self.infoObj.getErrorInfo())
+            raise dissomniag.taskManager.UnrevertableFailure()
+        
+        if not os.access(dissomniag.config.dissomniag.vmsFolder, os.W_OK):
+            self.infoObj.errorInfo.append("LiveImages Folder is not writable.")
             self.infoObj.usable = False
             self.job.trace(self.infoObj.getErrorInfo())
             raise dissomniag.taskManager.UnrevertableFailure()
@@ -362,6 +372,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                 myFile.write("CHECKED")
                 myFile.close()
                 self.infoObj.usable = True
+                self.infoObj.prepared = True
                 self.returnSuccess()
         finally:
                 if not dissomniag.resetDir():
@@ -379,3 +390,128 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         self.cleanUp()
         dissomniag.resetPermissions()
         return dissomniag.taskManager.TaskReturns.SUCCESS
+
+
+class CreateLiveCd(dissomniag.taskManager.AtomicTask):#
+    
+    def cleanUp(self):
+        
+        self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
+        dissomniag.getRoot()
+        
+        self.stageDir = os.path.join(self.patternFolder, ".stage")
+        self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes")
+        
+        if self.binLocalInc.endswith("/"):
+            cmd = "rm -rf %s/*" % self.binLocalInc
+        else:
+            cmd = "rm -rf %s*" % self.binLocalInc
+        self.multiLog("exec %s" % cmd, log)
+        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+        if ret != 0:
+            self.multiLog("Could not exec %s correctly" % cmd, log)
+        
+        if self.stageDir.endswith("/"):
+            cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+        else:
+            cmd = "rm %s/binary_iso %s/binary_checksums %s/binary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+        self.multiLog("exec %s" % cmd, log)
+        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+        if ret != 0:
+            self.multiLog("Could not exec %s correctly" % cmd, log)
+        dissomniag.resetPermissions()
+    
+    def run(self):
+        if (not hasattr(self.context, "LiveCd")):
+            self.multiLog("No LiveCd Object in Context", log)
+            raise dissomniag.taskManager.TaskFailed("No VM Object in Context")
+        
+        self.infoObj = dissomniag.model.LiveCdEnvironment()
+        if not self.infoObj.prepared:
+            self.multiLog("LiveCD Environment not prepared. No LiveCD creation possible!", log)
+            raise dissomniag.taskManager.TaskFailed("LiveCD Environment not prepared. No LiveCD creation possible!")
+        
+        self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder,
+                                dissomniag.config.dissomniag.liveCdPatternDirectory)
+        
+        dissomniag.getRoot()
+        
+        
+        try:
+            
+            if not dissomniag.chDir(self.patternFolder):
+                self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
+                dissomniag.resetPermissions()
+                raise dissomniag.taskManager.TaskFailed()
+            
+            self.lockFile = os.path.join(self.patternFolder,
+                                         dissomniag.config.dissomniag.patternLockFile)
+            self.mylock = lockfile.FileLock(self.lockFile, threaded = True)
+            
+            with self.myLock:
+                
+                # 1. Copy infoXML
+                
+                self.versioningHash, self.liveInfoString = self.context.VM.getInfoXMLwithVersionongHash(self.job.getUser())
+                
+                with open("./config/binary_local-includes/liveInfo.xml") as f:
+                    f.write(self.liveInfoString)
+                    
+                    
+                ###
+                #ToDo: At other thinks to binary include like Predefined Apps
+                ###
+                
+                #2. Make initial Build
+                # Try 10 times (Solves some repository connection timeout problems)
+                cmd = "lb build"
+                self.multiLog("Make initial Build", log)
+                success = False
+                for i in range(1, 11):
+                    if self.job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
+                        self.multiLog("Job cancelled. Initial LivdCD build failed.")
+                        raise dissomniag.taskManager.TaskFailed("Job cancelled. Initial LivdCD build failed.")
+                    
+                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    if ret != 0:
+                        self.multiLog("Initial LiveCD build failed. Retry %d" % i, log)
+                        continue
+                    else:
+                        success = True
+                        break
+                if not success:
+                    self.multiLog("Initial LiveCD build failed finally.", log)
+                    raise dissomniag.taskManager.TaskFailed("Initial LiveCD build failed finally.")
+                
+                #3. Copy iso to final Folder
+                # Check if folder for image exists
+                if not os.access(self.context.LiveCd.vm.getUtilityFolder(), os.F_OK):
+                    os.makedirs(self.context.LiveCd.vm.getUtilityFolder())
+                    
+                shutil.copy2("./binary.iso", self.context.LiveCd.vm.getLocalPathToCdImage(self.job.getUser()))
+                
+                with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash")) as f:
+                    f.write(self.versioningHash)
+                
+                self.context.LiveCd.imageCreated = True
+            
+        finally:
+                if not dissomniag.resetDir():
+                    self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
+                dissomniag.resetPermissions()
+                
+                self.cleanUp()
+        
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+            
+    def revert(self):
+        self.cleanUp()
+        try:
+            shutil.rmtree(os.path.join(self.context.LiveCd.vm.getUtilityFolder(), "configHash"))
+        except OSError, IOError:
+            pass
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+    
+class 
+        
