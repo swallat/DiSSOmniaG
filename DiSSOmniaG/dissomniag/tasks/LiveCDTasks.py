@@ -392,7 +392,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
 
 
-class CreateLiveCd(dissomniag.taskManager.AtomicTask):#
+class CreateLiveCd(dissomniag.taskManager.AtomicTask):
     
     def cleanUp(self):
         
@@ -490,7 +490,7 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):#
                     
                 shutil.copy2("./binary.iso", self.context.LiveCd.vm.getLocalPathToCdImage(self.job.getUser()))
                 
-                with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash")) as f:
+                with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash"), 'w') as f:
                     f.write(self.versioningHash)
                 
                 self.context.LiveCd.imageCreated = True
@@ -513,5 +513,121 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):#
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     
-class 
+class copyCDImage(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "liveCd"):
+            self.multiLog("No LiveCd in Context", log)
+            raise dissomniag.taskManager.TaskFailed("No LiveCd in Context")
+        
+        # 1. Check if Image on local hd exists
+        if not os.access(self.context.liveCd.vm.getLocalPathToCdImage(self.job.getUser()), os.F_OK) or not os.access(os.path.join(self.context.liveCd.vm.getLocalUtilityFolder(self.job.getUser()), "configHash"), os.F_OK):
+            
+            self.multiLog("No local image exists for copy!")
+            raise dissomniag.taskManager.TaskFailed("No local image exists for copy!")
+        
+        # 2. Create destination directory:
+        cmd = "mkdir -p %s" % self.context.liveCd.vm.getRemoteUtilityFolder
+        sshCmd = dissomniag.utils.SSHCommand(cmd, self.context.liveCd.vm.host.getMaintainanceIP(), self.context.liveCd.vm.host.administrativeUserName)
+        ret, output = sshCmd.callAndGetOutput()
+        self.multiLog("Creation of RemoteUtilityFolder with cmd %s results to: res: %d, output: %s" % (cmd, ret, output))
+        
+        # 3. Sync Files
+        
+        for i in range(1,5):
+            rsyncCmd = dissomniag.utils.RsyncCommand(self.context.liveCd.vm.getLocalUtilityFolder(self.job.getUser()),\
+                                                 self.context.liveCd.vm.getRemoteUtilityFolder(self.job.getUser()), \
+                                                 self.context.liveCd.vm.host.getMaintainanceIP(), \
+                                                 self.context.liveCd.vm.host.administrativeUserName)
+            ret, output = rsyncCmd.callAndGetOutput()
+            self.multiLog("Rsync LiveCD ret: %d, output: %s" % (ret, output), log)
+            if ret == 0:
+                break
+            if i == 4 and ret != 0:
+                self.context.liveCd.onRemoteUpToDate = False
+                self.multiLog("Could not rsync LiveCd Image.", log)
+                raise dissomniag.taskManager.TaskFailed("Could not rsync LiveCd Image.")
+            
+        self.context.liveCd.onRemoteUpToDate = True
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+         
+
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+
+class deleteLiveCd(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "liveCd"):
+            self.multiLog("No LiveCd in Context", log)
+            raise dissomniag.taskManager.TaskFailed("No LiveCd in Context")
+        
+        # 1. Delete Local Image
+        self.multiLog("Delete local LiveCd image.", log)
+        try:
+            shutil.rmtree(self.context.vm.getLocalUtilityFolder(self.job.getUser()))
+        except IOError, OSError:
+            self.multiLog("Cannot delete local LiveCd image.", log)
+            
+        # 2. Delete Remote Image
+        cmd = "rm -rf %s" % self.context.liveCd.vm.getRemoteUtilityFolder(self.job.getUser())
+        sshCmd = dissomniag.utils.SSHCommand(cmd, \
+                                             self.context.liveCd.vm.host.getMaintainanceIP(), \
+                                             self.context.liveCd.vm.host.administrativeUserName)
+        ret, output = sshCmd.callAndGetOutput()
+        self.multiLog("Delete LiveCd image remote. ret: %d, output: %s" % (ret, output))
+        if ret != 0:
+            return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
+        else:
+            return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+class checkUptODateOnHd(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "liveCd"):
+            self.multiLog("No LiveCd in Context", log)
+            raise dissomniag.taskManager.TaskFailed("No LiveCd in Context")
+        try:
+            with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash"), 'r') as f:
+                myHash = f.readline(self.versioningHash)
+        except Exception:
+            self.context.LiveCd.onHdUpToDate = False
+            self.multiLog("No config hash for LiveCd on HD.")
+            raise dissomniag.taskManager.TaskFailed("No config hash for LiveCd on HD.")
+        
+        if myHash == self.context.LiveCd.hashConfig(self.job.getUser()):
+            self.context.LiveCd.onHdUpToDate = True
+        else:
+            self.context.LiveCd.onHdUpToDate = False
+            
+        return dissomniag.taskManager.TaskReturns.SUCCESS        
+    
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+class checkUpToDateOnRemote(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "liveCd"):
+            self.multiLog("No LiveCd in Context", log)
+            raise dissomniag.taskManager.TaskFailed("No LiveCd in Context")
+        
+        self.cmd = "cat %s" % (os.path.join(self.context.liveCd.vm.getRemoteUtilityFolder, "configHash"))
+        sshCmd = dissomniag.utils.SSHCommand(self.cmd, \
+                                             self.context.liveCd.vm.host.getMaintainanceIP(), \
+                                             self.context.liveCd.vm.host.administrativeUserName)
+        ret, myHash = sshCmd.callAndGetOutput()
+        if ret == 0 and myHash == self.context.hashConfig(self.job.getUser()):
+            self.context.LiveCd.onRemoteUpToDate = True
+        else:
+            self.context.LiveCd.onRemoteUpToDate = False
+            
+        return dissomniag.taskManager.TaskReturns.SUCCESS 
+    
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS
         

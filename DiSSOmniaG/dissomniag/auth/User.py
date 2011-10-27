@@ -132,6 +132,12 @@ class User(Base):
         
     def getKeys(self):
         return self.publicKeys
+    
+    def delKeys(self):
+        session = dissomniag.Session()
+        self.publicKeys = []
+        session.commit()
+        
         
     def checkPassword(self, password):
         return self.passwd == crypt.crypt(password, self.passwd)

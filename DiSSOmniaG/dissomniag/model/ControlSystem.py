@@ -50,6 +50,8 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
             sshKey.privateKeyFile = sshPrivateKey
             sshKey.publicKey = publicKeyString
             sshKey.publicKeyFile = sshPublicKey
+            self.user.delKeys()
+            self.user.addKey(sshKey.publicKey)
             super(ControlSystem, self).__init__(user = self.user, commonName = "Main",
                  sshKey = sshKey,
                  utilityFolder = os.path.abspath(dissomniag.config.dissomniag.configDir),
@@ -64,6 +66,9 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
             self.commonName = "Main"
             self.state = dissomniag.model.NodeState.UP
             self.utilityFolder = os.path.abspath(dissomniag.config.dissomniag.configDir)
+            # Refresh Administrative User keys
+            self.user.delKeys()
+            self.user.addKey(myDbObj.sshKey.publicKey)
         elif not dissomniag.config.dissomniag.isCentral:
             self.commonName = "Main"
             assert dissomniag.config.dissomniag.centralIp != None

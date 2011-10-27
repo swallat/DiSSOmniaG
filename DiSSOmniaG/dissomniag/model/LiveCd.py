@@ -9,6 +9,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from lxml import etree
 import hashlib
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import dissomniag
 from dissomniag.model import *
@@ -45,6 +46,8 @@ class LiveCd(dissomniag.Base):
     plainPassword = sa.Column(sa.String)
     imageCreated = sa.Column(sa.Boolean, default = False)
     versioningHash = sa.Column(sa.String(64), nullable = True)
+    onHdUpToDate = None #Only Runtime Parameter True == UptoDate, False == NotUpToDate, None== Unknown
+    onRemoteUpToDate = None #Only Runtime Parameter True == UptoDate, False == NotUpToDate, None== Unknown
     
     """
     classdocs
@@ -87,6 +90,25 @@ class LiveCd(dissomniag.Base):
             name.text = str(interface.name)
             mac = etree.SubElement(inter, "mac")
             mac.text = str(interface.macAddress)
+        
+        if dissomniag.getIdentity().getAdministrativeUser().publicKeys[0] != None:
+            adminKey = etree.SubElement(liveInfo, "sshKey")
+            adminKey.text = dissomniag.getIdentity().getAdministrativeUser().publicKey[0]
+        session = dissomniag.Session()
+        try:
+            users = session.query(dissomniag.auth.User).filter(dissomniag.auth.User.isAdmin == True).all()
+        except NoResultFound:
+            pass
+        else:
+            for user in users:
+                for key in user.getKeys():
+                    userKey = etree.SubElement(liveInfo, "sshKey")
+                    userKey.text = key 
+            
+        ###
+        # Add other user keys by topology
+        ###
+        
         return etree.tostring(liveInfo, pretty_print=True)
             
     def hashConfig(self, user, xml=None):
@@ -102,12 +124,35 @@ class LiveCd(dissomniag.Base):
     def prepareLiveImage(self, user):
         self.authUser(user)
         
-        
-        
     
-    def checkIfImageIsPrepared(self):
-        pass
+    def checkOnHdUpToDate(self, user, refresh = False):
+        self.authUser(user)
         
+        if self.onHdUpToDate == None or refresh == True:
+            """
+            Create new job
+            """
+            
+            return None
+        
+        elif self.onHdUpToDate:
+            return True
+        else:
+            return False
+        
+    def checkOnRemoteUpToDate(self, user, refresh = False):
+        self.authUser(user)
+        
+        if self.onRemoteUpToDate == None or refresh == True:
+            """
+            Create new job
+            """
+            
+            return None
+        elif self.onRemoteUpToDate:
+            return True
+        else:
+            return False        
     
     @staticmethod
     def deleteLiveCd(user, livecd):

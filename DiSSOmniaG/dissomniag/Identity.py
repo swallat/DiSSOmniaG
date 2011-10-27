@@ -50,7 +50,6 @@ class Identity:
         session = dissomniag.Session()
         user = None
         try: 
-            
             user = session.query(dissomniag.auth.User).filter(dissomniag.auth.User.username == self.systemUserName).one()
         except MultipleResultsFound:
             one = False

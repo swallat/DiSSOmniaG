@@ -9,7 +9,7 @@ $myPassword
 $myPassword
 EOF
 
-passwd student << EOF
+passwd user << EOF
 $myPassword
 $myPassword
 EOF
