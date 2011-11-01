@@ -52,7 +52,7 @@ nodes = Table('nodes', meta,
            Column('sshKey_id', Integer, ForeignKey('sshNodeKeys.id')),
            Column('administrativeUserName', String(), default = "root", nullable = False),
            Column('utilityFolder', String(200), nullable = True),
-           Column('state', Integer, CheckConstraint("0 <= state < 7", name = "nodeState"), nullable = False),
+           Column('state', Integer, CheckConstraint("0 <= state < 11", name = "nodeState"), nullable = False),
            Column('type', String(50), nullable = False),
 )
 

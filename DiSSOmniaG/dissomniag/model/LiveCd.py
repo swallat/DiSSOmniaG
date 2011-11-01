@@ -53,10 +53,6 @@ class LiveCd(dissomniag.Base):
     classdocs
     """
     
-    def __init__(self, vm):
-        self.vm = vm
-        dissomniag.Session().commit()
-    
     def _generateRPCUser(self):
         pass
     
@@ -124,17 +120,30 @@ class LiveCd(dissomniag.Base):
     def prepareLiveImage(self, user):
         self.authUser(user)
         
+        if self.onHdUpToDate != True:
+            pass
+        
+    def deployLiveImage(self, user):
+        self.authUser(user)
+        
     
     def checkOnHdUpToDate(self, user, refresh = False):
         self.authUser(user)
         
         if self.onHdUpToDate == None or refresh == True:
-            """
-            Create new job
-            """
+            try:
+                with open(os.path.join(self.vm.getLocalUtilityFolder(), "configHash"), 'r') as f:
+                    myHash = f.readline(self.versioningHash)
+            except Exception:
+                self.onHdUpToDate = False
+                raise Exception("No config hash for LiveCd on HD.")
             
-            return None
-        
+            if myHash == self.hashConfig(user):
+                self.onHdUpToDate = True
+                return True
+            else:
+                self.onHdUpToDate = False
+                return False
         elif self.onHdUpToDate:
             return True
         else:
@@ -152,7 +161,28 @@ class LiveCd(dissomniag.Base):
         elif self.onRemoteUpToDate:
             return True
         else:
-            return False        
+            return False
+    
+    @staticmethod
+    def checkUptODateOnHd(user, livecd):
+        if livecd == None or not isinstance(livecd,LiveCd):
+            return False
+        livecd.authUser(user)
+        
+        try:
+            with open(os.path.join(livecd.vm.getLocalUtilityFolder(), "configHash"), 'r') as f:
+                myHash = f.readline(livecd.versioningHash)
+        except Exception:
+            livecd.onHdUpToDate = False
+            raise Exception("No config hash for LiveCd on HD.")
+        
+        if myHash == livecd.hashConfig(user):
+            livecd.onHdUpToDate = True
+        else:
+            livecd.onHdUpToDate = False
+        
+        return
+       
     
     @staticmethod
     def deleteLiveCd(user, livecd):
@@ -161,6 +191,11 @@ class LiveCd(dissomniag.Base):
         livecd.authUser(user)
         
         # Add Job for file system sanity
+        context = dissomniag.TaskManager.Context()
+        context.add(livecd)
+        job = dissomniag.taskManager.Job(context, "Delete a VM", user)
+        job.addTask(dissomniag.tasks.LiveCDTasks.deleteLiveCd())
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, livecd, job)
         
         session = dissomniag.Session()
         

@@ -229,6 +229,21 @@ class vmAddInterface(CliMethodABCClass.CliMethodABCClass):
         
         vm.addInterfaceToNet(self.user, net)
         
+class vmDelInterface(CliMethodABCClass.CliMethodABCClass):
+    
+    def implementation(self, *args):
+        pass 
+        
+class prepareVm(CliMethodABCClass.CliMethodABCClass):
+        
+    def implementation(self, *args):
+        pass
+        
+class deployVm(CliMethodABCClass.CliMethodABCClass):
+    
+    def implementation(self, *args):
+        pass
+        
 class startVm(CliMethodABCClass.CliMethodABCClass):
     
     def implementation(self, *args):

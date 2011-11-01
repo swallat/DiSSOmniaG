@@ -9,6 +9,7 @@ import sqlalchemy.orm as orm
 import logging
 import subprocess, os, netifaces
 from twisted.internet import reactor
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import uuid
 
 import dissomniag
@@ -130,6 +131,50 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         job.addTask(dissomniag.tasks.CheckLiveCdEnvironmentPrepared())
         job.addTask(dissomniag.tasks.PrepareLiveCdEnvironment())
         dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user,dissomniag.model.LiveCdEnvironment(), job)
+        
+        # Check existing Hosts
+        
+        session = dissomniag.Session()
+        
+        try:
+            hosts = session.query(dissomniag.model.Host).all()
+        except NoResultFound:
+            pass
+        else:
+            for host in hosts:
+                context = dissomniag.taskManager.Context()
+                context.add(host)
+                job = dissomniag.taskManager.Job(context, "Check Host up initially.", user = self.user)
+                job.addTask(dissomniag.tasks.CheckHostUpTask())
+                dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, host, job)
+        
+        # Check existing Net's
+        
+        try:
+            nets = session.query(dissomniag.model.generatedNetwork).all()
+        except NoResultFound:
+            pass
+        else:
+            for net in nets:
+                context = dissomniag.taskManager.Context()
+                context.add(net)
+                job = dissomniag.taskManager.Job(context, "Sanity check generatedNetworks on startup", user = self.user)
+                job.addTask(dissomniag.tasks.statusVM())
+                dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, net.host, job)
+        
+        # Check existing VM's
+        
+        try:
+            vms = session.query(dissomniag.model.VM).all()
+        except NoResultFound:
+            pass
+        else:
+            for vm in vms:
+                context = dissomniag.taskManager.Context()
+                context.add(vm)
+                job = dissomniag.taskManager.Job(context, "Sanity check VM on startup", user = self.user)
+                job.addTask(dissomniag.tasks.statusVM())
+                dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, vm.host, job)
         
         #print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
         log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)

@@ -221,6 +221,16 @@ class Job(threading.Thread):
         """
         with self.runningLock:
             self.taskList.append(Task)
+            
+    def appendTask(self, index, Task):
+        
+        with self.runningLock:
+            self.taskList.insert(index, Task)
+            
+    def getIndexOfTask(self, Task):
+        
+        with self.runningLock:
+            return self.taskList.index(Task)
         
     def run(self):
         """

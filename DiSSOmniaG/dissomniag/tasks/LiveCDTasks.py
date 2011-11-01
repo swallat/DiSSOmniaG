@@ -513,7 +513,7 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     
-class copyCDImage(dissomniag.taskManager.AtomicTask):
+class copyCdImage(dissomniag.taskManager.Atom icTask):
     
     def run(self):
         if not hasattr(self.context, "liveCd"):
@@ -592,17 +592,10 @@ class checkUptODateOnHd(dissomniag.taskManager.AtomicTask):
             self.multiLog("No LiveCd in Context", log)
             raise dissomniag.taskManager.TaskFailed("No LiveCd in Context")
         try:
-            with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash"), 'r') as f:
-                myHash = f.readline(self.versioningHash)
-        except Exception:
-            self.context.LiveCd.onHdUpToDate = False
-            self.multiLog("No config hash for LiveCd on HD.")
-            raise dissomniag.taskManager.TaskFailed("No config hash for LiveCd on HD.")
-        
-        if myHash == self.context.LiveCd.hashConfig(self.job.getUser()):
-            self.context.LiveCd.onHdUpToDate = True
-        else:
-            self.context.LiveCd.onHdUpToDate = False
+            self.context.liveCd.checkOnHdUpToDate(self.job.getUser(), refresh = True)
+        except Exception as e:
+            self.multiLog(e.message, log)
+            raise dissomniag.taskManager.TaskFailed(e.message)
             
         return dissomniag.taskManager.TaskReturns.SUCCESS        
     

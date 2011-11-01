@@ -21,10 +21,15 @@ class NodeState:
     UP = 0
     DOWN = 1
     NOT_CREATED = 2
-    CREATED = 3
-    CREATION_ERROR = 4
-    RUNTIME_ERROR = 5
-    CONNECTION_ERROR = 6
+    PREPARED = 3
+    PREPARE_ERROR = 4
+    DEPLOYED = 5
+    DEPLOY_ERROR = 6
+    CREATED = 7
+    RUNTIME_ERROR = 8 
+    CONNECTION_ERROR = 9
+    CREATION_ERROR = 10 # Deprecated
+    
     
     @staticmethod
     def getStateName(state):
@@ -34,13 +39,21 @@ class NodeState:
             return "DOWN"
         elif state == NodeState.NOT_CREATED:
             return "NOT CREATED"
+        elif state == NodeState.PREPARED:
+            return "PREPARED"
+        elif state == NodeState.PREPARE_ERROR:
+            return "PREPARE_ERROR"
+        elif state == NodeState.DEPLOYED:
+            return "DEPLOYED"
+        elif state == NodeState.DEPLOY_ERROR:
+            return "DEPLOY_ERROR"
         elif state == NodeState.CREATED:
             return "CREATED"
         elif state == NodeState.CREATION_ERROR:
             return "CREATION_ERROR"
         elif state == NodeState.RUNTIME_ERROR:
             return "RUNTIME_ERROR"
-        elif state == NodeState.CREATION_ERROR:
+        elif state == NodeState.CONNECTION_ERROR:
             return "CONNECTION_ERROR"
         else:
             return None
@@ -61,7 +74,7 @@ class AbstractNode(dissomniag.Base):
     sshKey = orm.relationship("SSHNodeKey", backref = orm.backref("node", uselist = False))
     administrativeUserName = sa.Column(sa.String(), default = "root", nullable = False)
     utilityFolder = sa.Column(sa.String(200), nullable = True)
-    state = sa.Column(sa.Integer, sa.CheckConstraint("0 <= state < 7", name = "nodeState"), nullable = False)
+    state = sa.Column(sa.Integer, sa.CheckConstraint("0 <= state < 11", name = "nodeState"), nullable = False)
     interfaces = orm.relationship('Interface', backref = "node") #One to Many style
     
     networks = orm.relationship('Network', secondary = node_network, backref = 'nodes')

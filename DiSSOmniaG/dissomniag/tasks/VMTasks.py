@@ -92,7 +92,7 @@ class createVMOnHost(dissomniag.taskManager.AtomicTask):
                 vm = con.lookupByName(self.context.vm.commonName)
             except libvirt.libvirtError:
                 self.job.trace("CreateNetwork: Could not find network.")
-                self.context.vm.state = dissomniag.model.NodeState.CREATION_ERROR
+                self.context.vm.state = dissomniag.model.NodeState.CREATION ERROR
                 try:
                     con.close()
                 except Exception:
@@ -149,6 +149,17 @@ class destroyVMOnHost(dissomniag.taskManager.AtomicTask):
     
     def revert(self):
         raise dissomniag.taskManager.UnrevertableFailure()
+    
+class testVM(dissomniag.taskManager.AtomicTask):
+    """
+    After start check if LiveCd is prepared.
+    """
+    
+    def run(self):
+        pass
+    
+    def revert(self):
+        pass
     
 class statusVM(dissomniag.taskManager.AtomicTask):
     

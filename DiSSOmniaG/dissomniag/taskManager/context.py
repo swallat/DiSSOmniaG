@@ -58,6 +58,13 @@ class Context(object):
         else:
             raise AttributeError("The object with the Name %s already exists in this context." % name)
         setattr(self, name, dict)
+    
+    def addWhileRunning(self, obj, name = None):
+        
+        if name == None:
+            setattr(self, obj.__class__.__name__, obj)
+        else:
+            setattr(self, name, obj)
         
             
             

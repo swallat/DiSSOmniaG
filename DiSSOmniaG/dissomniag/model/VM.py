@@ -9,9 +9,11 @@ from lxml import etree
 import os
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+from abc import ABCMeta, abstractmethod
 
 import dissomniag
 from dissomniag.model import *
+        
 
 class VM(AbstractNode):
     __tablename__ = 'vms'
@@ -31,6 +33,7 @@ class VM(AbstractNode):
     liveCd_id = sa.Column(sa.Integer, sa.ForeignKey('livecds.id'))
     #liveCd = orm.relationship("LiveCd", backref = orm.backref('livecds', uselist = False))
     liveCd = orm.relationship("LiveCd", backref = "vm")
+    runningState = None
     
     """
     classdocs
@@ -46,6 +49,9 @@ class VM(AbstractNode):
         
         interface = self.addInterface(user, "maintain")
         interface.maintainanceInterface = True
+            
+        self.liveCd = LiveCd()
+        self.runningState = dissomniag.model.VMStates.Not_Created_VM(self)
         
         session = dissomniag.Session()    
         session.commit()
@@ -387,6 +393,61 @@ class VM(AbstractNode):
             job.addTask(dissomniag.tasks.createVMOnHost())
             dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
+    
+    def test(self, user):
+        self.authUser(user)
+        if self.runningState == None:
+            self.createTestJob(user)
+        else:
+            self.runningState.test()
+        
+    def create(self, user):
+        self.authUser(user)
+        self.runningState.create()
+        
+    def deploy(self, user):
+        self.authUser(user)
+        self.runningState.deploy()
+        
+    def start(self, user):
+        self.authUser(user)
+        self.runningState.start()
+        
+    def stop(self, user):
+        self.authUser(user)
+        self.runningState.stop()
+        
+    def sanity(self, user):
+        self.authUser(user)
+        self.runningState.sanity()
+    
+    def reset(self, user):
+        self.authUser(user)
+        self.runningState.reset()
+    
+    def createTestJob(self, user):
+        pass
+    
+    def createCreateJob(self, user):
+        pass
+    
+    def createPrepareJob(self, user):
+        pass
+    
+    def createDeployJob(self, user):
+        pass
+    
+    def createStartJob(self, user):
+        pass
+    
+    def createStopJob(self, user):
+        pass
+    
+    def createSanityJob(self, user):
+        pass
+    
+    def createResetJob(self, user):
+        pass
         
         
         
