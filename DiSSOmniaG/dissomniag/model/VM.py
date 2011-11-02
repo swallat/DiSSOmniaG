@@ -417,9 +417,9 @@ class VM(AbstractNode):
         self.authUser(user)
         self.runningState.stop()
         
-    def sanity(self, user):
+    def sanityCheck(self, user):
         self.authUser(user)
-        self.runningState.sanity()
+        self.runningState.sanityCheck()
     
     def reset(self, user):
         self.authUser(user)
@@ -443,7 +443,7 @@ class VM(AbstractNode):
     def createStopJob(self, user):
         pass
     
-    def createSanityJob(self, user):
+    def createSanityCheckJob(self, user):
         pass
     
     def createResetJob(self, user):

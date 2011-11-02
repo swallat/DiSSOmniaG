@@ -33,7 +33,7 @@ class AbstractVMState():
         raise NotImplementedError()
     
     @abstractmethod
-    def sanity(self):
+    def sanityCheck(self):
         raise NotImplementedError()
     
     @abstractmethod

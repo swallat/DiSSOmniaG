@@ -24,7 +24,7 @@ class Deploy_Error_VM(dissomniag.model.VMStates.AbstractVMState):
     def stop(self):
         raise NotImplementedError()
     
-    def sanity(self):
+    def sanityCheck(self):
         raise NotImplementedError()
     
     def reset(self):
