@@ -92,7 +92,7 @@ class createVMOnHost(dissomniag.taskManager.AtomicTask):
                 vm = con.lookupByName(self.context.vm.commonName)
             except libvirt.libvirtError:
                 self.job.trace("CreateNetwork: Could not find network.")
-                self.context.vm.state = dissomniag.model.NodeState.CREATION ERROR
+                self.context.vm.state = dissomniag.model.NodeState.CREATION_ERROR
                 try:
                     con.close()
                 except Exception:

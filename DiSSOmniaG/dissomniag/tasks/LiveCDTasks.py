@@ -513,7 +513,7 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     
-class copyCdImage(dissomniag.taskManager.Atom icTask):
+class copyCdImage(dissomniag.taskManager.AtomicTask):
     
     def run(self):
         if not hasattr(self.context, "liveCd"):
