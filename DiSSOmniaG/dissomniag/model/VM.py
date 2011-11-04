@@ -391,7 +391,8 @@ class VM(AbstractNode):
             if interface.maintainanceInterface:
                 return interface
         return None
-        
+    
+    """
     def start(self, user):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
@@ -420,7 +421,7 @@ class VM(AbstractNode):
         return True
     
     """
-    After status check. Get the vm in a consitent state.
+    #After status check. Get the vm in a consitent state.
     """
     def operate(self, user):
         if self.state == dissomniag.model.NodeState.RUNTIME_ERROR:
@@ -437,6 +438,7 @@ class VM(AbstractNode):
             job.addTask(dissomniag.tasks.createVMOnHost())
             dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
+    """
     
     def test(self, user, job = None):
         self.authUser(user)
@@ -490,29 +492,67 @@ class VM(AbstractNode):
         self.runningState.reset()
     
     def createTestJob(self, user):
-        pass
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Fetch state of a VM", user = user)
+        job.addTask(dissomniag.tasks.statusVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
     
     def createPrepareJob(self, user):
-        pass
-    
-    def createPrepareJob(self, user):
-        pass
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Prepare a VM", user = user)
+        job.addTask(dissomniag.tasks.prepareVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
     
     def createDeployJob(self, user):
-        pass
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Deploy a VM", user = user)
+        job.addTask(dissomniag.tasks.deployVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
     
     def createStartJob(self, user):
-        pass
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Start a VM", user = user)
+        job.addTask(dissomniag.tasks.startVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
     
     def createStopJob(self, user):
-        pass
-    
-    def createSanityCheckJob(self, user):
-        pass
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Stop a VM", user = user)
+        job.addTask(dissomniag.tasks.stopVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
     
     def createResetJob(self, user):
-        pass
-        
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Reset a VM", user = user)
+        job.addTask(dissomniag.tasks.resetVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
+    
+    def createTotalResetJob(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Totally Reset a VM", user = user)
+        job.addTask(dissomniag.tasks.totalResetVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
         
         
     @staticmethod

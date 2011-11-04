@@ -112,7 +112,7 @@ class addVm(CliMethodABCClass.CliMethodABCClass):
         sys.stderr = self.terminal
         
         if not self.user.isAdmin:
-            self.printError("Only Admin Users can list Nets!")
+            self.printError("Only Admin Users can add a VM!")
             return
         
         parser = argparse.ArgumentParser(description = 'Add a VM to a host', prog = args[0])
@@ -156,7 +156,7 @@ class delVm(CliMethodABCClass.CliMethodABCClass):
         sys.stderr = self.terminal
         
         if not self.user.isAdmin:
-            self.printError("Only Admin Users can list Nets!")
+            self.printError("Only Admin Users can delete a VM!")
             return
         
         parser = argparse.ArgumentParser(description = 'Delete a VM', prog = args[0])
@@ -187,7 +187,7 @@ class vmAddInterface(CliMethodABCClass.CliMethodABCClass):
         sys.stderr = self.terminal
         
         if not self.user.isAdmin:
-            self.printError("Only Admin Users can list Nets!")
+            self.printError("Only Admin Users can add an interface to a VM!")
             return
         
         parser = argparse.ArgumentParser(description = 'Add a VM Interface to a networkVM', prog = args[0])
@@ -232,17 +232,105 @@ class vmAddInterface(CliMethodABCClass.CliMethodABCClass):
 class vmDelInterface(CliMethodABCClass.CliMethodABCClass):
     
     def implementation(self, *args):
-        pass 
+        sys.stdout = self.terminal
+        sys.stderr = self.terminal
+        
+        if not self.user.isAdmin:
+            self.printError("Only Admin Users can delete an interface from a net!")
+            return
+        
+        parser = argparse.ArgumentParser(description = 'Delete a VM Interface from a networkVM', prog = args[0])
+                
+        parser.add_argument("vmName", action = "store")
+        parser.add_argument("ifName", action = "store")
+        
+        options = parser.parse_args(args[1:])
+        
+        vmName = str(options.vmName)
+        ifName = str(options.ifName)
+        
+        session = dissomniag.Session()
+        
+        try:
+            vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == vmName).one()
+        except NoResultFound:
+            self.printError("There is no Vm with the name: %s" % vmName)
+            return
+        except MultipleResultsFound:
+            self.printError("Query Inconsistency.")
+            return
+        found = False
+        for interface in vm.interfaces:
+            if interface.name == ifName:
+                dissomniag.model.Interface.deleteInterface(self.user, interface)
+                found = True
+                break
+        if found:
+            self.printSuccess("Successfully deleted Interface %s from %s" % (ifName, vmName))
+        else:
+            self.printError("Could not delete an Interface with the name %s from %s" % (ifName, vmName))
         
 class prepareVm(CliMethodABCClass.CliMethodABCClass):
         
     def implementation(self, *args):
-        pass
+        sys.stdout = self.terminal
+        sys.stderr = self.terminal
+        
+        if not self.user.isAdmin:
+            self.printError("Only Admin Users can prepare a VM!")
+            return
+        
+        parser = argparse.ArgumentParser(description = 'Prepare a VM', prog = args[0])
+                
+        parser.add_argument("vmName", action = "store")
+        
+        options = parser.parse_args(args[1:])
+        
+        vmName = str(options.vmName)
+        
+        session = dissomniag.Session()
+        
+        try:
+            vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == vmName).one()
+        except NoResultFound:
+            self.printError("There is no Vm with the name: %s" % vmName)
+            return
+        except MultipleResultsFound:
+            self.printError("Query Inconsistency.")
+            return
+        
+        vm.createPrepareJob(self.user)
         
 class deployVm(CliMethodABCClass.CliMethodABCClass):
     
     def implementation(self, *args):
-        pass
+        sys.stdout = self.terminal
+        sys.stderr = self.terminal
+        
+        if not self.user.isAdmin:
+            self.printError("Only Admin Users can deploy a VM!")
+            return
+        
+        parser = argparse.ArgumentParser(description = 'Deploy a VM', prog = args[0])
+                
+        parser.add_argument("vmName", action = "store")
+        
+        options = parser.parse_args(args[1:])
+        
+        vmName = str(options.vmName)
+        
+        session = dissomniag.Session()
+        
+        try:
+            vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == vmName).one()
+        except NoResultFound:
+            self.printError("There is no Vm with the name: %s" % vmName)
+            return
+        except MultipleResultsFound:
+            self.printError("Query Inconsistency.")
+            return
+        
+        vm.createdeployJob(self.user)
         
 class startVm(CliMethodABCClass.CliMethodABCClass):
     
@@ -251,7 +339,7 @@ class startVm(CliMethodABCClass.CliMethodABCClass):
         sys.stderr = self.terminal
         
         if not self.user.isAdmin:
-            self.printError("Only Admin Users can list Nets!")
+            self.printError("Only Admin Users can start a VM!")
             return
         
         parser = argparse.ArgumentParser(description = 'Start a VM', prog = args[0])
@@ -273,7 +361,7 @@ class startVm(CliMethodABCClass.CliMethodABCClass):
             self.printError("Query Inconsistency.")
             return
         
-        vm.start(self.user)
+        vm.createStartJob(self.user)
         
         
 class stopVm(CliMethodABCClass.CliMethodABCClass):
@@ -283,7 +371,7 @@ class stopVm(CliMethodABCClass.CliMethodABCClass):
         sys.stderr = self.terminal
         
         if not self.user.isAdmin:
-            self.printError("Only Admin Users can list Nets!")
+            self.printError("Only Admin Users can stop a VM!")
             return
         
         parser = argparse.ArgumentParser(description = 'Stop a VM', prog = args[0])
@@ -305,7 +393,7 @@ class stopVm(CliMethodABCClass.CliMethodABCClass):
             self.printError("Query Inconsistency.")
             return
         
-        vm.stop(self.user)
+        vm.createStopJob(self.user)
         
 class refreshVm(CliMethodABCClass.CliMethodABCClass):
     
@@ -314,7 +402,7 @@ class refreshVm(CliMethodABCClass.CliMethodABCClass):
         sys.stderr = self.terminal
         
         if not self.user.isAdmin:
-            self.printError("Only Admin Users can list Nets!")
+            self.printError("Only Admin Users can refresh a VM!")
             return
         
         parser = argparse.ArgumentParser(description = 'Refresh a VM', prog = args[0])
@@ -336,4 +424,35 @@ class refreshVm(CliMethodABCClass.CliMethodABCClass):
             self.printError("Query Inconsistency.")
             return
         
-        vm.refresh(self.user)
+        vm.createTestJob(self.user)
+        
+class resetVM(CliMethodABCClass.CliMethodABCClass):
+    
+    def implementation(self, *args):
+        sys.stdout = self.terminal
+        sys.stderr = self.terminal
+        
+        if not self.user.isAdmin:
+            self.printError("Only Admin Users can reset a VM!")
+            return
+        
+        parser = argparse.ArgumentParser(description = 'Reset a VM', prog = args[0])
+                
+        parser.add_argument("vmName", action = "store")
+        
+        options = parser.parse_args(args[1:])
+        
+        vmName = str(options.vmName)
+        
+        session = dissomniag.Session()
+        
+        try:
+            vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == vmName).one()
+        except NoResultFound:
+            self.printError("There is no Vm with the name: %s" % vmName)
+            return
+        except MultipleResultsFound:
+            self.printError("Query Inconsistency.")
+            return
+        
+        vm.createResetJob(self.user)

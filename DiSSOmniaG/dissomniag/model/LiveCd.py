@@ -156,7 +156,11 @@ class LiveCd(dissomniag.Base):
             """
             Create new job
             """
-            
+            context = dissomniag.taskManager.Context()
+            context.add(self.vm, "vm")
+            job = dissomniag.taskManager.Job(context, "Check LiveCd up to date", user)
+            job.addTask(dissomniag.tasks.VMTasks.statusVM())
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, LiveCdEnvironment(), job)
             return None
         elif self.onRemoteUpToDate:
             return True
