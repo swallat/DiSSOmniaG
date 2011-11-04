@@ -17,24 +17,24 @@ class Prepare_Error_VM(dissomniag.model.VMStates.AbstractVMState):
         return self.sanityCheck(job)
     
     def prepare(self, job):
-        if self.sanityCheck(job):
-            self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
-            return self.vm.runningState.create(job)
-        else:
-            raise dissomniag.taskManager.TaskFailed("VM could not be created.")
+        return self.sanityCheck(job)
     
     def deploy(self, job):
-        raise NotImplementedError()
+        self.vm.changeState(dissomniag.model.NodeState.NOT_CREAED)
+        return self.vm.runningState.deploy(job)
     
     def start(self, job):
-        raise NotImplementedError()
+        self.vm.changeState(dissomniag.model.NodeState.NOT_CREAED)
+        return self.vm.runningState.start(job)
     
     def stop(self, job):
-        raise NotImplementedError()
+        return True
     
     def sanityCheck(self, job):
-        raise NotImplementedError()
+        self.vm.changeState(dissomniag.model.NodeState.NOT_CREAED)
+        return self.vm.runningState.prepare(job)
     
     def reset(self, job):
-        raise NotImplementedError()
+        self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
+        return self.vm.runningState.cleanUpPrepare(job)
         

@@ -42,16 +42,37 @@ class Created_VM(dissomniag.model.VMStates.AbstractVMState):
         return True
     
     def deploy(self, job):
-        raise NotImplementedError()
+        return True
     
     def start(self, job):
-        raise NotImplementedError()
+        return True
     
     def stop(self, job):
-        raise NotImplementedError()
+        try:
+            con = libvirt.open(str(self.vm.host.qemuConnector))
+        except libvirt.libvirtError:
+            self.vm.changeState(dissomniag.model.NodeState.DEPLOY_ERROR)
+            raise dissomniag.taskManager.TaskFailed("Could Not Connect to Libvirt Host!")
+        
+        try:
+            vm = con.lookupByName(self.vm.commonName)
+        except libvirt.libvirtError:
+            self.multiLog("destroyVMOnHost: Could not find VM on host.", job, log)
+        else:
+            try:
+                vm.destroy()
+            except libvirt.libvirtError:
+                self.multiLog("destroyVMOnHost: could not destroy or undefine vm", job, log)
+                self.vm.changeState(dissomniag.model.NodeState.DEPLOY_ERROR)
+                return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
+        
+        self.vm.changeState(dissomniag.model.NodeState.DEPLOYED)
+        return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def sanityCheck(self, job):
-        raise NotImplementedError()
+        return True
     
     def reset(self, job):
-        raise NotImplementedError()
+        returnMe = self.stop(job)
+        self.vm.changeState(dissomniag.model.NodeState.DEPLOYED)
+        return returnMe

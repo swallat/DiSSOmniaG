@@ -95,21 +95,21 @@ class Not_Created_VM(dissomniag.model.VMStates.AbstractVMState):
                     job.trace("Cannot chdir to %s" % self.patternFolder)
                 dissomniag.resetPermissions()
                 
-                self.cleanUp()
+                self.cleanUpPrepare()
         
         job.trace("LiveCd Image created.")
         self.vm.changeState(dissomniag.model.NodeState.CREATED)
         return True
     
-    def deploy(self, job):
+    def deploy(self, job):#
         if self.prepare(job):
-            return self.vm.runningJob.deploy(job)
+            self.vm.runningJob.deploy(job)
         else:
             return False
     
     def start(self, job):
         if self.prepare(job):
-            return self.vm.runningJob.start(job)
+            self.vm.runningJob.start(job)
         else:
             return False
     
@@ -123,7 +123,7 @@ class Not_Created_VM(dissomniag.model.VMStates.AbstractVMState):
         return True
     
     
-    def cleanUp(self):
+    def cleanUpPrepare(self, job):
         
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
         dissomniag.getRoot()
@@ -138,7 +138,7 @@ class Not_Created_VM(dissomniag.model.VMStates.AbstractVMState):
         self.multiLog("exec %s" % cmd, log)
         ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
         if ret != 0:
-            self.multiLog("Could not exec %s correctly" % cmd, log)
+            self.multiLog("Could not exec %s correctly" % cmd, job, log)
         
         if self.stageDir.endswith("/"):
             cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
@@ -147,6 +147,7 @@ class Not_Created_VM(dissomniag.model.VMStates.AbstractVMState):
         self.multiLog("exec %s" % cmd, log)
         ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
         if ret != 0:
-            self.multiLog("Could not exec %s correctly" % cmd, log)
+            self.multiLog("Could not exec %s correctly" % cmd, job, log)
         dissomniag.resetPermissions()
+        return True
         

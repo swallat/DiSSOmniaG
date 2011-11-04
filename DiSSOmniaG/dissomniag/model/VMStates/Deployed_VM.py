@@ -35,38 +35,8 @@ class Deployed_VM(dissomniag.model.VMStates.AbstractVMState):
         job.trace("VM already prepared!")
         return True
         
-    
     def deploy(self, job):
-        # 1. Check if Image on local hd exists
-        if not os.access(self.vm.getLocalPathToCdImage(self.job.getUser()), os.F_OK) or not os.access(os.path.join(self.vm.getLocalUtilityFolder(job.getUser()), "configHash"), os.F_OK):
-            
-            self.multiLog("No local image exists for copy!", job, log)
-            raise dissomniag.taskManager.TaskFailed("No local image exists for copy!", job, log)
-        
-        # 2. Create destination directory:
-        cmd = "mkdir -p %s" % self.vm.getRemoteUtilityFolder
-        sshCmd = dissomniag.utils.SSHCommand(cmd, self.vm.host.getMaintainanceIP(), self.vm.host.administrativeUserName)
-        ret, output = sshCmd.callAndGetOutput()
-        self.multiLog("Creation of RemoteUtilityFolder with cmd %s results to: res: %d, output: %s" % (cmd, ret, output), job, log)
-        
-        # 3. Sync Files
-        
-        for i in range(1,5):
-            rsyncCmd = dissomniag.utils.RsyncCommand(self.context.liveCd.vm.getLocalUtilityFolder(self.job.getUser()),\
-                                                 self.context.liveCd.vm.getRemoteUtilityFolder(self.job.getUser()), \
-                                                 self.context.liveCd.vm.host.getMaintainanceIP(), \
-                                                 self.context.liveCd.vm.host.administrativeUserName)
-            ret, output = rsyncCmd.callAndGetOutput()
-            self.multiLog("Rsync LiveCD ret: %d, output: %s" % (ret, output), log)
-            if ret == 0:
-                break
-            if i == 4 and ret != 0:
-                self.context.liveCd.onRemoteUpToDate = False
-                self.multiLog("Could not rsync LiveCd Image.", log)
-                raise dissomniag.taskManager.TaskFailed("Could not rsync LiveCd Image.")
-            
-        self.context.liveCd.onRemoteUpToDate = True
-        return dissomniag.taskManager.TaskReturns.SUCCESS
+        return True
     
     def start(self, job):
         try:
@@ -96,10 +66,11 @@ class Deployed_VM(dissomniag.model.VMStates.AbstractVMState):
         return True
     
     def stop(self, job):
-        raise NotImplementedError()
+        return True
     
     def sanityCheck(self, job):
-        raise NotImplementedError()
+        return True
     
     def reset(self, job):
-        raise NotImplementedError()
+        self.vm.changeState(dissomniag.model.NodeState.PREPARED)
+        return self.vm.runningState.cleanUpDeploy(job)

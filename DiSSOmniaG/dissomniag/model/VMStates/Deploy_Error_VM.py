@@ -17,10 +17,10 @@ class Deploy_Error_VM(dissomniag.model.VMStates.AbstractVMState):
         return self.sanityCheck(job)
     
     def prepare(self, job):
-        raise dissomniag.taskManager.TaskFailed("VM in inconsistent state! Could not recreate image!")
-    
+        return self.reset(job)
+        
     def deploy(self, job):
-        raise NotImplementedError()
+        return self.sanityCheck(job)
     
     def start(self, job):
         if self.sanityCheck(job):
@@ -29,11 +29,17 @@ class Deploy_Error_VM(dissomniag.model.VMStates.AbstractVMState):
             raise dissomniag.taskManager("VM could not be started!")
     
     def stop(self, job):
-        raise NotImplementedError()
+        return self.sanityCheck(job)
     
     def sanityCheck(self, job):
-        raise NotImplementedError()
+        self.vm.changeState(dissomniag.model.NodeState.PREPARED)
+        return self.vm.runningState.deploy(job)
     
     def reset(self, job):
-        raise NotImplementedError()
+        self.vm.changeState(dissomniag.model.NodeState.DEPLOYED)
+        if self.vm.runningState.reset(job):
+            return True
+        else:
+            self.changeState(dissomniag.model.NodeState.PREPARE_ERROR)
+            return False
         

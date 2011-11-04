@@ -21,16 +21,18 @@ class Runtime_Error_VM(dissomniag.model.VMStates.AbstractVMState):
         raise dissomniag.taskManager.TaskFailed("VM in inconsistent state! Could not recreate image!")
     
     def deploy(self, job):
-        raise NotImplementedError()
+        return self.stop()
     
     def start(self, job):
-        raise NotImplementedError()
+        return self.sanityCheck(job)
     
     def stop(self, job):
-        raise NotImplementedError()
+        self.vm.changeState(dissomniag.model.NodeState.CREATED)
+        return self.vm.runningSatate.stop()
     
     def sanityCheck(self, job):
-        raise NotImplementedError()
-    
+        self.vm.changeState(dissomniag.model.NodeState.DEPLOYED)
+        return self.vm.runningState.start(job)
+        
     def reset(self, job):
-        raise NotImplementedError()
+        return self.stop(job)
