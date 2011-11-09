@@ -13,6 +13,7 @@ from abc import ABCMeta, abstractmethod
 
 import dissomniag
 from dissomniag.model import *
+from logging import thread
         
 
 class VM(AbstractNode):
@@ -32,22 +33,24 @@ class VM(AbstractNode):
     host = orm.relationship("Host", primaryjoin = "VM.host_id == Host.host_id", backref = "virtualMachines")
     liveCd_id = sa.Column(sa.Integer, sa.ForeignKey('livecds.id'))
     #liveCd = orm.relationship("LiveCd", backref = orm.backref('livecds', uselist = False))
-    liveCd = orm.relationship("LiveCd", backref = "vm")
+    #liveCd = orm.relationship("LiveCd", backref = "vm")
+    liveCd = orm.relationship("LiveCd", backref=orm.backref("vm", uselist=False))
     runningState = None
     
     """
     classdocs
     """
     
-    def __new__(self, *args, **kwargs):
-        self.createdState = VMStates.Created_VM(self)
-        self.deployErrorState = VMStates.Deploy_Error_VM(self)
-        self.deployedState = VMStates.Deployed_VM(self)
-        self.notCreatedState = VMStates.Not_Created_VM(self)
-        self.prepareErrorState = VMStates.Prepare_Error_VM(self)
-        self.preparedState = VMStates.Prepared_VM(self)
-        self.runtimeErrorState = VMStates.Runtime_Error_VM(self)
-        return super(VM, self).__new__(self, *args, **kwargs)
+    #def __new__(self, *args, **kwargs):
+    #    self.createdState = dissomniag.model.VMStates.Created_VM(self)
+    #    self.deployErrorState = dissomniag.model.VMStates.Deploy_Error_VM(self)
+    #    self.deployedState = dissomniag.model.VMStates.Deployed_VM(self)
+    #    self.notCreatedState = dissomniag.model.VMStates.Not_Created_VM(self)
+    #    self.prepareErrorState = dissomniag.model.VMStates.Prepare_Error_VM(self)
+    #    self.preparedState = dissomniag.model.VMStates.Prepared_VM(self)
+    #    self.runtimeErrorState = dissomniag.model.VMStates.Runtime_Error_VM(self)
+    #    #return super(VM, self).__new__(self, *args, **kwargs)
+    #    return super(VM, self).__new__(self)
 
     def changeState(self, nextState):
         if not dissomniag.model.NodeState.checkIn(nextState):
@@ -64,7 +67,7 @@ class VM(AbstractNode):
                 self.runningState = self.preparedState
                 self.state = dissomniag.model.NodeState.PREPARED
             elif nextState == dissomniag.model.NodeState.PREPARE_ERROR:
-                self.runningState = self.prepareErrorstate
+                self.runningState = self.prepareErrorState
                 self.state = dissomniag.model.NodeState.PREPARE_ERROR
             elif nextState == dissomniag.model.NodeState.DEPLOYED:
                 self.runningState = self.deployedState
@@ -78,9 +81,25 @@ class VM(AbstractNode):
             session.commit()
                 
     def selectInitialStateActor(self):
-        if self.runningState == None:
-            self.changeState(self.state)
-        return
+        #if self.runningState == None:
+        #    self.createdState = dissomniag.model.VMStates.Created_VM(self, self.liveCd)
+        #    self.deployErrorState = dissomniag.model.VMStates.Deploy_Error_VM(self, self.liveCd)
+        #    self.deployedState = dissomniag.model.VMStates.Deployed_VM(self, self.liveCd)
+        #    self.notCreatedState = dissomniag.model.VMStates.Not_Created_VM(self, self.liveCd)
+        #    self.prepareErrorState = dissomniag.model.VMStates.Prepare_Error_VM(self, self.liveCd)
+        #    self.preparedState = dissomniag.model.VMStates.Prepared_VM(self, self.liveCd)
+        #    self.runtimeErrorState = dissomniag.model.VMStates.Runtime_Error_VM(self, self.liveCd)
+        #    self.changeState(self.state)
+        #return
+        self.runningState = None
+        self.createdState = dissomniag.model.VMStates.Created_VM(self, self.liveCd)
+        self.deployErrorState = dissomniag.model.VMStates.Deploy_Error_VM(self, self.liveCd)
+        self.deployedState = dissomniag.model.VMStates.Deployed_VM(self, self.liveCd)
+        self.notCreatedState = dissomniag.model.VMStates.Not_Created_VM(self, self.liveCd)
+        self.prepareErrorState = dissomniag.model.VMStates.Prepare_Error_VM(self, self.liveCd)
+        self.preparedState = dissomniag.model.VMStates.Prepared_VM(self, self.liveCd)
+        self.runtimeErrorState = dissomniag.model.VMStates.Runtime_Error_VM(self, self.liveCd)
+        self.changeState(self.state)
     
     def __init__(self, user, commonName, host):
         
@@ -88,14 +107,13 @@ class VM(AbstractNode):
             self.host = host
         
         super(VM, self).__init__(user, commonName, state = dissomniag.model.NodeState.NOT_CREATED)
-        self.selectInitialStateActor(dissomniag.model.NodeState.NOT_CREATED)
+        self.selectInitialStateActor()
         self.vncPort = self.getFreeVNCPortOnHost(user, host)
         
         interface = self.addInterface(user, "maintain")
         interface.maintainanceInterface = True
             
-        self.liveCd = LiveCd()
-        self.runningState = dissomniag.model.VMStates.Not_Created_VM(self)
+        self.liveCd = dissomniag.model.LiveCd(self)
         
         session = dissomniag.Session()    
         session.commit()
@@ -316,7 +334,7 @@ class VM(AbstractNode):
         return vmFolder
     
     def getLocalUtilityFolder(self, user):
-        self.authUser(self.user)
+        self.authUser(user)
         vmFolder = os.path.join(dissomniag.config.dissomniag.vmsFolder, self.commonName)
         return vmFolder
     
@@ -332,7 +350,7 @@ class VM(AbstractNode):
     
     def getImageName(self, user):
         self.authUser(user)
-        return ("%s_%s.iso" % (self.name, self.uuid))
+        return ("%s_%s.iso" % (self.commonName, self.uuid))
     
     def getPathToHdImage(self, user):
         self.authUser(user)
@@ -442,54 +460,55 @@ class VM(AbstractNode):
     
     def test(self, user, job = None):
         self.authUser(user)
-        if self.runningState == None:
+        if job == None:
             self.createTestJob(user)
         else:
             if not isinstance(job, dissomniag.taskManager.Job):
                 raise dissomniag.utils.MissingJobObject()
-            self.runningState.test()
+            self.selectInitialStateActor()
+            self.runningState.test(job)
         
     def prepare(self, user, job):
         self.authUser(user)
         if not isinstance(job, dissomniag.taskManager.Job):
                 raise dissomniag.utils.MissingJobObject()
         self.selectInitialStateActor()
-        self.runningState.createImage()
+        self.runningState.prepare(job)
         
     def deploy(self, user, job):
         self.authUser(user)
         if not isinstance(job, dissomniag.taskManager.Job):
                 raise dissomniag.utils.MissingJobObject()
         self.selectInitialStateActor()
-        self.runningState.deploy()
+        self.runningState.deploy(job)
         
     def start(self, user, job):
         self.authUser(user)
         if not isinstance(job, dissomniag.taskManager.Job):
                 raise dissomniag.utils.MissingJobObject()
         self.selectInitialStateActor()
-        self.runningState.start()
+        self.runningState.start(job)
         
     def stop(self, user, job):
         self.authUser(user)
         if not isinstance(job, dissomniag.taskManager.Job):
                 raise dissomniag.utils.MissingJobObject()
         self.selectInitialStateActor()
-        self.runningState.stop()
+        self.runningState.stop(job)
         
     def sanityCheck(self, user, job):
         self.authUser(user)
         if not isinstance(job, dissomniag.taskManager.Job):
                 raise dissomniag.utils.MissingJobObject()
         self.selectInitialStateActor()
-        self.runningState.sanityCheck()
+        self.runningState.sanityCheck(job)
     
     def reset(self, user, job):
         self.authUser(user)
         if not isinstance(job, dissomniag.taskManager.Job):
                 raise dissomniag.utils.MissingJobObject()
         self.selectInitialStateActor()
-        self.runningState.reset()
+        self.runningState.reset(job)
     
     def createTestJob(self, user):
         self.authUser(user)
@@ -507,6 +526,7 @@ class VM(AbstractNode):
         job = dissomniag.taskManager.Job(context, "Prepare a VM", user = user)
         job.addTask(dissomniag.tasks.prepareVM())
         dissomniag.taskManager.Dispatcher.addJob(user, job)
+        log.info("THREAD PREPARE ID " + str(thread.get_ident()))
         return True
     
     def createDeployJob(self, user):
@@ -563,7 +583,7 @@ class VM(AbstractNode):
         
         #1. Delete LiveCD
         if node.liveCd != None and type(node.liveCd) == dissomniag.model.LiveCd:
-            dissomniag.model.LiveCd.deleteLiveCd(node.liveCd)
+            dissomniag.model.LiveCd.deleteLiveCd(user, node.liveCd)
 
         #2. Delete Interfaces
         for interface in node.interfaces:

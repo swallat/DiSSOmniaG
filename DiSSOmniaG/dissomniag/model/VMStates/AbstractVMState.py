@@ -9,15 +9,16 @@ import dissomniag
 class AbstractVMState():
     __metaclass__ = ABCMeta
     
-    def __init__(self, vm):
+    def __init__(self, vm, liveCd):
         self.vm = vm
+        self.liveCd = liveCd
         
     @abstractmethod
     def test(self, job):
         raise NotImplementedError()
     
     @abstractmethod
-    def createImage(self, job):
+    def prepare(self, job):
         raise NotImplementedError()
     
     @abstractmethod

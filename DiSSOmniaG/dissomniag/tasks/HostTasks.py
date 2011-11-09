@@ -123,12 +123,14 @@ class checkKvmOnHost(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
         
         maintainanceIp = self.context.host.getMaintainanceIP().addr
-        self.job.trace("chekKvmOnHost: (Host: %s) kvm-ok" % self.context.host.commonName)
-        sshCmd = dissomniag.utils.SSHCommand("kvm-ok", hostOrIp = maintainanceIp, username = self.context.host.administrativeUserName)
-        code, output = sshCmd.callAndGetOutput()
-        if code != 0:
-            out = "\n".join(output)
-            self.job.trace("checkLibvirtVersionOnHost: Could not execute 'kvm-ok' %s!" % out)
+        self.job.trace("chekKvmOnHost: (Host: %s) egrep vmx --color=always /proc/cpuinfo" % self.context.host.commonName)
+        sshCmd1 = dissomniag.utils.SSHCommand("egrep vmx --color=always /proc/cpuinfo", hostOrIp = maintainanceIp, username = self.context.host.administrativeUserName)
+        code1, output1 = sshCmd1.callAndGetOutput()
+        sshCmd2 = dissomniag.utils.SSHCommand("egrep svm --color=always /proc/cpuinfo", hostOrIp = maintainanceIp, username = self.context.host.administrativeUserName)
+        code2, output2 = sshCmd2.callAndGetOutput()
+        if code1 != 0 and code2 != 0:
+            out = "\n".join(output1 + output2)
+            self.job.trace("checkLibvirtVersionOnHost: Could not execute 'egrep vmx --color=always /proc/cpuinfo' %s!" % out)
             self.context.host.kvmUsable = False
             return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
         self.context.host.kvmUsable = True

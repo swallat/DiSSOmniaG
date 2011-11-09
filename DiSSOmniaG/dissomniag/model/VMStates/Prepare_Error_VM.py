@@ -4,12 +4,13 @@ Created on 01.11.2011
 @author: Sebastian Wallat
 '''
 import dissomniag
+from dissomniag.model.VMStates import *
 
 import logging
 
 log = logging.getLogger("model.VMStates.Prepare_Error_VM")
 
-class Prepare_Error_VM(dissomniag.model.VMStates.AbstractVMState):
+class Prepare_Error_VM(AbstractVMState):
     '''
     classdocs
     '''
@@ -31,10 +32,10 @@ class Prepare_Error_VM(dissomniag.model.VMStates.AbstractVMState):
         return True
     
     def sanityCheck(self, job):
-        self.vm.changeState(dissomniag.model.NodeState.NOT_CREAED)
+        self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
         return self.vm.runningState.prepare(job)
     
     def reset(self, job):
-        self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
-        return self.vm.runningState.cleanUpPrepare(job)
+        self.vm.changeState(dissomniag.model.NodeState.PREPARED)
+        return self.vm.runningState.reset(job)
         

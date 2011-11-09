@@ -24,15 +24,15 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
         if not os.access(dissomniag.config.dissomniag.utilityFolder, os.F_OK):
             try:
                 dissomniag.getRoot()
-                os.mkdir(dissomniag.config.dissomniag.utilityFolder)
+                os.makedirs(dissomniag.config.dissomniag.utilityFolder)
                 os.chown(dissomniag.config.dissomniag.utilityFolder,
                          dissomniag.config.dissomniag.userId,
                          dissomniag.config.dissomniag.groupId)
-                os.mkdir(dissomniag.config.dissomniag.serverFolder)
+                os.makedirs(dissomniag.config.dissomniag.serverFolder)
                 os.chown(dissomniag.config.dissomniag.serverFolder,
                          dissomniag.config.dissomniag.userId,
                          dissomniag.config.dissomniag.groupId)
-                os.mkdir(dissomniag.config.dissomniag.vmsFolder)
+                os.makedirs(dissomniag.config.dissomniag.vmsFolder)
                 os.chown(dissomniag.config.dissomniag.vmsFolder,
                          dissomniag.config.dissomniag.userId,
                          dissomniag.config.dissomniag.groupId)
@@ -400,16 +400,18 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
         dissomniag.getRoot()
         
         self.stageDir = os.path.join(self.patternFolder, ".stage")
-        self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes")
+        self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes/")
         
-        if self.binLocalInc.endswith("/"):
-            cmd = "rm -rf %s/*" % self.binLocalInc
-        else:
-            cmd = "rm -rf %s*" % self.binLocalInc
-        self.multiLog("exec %s" % cmd, log)
-        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-        if ret != 0:
-            self.multiLog("Could not exec %s correctly" % cmd, log)
+        try:
+            shutil.rmtree(self.binLocalInc)
+        except (OSError, IOError) as e:
+            pass
+            
+        try:
+            os.makedirs(self.binLocalInc)
+        except (OSError, IOError) as e:
+            self.multiLog("Cannot recreate %s" % self.binLocalInc)
+
         
         if self.stageDir.endswith("/"):
             cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)

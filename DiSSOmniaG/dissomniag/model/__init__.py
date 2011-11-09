@@ -10,7 +10,6 @@ from LiveCd import *
 from Topology import *
 from ControlSystem import *
 from Git import *
-import VMStates
-
+from VMStates import *
 
 

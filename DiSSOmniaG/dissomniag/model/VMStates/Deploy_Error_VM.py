@@ -4,12 +4,13 @@ Created on 01.11.2011
 @author: Sebastian Wallat
 '''
 import dissomniag
+from dissomniag.model.VMStates import *
 
 import logging
 
 log = logging.getLogger("model.VMStates.Deploy_Error_VM")
 
-class Deploy_Error_VM(dissomniag.model.VMStates.AbstractVMState):
+class Deploy_Error_VM(AbstractVMState):
     '''
     classdocs
     '''

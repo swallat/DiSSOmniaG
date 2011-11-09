@@ -5,12 +5,13 @@ Created on 01.11.2011
 '''
 
 import dissomniag
+from dissomniag.model.VMStates import *
 
 import logging
 
 log = logging.getLogger("model.VMStates.Runtime_Error_VM")
 
-class Runtime_Error_VM(dissomniag.model.VMStates.AbstractVMState):
+class Runtime_Error_VM(AbstractVMState):
     '''
     classdocs
     '''

@@ -6,12 +6,13 @@ Created on 01.11.2011
 import os
 import libvirt
 import dissomniag
+from dissomniag.model.VMStates import *
 
 import logging
 
 log = logging.getLogger("model.VMStates.Deployed_VM")
 
-class Deployed_VM(dissomniag.model.VMStates.AbstractVMState):
+class Deployed_VM(AbstractVMState):
     '''
     classdocs
     '''
@@ -21,12 +22,12 @@ class Deployed_VM(dissomniag.model.VMStates.AbstractVMState):
                                              self.context.liveCd.vm.host.getMaintainanceIP(), \
                                              self.context.liveCd.vm.host.administrativeUserName)
         ret, myHash = sshCmd.callAndGetOutput()
-        if ret == 0 and myHash == self.vm.liveCd.hashConfig(job.getUser()):
-            self.vm.liveCd.onRemoteUpToDate = True
+        if ret == 0 and myHash == self.liveCd.hashConfig(job.getUser()):
+            self.liveCd.onRemoteUpToDate = True
             job.trace("VM in correct state!")
             return True
         else:
-            self.vm.liveCd.onRemoteUpToDate = False
+            self.liveCd.onRemoteUpToDate = False
             job.trace("VM not deployed!")
             self.vm.changeState(dissomniag.model.NodeState.DEPLOY_ERROR)
             return self.vm.runningState.sanityCheck(job)

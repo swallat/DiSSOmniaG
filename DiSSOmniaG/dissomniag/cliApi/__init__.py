@@ -121,6 +121,23 @@ def refreshVm(*args):
 def vmAddInterface(*args):
     import ManageVms
     ManageVms.vmAddInterface().call(*args)
+    
+def vmDelInterface(*args):
+    import ManageVms
+    ManageVms.vmDelInterface().call(*args)
+
+def prepareVm(*args):
+    import ManageVms
+    ManageVms.prepareVm().call(*args)
+    
+def deployVm(*args):
+    import ManageVms
+    ManageVms.deployVm().call(*args)
+    
+def resetVm(*args):
+    import ManageVms
+    ManageVms.resetVm().call(*args)
+    
 def testSubprocess(terminal, user, *args):
     import sys
     sys.stdout = terminal

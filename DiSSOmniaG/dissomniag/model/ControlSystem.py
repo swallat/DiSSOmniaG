@@ -11,6 +11,7 @@ import subprocess, os, netifaces
 from twisted.internet import reactor
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import uuid
+import thread
 
 import dissomniag
 from dissomniag.model import *
@@ -26,15 +27,15 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
     classdocs
     """
     
-    def __new__(cls, *args, **kwargs):
-        # Store instance on cls._instance_dict with cls hash
-        key = str(hash(cls))
-        if not hasattr(cls, '_instance_dict'):
-            cls._instance_dict = {}
-        if key not in cls._instance_dict:
-            cls._instance_dict[key] = \
-                super(ControlSystem, cls).__new__(cls, *args, **kwargs)
-        return cls._instance_dict[key]
+    #def __new__(cls, *args, **kwargs):
+    #    # Store instance on cls._instance_dict with cls hash
+    #    key = str(hash(cls)) + str(thread.get_ident())
+    #    if not hasattr(cls, '_instance_dict'):
+    #        cls._instance_dict = {}
+    #    if key not in cls._instance_dict:
+    #        cls._instance_dict[key] = \
+    #            super(ControlSystem, cls).__new__(cls, *args, **kwargs)
+    #    return cls._instance_dict[key]
     
     def __init__(self):
         session = dissomniag.Session()
@@ -143,7 +144,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         else:
             for host in hosts:
                 context = dissomniag.taskManager.Context()
-                context.add(host)
+                context.add(host, "host")
                 job = dissomniag.taskManager.Job(context, "Check Host up initially.", user = self.user)
                 job.addTask(dissomniag.tasks.CheckHostUpTask())
                 dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, host, job)
@@ -157,9 +158,9 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         else:
             for net in nets:
                 context = dissomniag.taskManager.Context()
-                context.add(net)
+                context.add(net, "net")
                 job = dissomniag.taskManager.Job(context, "Sanity check generatedNetworks on startup", user = self.user)
-                job.addTask(dissomniag.tasks.statusVM())
+                job.addTask(dissomniag.tasks.statusNetwork())
                 dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, net.host, job)
         
         # Check existing VM's
@@ -171,7 +172,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         else:
             for vm in vms:
                 context = dissomniag.taskManager.Context()
-                context.add(vm)
+                context.add(vm, "vm")
                 job = dissomniag.taskManager.Job(context, "Sanity check VM on startup", user = self.user)
                 job.addTask(dissomniag.tasks.statusVM())
                 dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, vm.host, job)

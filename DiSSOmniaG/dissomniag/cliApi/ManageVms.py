@@ -426,7 +426,7 @@ class refreshVm(CliMethodABCClass.CliMethodABCClass):
         
         vm.createTestJob(self.user)
         
-class resetVM(CliMethodABCClass.CliMethodABCClass):
+class resetVm(CliMethodABCClass.CliMethodABCClass):
     
     def implementation(self, *args):
         sys.stdout = self.terminal

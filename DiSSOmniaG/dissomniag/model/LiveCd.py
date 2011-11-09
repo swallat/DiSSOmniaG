@@ -40,7 +40,7 @@ class LiveCdEnvironment(dissomniag.utils.Singleton):
 class LiveCd(dissomniag.Base):
     __tablename__ = 'livecds'
     id = sa.Column(sa.Integer, primary_key = True)
-    buildDir = sa.Column(sa.String, nullable = False)
+    #buildDir = sa.Column(sa.String, nullable = False)
     user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id')) # Many to one style
     user = orm.relationship('User', backref = 'liveCd')
     plainPassword = sa.Column(sa.String)
@@ -52,6 +52,10 @@ class LiveCd(dissomniag.Base):
     """
     classdocs
     """
+    
+    def __init__(self, vm):
+        #self.user = vm.user
+        self.plainPassword = "b00tloader"
     
     def _generateRPCUser(self):
         pass
@@ -89,7 +93,7 @@ class LiveCd(dissomniag.Base):
         
         if dissomniag.getIdentity().getAdministrativeUser().publicKeys[0] != None:
             adminKey = etree.SubElement(liveInfo, "sshKey")
-            adminKey.text = dissomniag.getIdentity().getAdministrativeUser().publicKey[0]
+            adminKey.text = str(dissomniag.getIdentity().getAdministrativeUser().publicKeys[0].publicKey)
         session = dissomniag.Session()
         try:
             users = session.query(dissomniag.auth.User).filter(dissomniag.auth.User.isAdmin == True).all()
@@ -99,7 +103,7 @@ class LiveCd(dissomniag.Base):
             for user in users:
                 for key in user.getKeys():
                     userKey = etree.SubElement(liveInfo, "sshKey")
-                    userKey.text = key 
+                    userKey.text = str(key) 
             
         ###
         # Add other user keys by topology
@@ -111,10 +115,10 @@ class LiveCd(dissomniag.Base):
         self.authUser(user)
         myHash = hashlib.sha256()
         if xml == None:
-            hash.update(self.getInfoXML(user))
+            myHash.update(self.getInfoXML(user))
         else:
-            hash.update(xml)
-        self.versioningHash = myHash.hexdigist()
+            myHash.update(xml)
+        self.versioningHash = myHash.hexdigest()
         return self.versioningHash
     
     def prepareLiveImage(self, user):
@@ -195,7 +199,7 @@ class LiveCd(dissomniag.Base):
         livecd.authUser(user)
         
         # Add Job for file system sanity
-        context = dissomniag.TaskManager.Context()
+        context = dissomniag.taskManager.Context()
         context.add(livecd)
         job = dissomniag.taskManager.Job(context, "Delete a VM", user)
         job.addTask(dissomniag.tasks.LiveCDTasks.deleteLiveCd())

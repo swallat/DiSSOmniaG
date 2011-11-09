@@ -6,19 +6,20 @@ Created on 01.11.2011
 import os
 import shutil
 import dissomniag
+from dissomniag.model.VMStates import *
 
 import logging
 
 log = logging.getLogger("model.VMStates.Prepared_VM")
 
-class Prepared_VM(dissomniag.model.VMStates.AbstractVMState):
+class Prepared_VM(AbstractVMState):
     '''
     classdocs
     '''
     
     def test(self, job):
         try:
-            upToDate = self.vm.liveCd.checkOnHdUpToDate(self.job.getUser(), refresh = True)
+            upToDate = self.liveCd.checkOnHdUpToDate(self.job.getUser(), refresh = True)
         except Exception as e:
             job.trace(e.message)
             self.vm.changeState(dissomniag.model.NodeState.PREPARE_ERROR)
@@ -61,12 +62,12 @@ class Prepared_VM(dissomniag.model.VMStates.AbstractVMState):
             if ret == 0:
                 break
             if i == 4 and ret != 0:
-                self.vm.liveCd.onRemoteUpToDate = False
+                self.liveCd.onRemoteUpToDate = False
                 self.multiLog("Could not rsync LiveCd Image.", job, log)
                 self.vm.changeState(dissomniag.model.NodeState.DEPLOY_ERROR)
                 raise dissomniag.taskManager.TaskFailed("Could not rsync LiveCd Image.")
             
-        self.vm.liveCd.onRemoteUpToDate = True
+        self.liveCd.onRemoteUpToDate = True
         self.vm.changeState(dissomniag.model.NodeState.DEPLOYED)
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
@@ -83,8 +84,12 @@ class Prepared_VM(dissomniag.model.VMStates.AbstractVMState):
         return True
     
     def reset(self, job):
+        try:
+            shutil.rmtree(self.vm.getLocalUtilityFolder(job.getUser()))
+        except OSError as e:
+            pass
         self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
-        return self.vm.runningState.ceanUpPrepare(job)
+        return True
     
     def cleanUpDeploy(self, job):
         # 1. Delete Local Image

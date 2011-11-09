@@ -5,12 +5,13 @@ Created on 01.11.2011
 '''
 import libvirt
 import dissomniag
+from dissomniag.model.VMStates import *
 
 import logging
 
 log = logging.getLogger("model.VMStates.Created_VM")
 
-class Created_VM(dissomniag.model.VMStates.AbstractVMState):
+class Created_VM(AbstractVMState):
     '''
     classdocs
     '''
@@ -26,7 +27,7 @@ class Created_VM(dissomniag.model.VMStates.AbstractVMState):
             vm = con.lookupByName(self.vm.commonName)
         except libvirt.libvirtError:
             job.trace("VM is not Running.")
-            self.vm.changestate(dissomniag.model.NodeState.RUNTIME_ERROR)
+            self.vm.changeState(dissomniag.model.NodeState.RUNTIME_ERROR)
             return self.vm.runningState.sanityCheck(job)
         
         if vm.isActive() == 1:
