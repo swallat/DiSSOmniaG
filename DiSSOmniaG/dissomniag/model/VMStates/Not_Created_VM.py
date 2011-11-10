@@ -44,8 +44,6 @@ class Not_Created_VM(AbstractVMState):
             with self.myLock:
                 
                 # 1. Copy infoXML
-                self.multiLog(str(self.vm), job, log)
-                self.multiLog(str(self.liveCd), job, log)
                 self.liveInfoString, self.versioningHash = self.liveCd.getInfoXMLwithVersionongHash(job.getUser())
                 lifeInfoFile = os.path.join(self.patternFolder, "config/binary_local-includes/liveInfo.xml")
                 self.multiLog(str(lifeInfoFile), job, log)
@@ -105,13 +103,13 @@ class Not_Created_VM(AbstractVMState):
     
     def deploy(self, job):#
         if self.prepare(job):
-            self.vm.runningJob.deploy(job)
+            self.vm.runningState.deploy(job)
         else:
             return False
     
     def start(self, job):
         if self.prepare(job):
-            self.vm.runningJob.start(job)
+            self.vm.runningState.start(job)
         else:
             return False
     

@@ -77,16 +77,16 @@ class prepareVM(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
-        if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
-            self.job.trace("prepareVM: In Context missing net object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
-        try:
-            self.context.vm.reset(self.job.getUser(), self.job)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_tb(exc_traceback)
-            self.job.trace(str(e))
-            raise dissomniag.taskManager.TaskFailed("Reset VM failed!")
+        #if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
+        #    self.job.trace("prepareVM: In Context missing net object.")
+        #    raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
+        #try:
+        #    self.context.vm.reset(self.job.getUser(), self.job)
+        #except Exception as e:
+        #    exc_type, exc_value, exc_traceback = sys.exc_info()
+        #    traceback.print_tb(exc_traceback)
+        #    self.job.trace(str(e))
+        #    raise dissomniag.taskManager.TaskFailed("Reset VM failed!")
         
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
@@ -107,17 +107,17 @@ class deployVM(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
-        if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
-            self.job.trace("deployVM: In Context missing net object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
-        try:
-            self.context.vm.reset(self.job.getUser(), self.job)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_tb(exc_traceback)
-            self.job.trace(str(e))
-            raise dissomniag.taskManager.TaskFailed("Reset VM failed!")
-        
+        #if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
+        #    self.job.trace("deployVM: In Context missing net object.")
+        #    raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
+        #try:
+        #    self.context.vm.reset(self.job.getUser(), self.job)
+        #except Exception as e:
+        #    exc_type, exc_value, exc_traceback = sys.exc_info()
+        #    traceback.print_tb(exc_traceback)
+        #    self.job.trace(str(e))
+        #    raise dissomniag.taskManager.TaskFailed("Reset VM failed!")
+        #
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
 class startVM(dissomniag.taskManager.AtomicTask):
@@ -137,16 +137,16 @@ class startVM(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
-        if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
-            self.job.trace("startVM: In Context missing net object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
-        try:
-            self.context.vm.reset(self.job.getUser(), self.job)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_tb(exc_traceback)
-            self.job.trace(str(e))
-            raise dissomniag.taskManager.TaskFailed("Reset VM failed!")
+        #if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
+        #    self.job.trace("startVM: In Context missing net object.")
+        #    raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
+        #try:
+        #    self.context.vm.reset(self.job.getUser(), self.job)
+        #except Exception as e:
+        #    exc_type, exc_value, exc_traceback = sys.exc_info()
+        #    traceback.print_tb(exc_traceback)
+        #    self.job.trace(str(e))
+        #    raise dissomniag.taskManager.TaskFailed("Reset VM failed!")
         
         return dissomniag.taskManager.TaskReturns.SUCCESS
 
@@ -167,16 +167,16 @@ class stopVM(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
-        if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
-            self.job.trace("stopVM: In Context missing net object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
-        try:
-            self.context.vm.reset(self.job.getUser(), self.job)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_tb(exc_traceback)
-            self.job.trace(str(e))
-            raise dissomniag.taskManager.TaskFailed("Reset VM failed!")
+        #if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
+        #    self.job.trace("stopVM: In Context missing net object.")
+        #    raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
+        #try:
+        #    self.context.vm.reset(self.job.getUser(), self.job)
+        #except Exception as e:
+        #    exc_type, exc_value, exc_traceback = sys.exc_info()
+        #    traceback.print_tb(exc_traceback)
+        #    self.job.trace(str(e))
+        #    raise dissomniag.taskManager.TaskFailed("Reset VM failed!")
         
         return dissomniag.taskManager.TaskReturns.SUCCESS
     

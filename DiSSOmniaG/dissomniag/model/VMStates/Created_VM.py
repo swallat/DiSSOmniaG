@@ -34,6 +34,10 @@ class Created_VM(AbstractVMState):
             job.trace("VM state is correct!")
             return True
         else:
+            try:
+                vm.destroy()
+            except libvirt.libvirtError as e:
+                pass
             job.trace("VM is not Running.")
             self.vm.changestate(dissomniag.model.NodeState.RUNTIME_ERROR)
             return self.vm.runningState.sanityCheck(job)

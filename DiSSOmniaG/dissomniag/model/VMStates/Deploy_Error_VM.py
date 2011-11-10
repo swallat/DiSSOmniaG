@@ -25,7 +25,7 @@ class Deploy_Error_VM(AbstractVMState):
     
     def start(self, job):
         if self.sanityCheck(job):
-            return self.vm.runningJob.create(job)
+            return self.vm.runningState.create(job)
         else:
             raise dissomniag.taskManager("VM could not be started!")
     

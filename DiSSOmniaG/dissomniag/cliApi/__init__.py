@@ -137,7 +137,11 @@ def deployVm(*args):
 def resetVm(*args):
     import ManageVms
     ManageVms.resetVm().call(*args)
-    
+
+def totalResetVm(*args):
+    import ManageVms
+    ManageVms.totalResetVm().call(*args)
+
 def testSubprocess(terminal, user, *args):
     import sys
     sys.stdout = terminal

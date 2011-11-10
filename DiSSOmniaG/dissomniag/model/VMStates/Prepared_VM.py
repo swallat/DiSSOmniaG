@@ -19,9 +19,9 @@ class Prepared_VM(AbstractVMState):
     
     def test(self, job):
         try:
-            upToDate = self.liveCd.checkOnHdUpToDate(self.job.getUser(), refresh = True)
+            upToDate = self.liveCd.checkOnHdUpToDate(job.getUser(), refresh = True)
         except Exception as e:
-            job.trace(e.message)
+            job.trace(str(e))
             self.vm.changeState(dissomniag.model.NodeState.PREPARE_ERROR)
             return self.vm.runningState.sanityCheck(job)
         else:
@@ -38,30 +38,30 @@ class Prepared_VM(AbstractVMState):
     
     def deploy(self, job):
         # 1. Check if Image on local hd exists
-        if not os.access(self.vm.getLocalPathToCdImage(self.job.getUser()), os.F_OK) or not os.access(os.path.join(self.vm.getLocalUtilityFolder(job.getUser()), "configHash"), os.F_OK):
+        if not os.access(self.vm.getLocalPathToCdImage(job.getUser()), os.F_OK) or not os.access(os.path.join(self.vm.getLocalUtilityFolder(job.getUser()), "configHash"), os.F_OK):
             
             self.multiLog("No local image exists for copy!", job, log)
             self.vm.changeState(dissomniag.model.NodeState.DEPLOY_ERROR)
             raise dissomniag.taskManager.TaskFailed("No local image exists for copy!", job, log)
         
         # 2. Create destination directory:
-        cmd = "mkdir -p %s" % self.vm.getRemoteUtilityFolder
-        sshCmd = dissomniag.utils.SSHCommand(cmd, self.vm.host.getMaintainanceIP(), self.vm.host.administrativeUserName)
+        cmd = "mkdir -p %s" % self.vm.getRemoteUtilityFolder(job.getUser())
+        sshCmd = dissomniag.utils.SSHCommand(cmd, self.vm.host.getMaintainanceIP().addr, self.vm.host.administrativeUserName)
         ret, output = sshCmd.callAndGetOutput()
         self.multiLog("Creation of RemoteUtilityFolder with cmd %s results to: res: %d, output: %s" % (cmd, ret, output), job, log)
         
         # 3. Sync Files
         
-        for i in range(1,5):
+        for i in range(1,3):
             rsyncCmd = dissomniag.utils.RsyncCommand(self.vm.getLocalUtilityFolder(job.getUser()),\
-                                                 self.vm.getRemoteUtilityFolder(job.getUser()), \
-                                                 self.vm.host.getMaintainanceIP(), \
+                                                 os.path.join(self.vm.host.utilityFolder, dissomniag.config.hostConfig.vmSubdirectory), \
+                                                 self.vm.host.getMaintainanceIP().addr, \
                                                  self.vm.host.administrativeUserName)
             ret, output = rsyncCmd.callAndGetOutput()
             self.multiLog("Rsync LiveCD ret: %d, output: %s" % (ret, output), job, log)
             if ret == 0:
                 break
-            if i == 4 and ret != 0:
+            if i == 2 and ret != 0:
                 self.liveCd.onRemoteUpToDate = False
                 self.multiLog("Could not rsync LiveCd Image.", job, log)
                 self.vm.changeState(dissomniag.model.NodeState.DEPLOY_ERROR)
@@ -73,7 +73,7 @@ class Prepared_VM(AbstractVMState):
     
     def start(self, job):
         if self.deploy(job):
-            return self.vm.runningVM.start()
+            return self.vm.runningState.start(job)
         else:
             return False
     
@@ -84,26 +84,23 @@ class Prepared_VM(AbstractVMState):
         return True
     
     def reset(self, job):
-        try:
-            shutil.rmtree(self.vm.getLocalUtilityFolder(job.getUser()))
-        except OSError as e:
-            pass
-        self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
-        return True
-    
-    def cleanUpDeploy(self, job):
         # 1. Delete Local Image
         self.multiLog("Delete local LiveCd image.", job, log)
+        self.multiLog("Rmtree %s" % self.vm.getLocalUtilityFolder(job.getUser()), job, log)
         try:
             shutil.rmtree(self.vm.getLocalUtilityFolder(job.getUser()))
-        except IOError, OSError:
+        except (IOError, OSError) as e:
             self.multiLog("Cannot delete local LiveCd image.", job, log)
             self.vm.changeState(dissomniag.model.NodeState.PREPARED)
-            
-        # 2. Delete Remote Image
+        else:
+            self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
+        return True
+    
+    def cleanUpDeploy(self, job):    
+        # 1. Delete Remote Image
         cmd = "rm -rf %s" % self.vm.getRemoteUtilityFolder(job.getUser())
         sshCmd = dissomniag.utils.SSHCommand(cmd, \
-                                             self.vm.host.getMaintainanceIP(), \
+                                             self.vm.host.getMaintainanceIP().addr, \
                                              self.vm.host.administrativeUserName)
         ret, output = sshCmd.callAndGetOutput()
         self.multiLog("Delete LiveCd image remote. ret: %d, output: %s" % (ret, output), job, log)

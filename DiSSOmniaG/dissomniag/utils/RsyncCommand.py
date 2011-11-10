@@ -36,7 +36,7 @@ class RsyncCommand(object):
         
     def get(self):
         sshKeyPart = '-e "ssh -i %s"' % self.keyfile
-        returnMe = self.RsyncCommand + sshKeyPart + ' ' + self.src + + ('%s@%s:%s' % (self.username, self.hostOrIp, self.dst)) 
+        returnMe = self.RsyncCommand + sshKeyPart + ' ' + self.src + ' ' + ('%s@%s:%s' % (self.username, self.hostOrIp, self.dst)) 
         return shlex.split(returnMe)
     
     def call(self):

@@ -136,8 +136,8 @@ class LiveCd(dissomniag.Base):
         
         if self.onHdUpToDate == None or refresh == True:
             try:
-                with open(os.path.join(self.vm.getLocalUtilityFolder(), "configHash"), 'r') as f:
-                    myHash = f.readline(self.versioningHash)
+                with open(os.path.join(self.vm.getLocalUtilityFolder(user), "configHash"), 'r') as f:
+                    myHash = f.readline()
             except Exception:
                 self.onHdUpToDate = False
                 raise Exception("No config hash for LiveCd on HD.")

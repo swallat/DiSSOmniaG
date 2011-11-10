@@ -341,8 +341,8 @@ class VM(AbstractNode):
     def getRemotePathToCdImage(self, user):
         self.authUser(user)
         
-        folder = self.getUtilityFolder(user)
-        return os.path.join(folder, self.getImageName())
+        folder = self.getRemoteUtilityFolder(user)
+        return os.path.join(folder, self.getImageName(user))
     
     def getLocalPathToCdImage(self, user):
         self.authUser(user)
@@ -516,7 +516,10 @@ class VM(AbstractNode):
         context.add(self, "vm")
         job = dissomniag.taskManager.Job(context, "Fetch state of a VM", user = user)
         job.addTask(dissomniag.tasks.statusVM())
-        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        if dissomniag.model.NodeState.NOT_CREATED == self.state or dissomniag.model.NodeState.PREPARE_ERROR == self.state:
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
+        else:
+            dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
     
     def createPrepareJob(self, user):
@@ -525,7 +528,10 @@ class VM(AbstractNode):
         context.add(self, "vm")
         job = dissomniag.taskManager.Job(context, "Prepare a VM", user = user)
         job.addTask(dissomniag.tasks.prepareVM())
-        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        if dissomniag.model.NodeState.NOT_CREATED == self.state or dissomniag.model.NodeState.PREPARE_ERROR == self.state:
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
+        else:
+            dissomniag.taskManager.Dispatcher.addJob(user, job)
         log.info("THREAD PREPARE ID " + str(thread.get_ident()))
         return True
     
@@ -535,7 +541,10 @@ class VM(AbstractNode):
         context.add(self, "vm")
         job = dissomniag.taskManager.Job(context, "Deploy a VM", user = user)
         job.addTask(dissomniag.tasks.deployVM())
-        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        if dissomniag.model.NodeState.NOT_CREATED == self.state or dissomniag.model.NodeState.PREPARE_ERROR == self.state:
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
+        else:
+            dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
     
     def createStartJob(self, user):
@@ -544,7 +553,10 @@ class VM(AbstractNode):
         context.add(self, "vm")
         job = dissomniag.taskManager.Job(context, "Start a VM", user = user)
         job.addTask(dissomniag.tasks.startVM())
-        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        if dissomniag.model.NodeState.NOT_CREATED == self.state or dissomniag.model.NodeState.PREPARE_ERROR == self.state:
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
+        else:
+            dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
     
     def createStopJob(self, user):
@@ -553,7 +565,10 @@ class VM(AbstractNode):
         context.add(self, "vm")
         job = dissomniag.taskManager.Job(context, "Stop a VM", user = user)
         job.addTask(dissomniag.tasks.stopVM())
-        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        if dissomniag.model.NodeState.NOT_CREATED == self.state or dissomniag.model.NodeState.PREPARE_ERROR == self.state:
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
+        else:
+            dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
     
     def createResetJob(self, user):
@@ -562,7 +577,10 @@ class VM(AbstractNode):
         context.add(self, "vm")
         job = dissomniag.taskManager.Job(context, "Reset a VM", user = user)
         job.addTask(dissomniag.tasks.resetVM())
-        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        if dissomniag.model.NodeState.NOT_CREATED == self.state or dissomniag.model.NodeState.PREPARE_ERROR == self.state:
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
+        else:
+            dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
     
     def createTotalResetJob(self, user):
@@ -571,7 +589,7 @@ class VM(AbstractNode):
         context.add(self, "vm")
         job = dissomniag.taskManager.Job(context, "Totally Reset a VM", user = user)
         job.addTask(dissomniag.tasks.totalResetVM())
-        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
         return True
         
         

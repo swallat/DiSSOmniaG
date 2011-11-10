@@ -209,7 +209,32 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             os.remove(targetTarBall)
         except OSError:
             self.multiLog("Cannot delete LiveDaemon Tarball", log)
+            
+    def installOmnet(self, patternFolder):
         
+        omnetTarBall = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "omnetLibs/OMNeT.tar.gz")
+        inetTarBall = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "omnetLibs/INET.tar.gz")
+        chrootLocalIncludesFolder = os.path.join(patternFolder, "config/chroot_local-includes")
+        omnetTargetTarBall = os.path.join(chrootLocalIncludesFolder, "OMNeT.tar.gz")
+        inetTargetTarBall = os.path.join(chrootLocalIncludesFolder, "INET.tar.gz")
+        try:
+            shutil.copy2(omnetTarBall, chrootLocalIncludesFolder)
+            shutil.copy2(inetTarBall, chrootLocalIncludesFolder)
+        except OSError:
+            self.multiLog("Cannot copy OMNeT INET", log)
+            raise dissomniag.taskManager.TaskFailed()
+        
+        with tarfile.open(omnetTargetTarBall, "r|gz") as tar:
+            tar.exctractall(path = chrootLocalIncludesFolder)
+        
+        with tarfile.open(inetTargetTarBall, "r|gz") as tar:
+            tar.exctractall(path = chrootLocalIncludesFolder)
+        
+        try:
+            os.remove(omnetTargetTarBall)
+            os.remove(inetTargetTarBall)
+        except OSError:
+            self.multiLog("Cannot delete OMNeT INET tarball", log)
         
     def cleanUp(self):
         
@@ -335,6 +360,8 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                 self.installLiveDaemon(self.patternFolder)
                 
                 #5. Copy needed files. (like OMNeT binaries)
+                
+                self.installOmnet(self.patternFolder)
                   
                 #6. Init debian live environment
                 cmd = "lb config"

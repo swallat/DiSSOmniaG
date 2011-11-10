@@ -18,6 +18,8 @@ log = logging.getLogger("cliApi.ManageVms")
 class vms(CliMethodABCClass.CliMethodABCClass):
     
     def printVm(self, vm, withXml = False):
+        session = dissomniag.Session()
+        session.expire(vm)
         print("VM Name: %s" % str(vm.commonName))
         print("UUID: %s" % str(vm.uuid))
         print("State: %s" % str(dissomniag.model.NodeState.getStateName(vm.state)))
@@ -330,7 +332,7 @@ class deployVm(CliMethodABCClass.CliMethodABCClass):
             self.printError("Query Inconsistency.")
             return
         
-        vm.createdeployJob(self.user)
+        vm.createDeployJob(self.user)
         
 class startVm(CliMethodABCClass.CliMethodABCClass):
     
@@ -456,3 +458,34 @@ class resetVm(CliMethodABCClass.CliMethodABCClass):
             return
         
         vm.createResetJob(self.user)
+        
+class totalResetVm(CliMethodABCClass.CliMethodABCClass):
+    
+    def implementation(self, *args):
+        sys.stdout = self.terminal
+        sys.stderr = self.terminal
+        
+        if not self.user.isAdmin:
+            self.printError("Only Admin Users can reset a VM!")
+            return
+        
+        parser = argparse.ArgumentParser(description = 'Total reset a VM', prog = args[0])
+                
+        parser.add_argument("vmName", action = "store")
+        
+        options = parser.parse_args(args[1:])
+        
+        vmName = str(options.vmName)
+        
+        session = dissomniag.Session()
+        
+        try:
+            vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == vmName).one()
+        except NoResultFound:
+            self.printError("There is no Vm with the name: %s" % vmName)
+            return
+        except MultipleResultsFound:
+            self.printError("Query Inconsistency.")
+            return
+        
+        vm.createTotalResetJob(self.user)

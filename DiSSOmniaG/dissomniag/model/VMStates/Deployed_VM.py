@@ -17,18 +17,18 @@ class Deployed_VM(AbstractVMState):
     classdocs
     '''
     def test(self, job):
-        cmd = "cat %s" % (os.path.join(self.vm.getRemoteUtilityFolder, "configHash"))
-        sshCmd = dissomniag.utils.SSHCommand(self.cmd, \
-                                             self.context.liveCd.vm.host.getMaintainanceIP(), \
-                                             self.context.liveCd.vm.host.administrativeUserName)
+        cmd = "cat %s" % (os.path.join(self.vm.getRemoteUtilityFolder(job.getUser()), "configHash"))
+        sshCmd = dissomniag.utils.SSHCommand(cmd, \
+                                             self.vm.host.getMaintainanceIP().addr, \
+                                             self.vm.host.administrativeUserName)
         ret, myHash = sshCmd.callAndGetOutput()
-        if ret == 0 and myHash == self.liveCd.hashConfig(job.getUser()):
+        if ret == 0 and str(myHash[0]) == str(self.liveCd.hashConfig(job.getUser())):
             self.liveCd.onRemoteUpToDate = True
             job.trace("VM in correct state!")
             return True
         else:
             self.liveCd.onRemoteUpToDate = False
-            job.trace("VM not deployed!")
+            job.trace("VM not deployed!remoteHash: %s localHash: %s Compared: %s" % (str(myHash[0]), str(self.liveCd.hashConfig(job.getUser())), str(str(myHash[0]) == str(self.liveCd.hashConfig(job.getUser())))))
             self.vm.changeState(dissomniag.model.NodeState.DEPLOY_ERROR)
             return self.vm.runningState.sanityCheck(job)
 
@@ -47,11 +47,11 @@ class Deployed_VM(AbstractVMState):
             raise dissomniag.taskManager.TaskFailed("Could Not Connect to Libvirt Host!")
         
         try:
-            vm = con.createXML(self.context.vm.getLibVirtString(self.job.getUser()), 0)
+            vm = con.createXML(self.vm.getLibVirtString(job.getUser()), 0)
         except libvirt.libvirtError:
             job.trace("CreateVM: Could not create vm. The network is already created or there is an error.")
             try:
-                vm = con.lookupByName(self.context.vm.commonName)
+                vm = con.lookupByName(self.vm.commonName)
                 vm.destroy()
             except libvirt.libvirtError:
                 pass
@@ -73,5 +73,10 @@ class Deployed_VM(AbstractVMState):
         return True
     
     def reset(self, job):
+        cmd = "rm -rf %s" % self.vm.getRemoteUtilityFolder(job.getUser())
+        sshCmd = dissomniag.utils.SSHCommand(cmd, self.vm.host.getMaintainanceIP().addr, self.vm.host.administrativeUserName)
+        ret, output = sshCmd.callAndGetOutput()
+        self.multiLog("Deletion of RemoteUtilityFolder with cmd %s results to: res: %d, output: %s" % (cmd, ret, output), job, log)
+        
         self.vm.changeState(dissomniag.model.NodeState.PREPARED)
-        return self.vm.runningState.cleanUpDeploy(job)
+        return self.vm.runningState.reset(job)

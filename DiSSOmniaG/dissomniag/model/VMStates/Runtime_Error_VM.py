@@ -29,7 +29,7 @@ class Runtime_Error_VM(AbstractVMState):
     
     def stop(self, job):
         self.vm.changeState(dissomniag.model.NodeState.CREATED)
-        return self.vm.runningSatate.stop()
+        return self.vm.runningState.stop(job)
     
     def sanityCheck(self, job):
         self.vm.changeState(dissomniag.model.NodeState.DEPLOYED)
