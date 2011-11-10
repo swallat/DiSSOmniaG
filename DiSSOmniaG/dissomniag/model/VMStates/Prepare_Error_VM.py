@@ -4,29 +4,38 @@ Created on 01.11.2011
 @author: Sebastian Wallat
 '''
 import dissomniag
+from dissomniag.model.VMStates import *
 
-class Prepare_Error_VM(dissomniag.model.VMStates.AbstractVMState):
+import logging
+
+log = logging.getLogger("model.VMStates.Prepare_Error_VM")
+
+class Prepare_Error_VM(AbstractVMState):
     '''
     classdocs
     '''
-    def test(self):
-        raise NotImplementedError()
+    def test(self, job):
+        return self.sanityCheck(job)
     
-    def create(self):
-        raise NotImplementedError()
+    def prepare(self, job):
+        return self.sanityCheck(job)
     
-    def deploy(self):
-        raise NotImplementedError()
+    def deploy(self, job):
+        self.vm.changeState(dissomniag.model.NodeState.NOT_CREAED)
+        return self.vm.runningState.deploy(job)
     
-    def start(self):
-        raise NotImplementedError()
+    def start(self, job):
+        self.vm.changeState(dissomniag.model.NodeState.NOT_CREAED)
+        return self.vm.runningState.start(job)
     
-    def stop(self):
-        raise NotImplementedError()
+    def stop(self, job):
+        return True
     
-    def sanityCheck(self):
-        raise NotImplementedError()
+    def sanityCheck(self, job):
+        self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
+        return self.vm.runningState.prepare(job)
     
-    def reset(self):
-        raise NotImplementedError()
+    def reset(self, job):
+        self.vm.changeState(dissomniag.model.NodeState.PREPARED)
+        return self.vm.runningState.reset(job)
         

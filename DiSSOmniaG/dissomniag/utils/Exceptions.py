@@ -26,3 +26,6 @@ class LogicalError(Exception):
 
 class UnauthorizedFunctionCall(Exception):
     pass
+
+class MissingJobObject(Exception):
+    pass

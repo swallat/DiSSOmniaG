@@ -24,15 +24,15 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
         if not os.access(dissomniag.config.dissomniag.utilityFolder, os.F_OK):
             try:
                 dissomniag.getRoot()
-                os.mkdir(dissomniag.config.dissomniag.utilityFolder)
+                os.makedirs(dissomniag.config.dissomniag.utilityFolder)
                 os.chown(dissomniag.config.dissomniag.utilityFolder,
                          dissomniag.config.dissomniag.userId,
                          dissomniag.config.dissomniag.groupId)
-                os.mkdir(dissomniag.config.dissomniag.serverFolder)
+                os.makedirs(dissomniag.config.dissomniag.serverFolder)
                 os.chown(dissomniag.config.dissomniag.serverFolder,
                          dissomniag.config.dissomniag.userId,
                          dissomniag.config.dissomniag.groupId)
-                os.mkdir(dissomniag.config.dissomniag.vmsFolder)
+                os.makedirs(dissomniag.config.dissomniag.vmsFolder)
                 os.chown(dissomniag.config.dissomniag.vmsFolder,
                          dissomniag.config.dissomniag.userId,
                          dissomniag.config.dissomniag.groupId)
@@ -209,7 +209,32 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             os.remove(targetTarBall)
         except OSError:
             self.multiLog("Cannot delete LiveDaemon Tarball", log)
+            
+    def installOmnet(self, patternFolder):
         
+        omnetTarBall = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "omnetLibs/OMNeT.tar.gz")
+        inetTarBall = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "omnetLibs/INET.tar.gz")
+        chrootLocalIncludesFolder = os.path.join(patternFolder, "config/chroot_local-includes")
+        omnetTargetTarBall = os.path.join(chrootLocalIncludesFolder, "OMNeT.tar.gz")
+        inetTargetTarBall = os.path.join(chrootLocalIncludesFolder, "INET.tar.gz")
+        try:
+            shutil.copy2(omnetTarBall, chrootLocalIncludesFolder)
+            shutil.copy2(inetTarBall, chrootLocalIncludesFolder)
+        except OSError:
+            self.multiLog("Cannot copy OMNeT INET", log)
+            raise dissomniag.taskManager.TaskFailed()
+        
+        with tarfile.open(omnetTargetTarBall, "r|gz") as tar:
+            tar.extractall(path = chrootLocalIncludesFolder)
+        
+        with tarfile.open(inetTargetTarBall, "r|gz") as tar:
+            tar.extractall(path = chrootLocalIncludesFolder)
+        
+        try:
+            os.remove(omnetTargetTarBall)
+            os.remove(inetTargetTarBall)
+        except OSError:
+            self.multiLog("Cannot delete OMNeT INET tarball", log)
         
     def cleanUp(self):
         
@@ -335,6 +360,8 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                 self.installLiveDaemon(self.patternFolder)
                 
                 #5. Copy needed files. (like OMNeT binaries)
+                
+                self.installOmnet(self.patternFolder)
                   
                 #6. Init debian live environment
                 cmd = "lb config"
@@ -400,16 +427,18 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
         dissomniag.getRoot()
         
         self.stageDir = os.path.join(self.patternFolder, ".stage")
-        self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes")
+        self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes/")
         
-        if self.binLocalInc.endswith("/"):
-            cmd = "rm -rf %s/*" % self.binLocalInc
-        else:
-            cmd = "rm -rf %s*" % self.binLocalInc
-        self.multiLog("exec %s" % cmd, log)
-        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-        if ret != 0:
-            self.multiLog("Could not exec %s correctly" % cmd, log)
+        try:
+            shutil.rmtree(self.binLocalInc)
+        except (OSError, IOError) as e:
+            pass
+            
+        try:
+            os.makedirs(self.binLocalInc)
+        except (OSError, IOError) as e:
+            self.multiLog("Cannot recreate %s" % self.binLocalInc)
+
         
         if self.stageDir.endswith("/"):
             cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
@@ -513,7 +542,7 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     
-class copyCdImage(dissomniag.taskManager.Atom icTask):
+class copyCdImage(dissomniag.taskManager.AtomicTask):
     
     def run(self):
         if not hasattr(self.context, "liveCd"):

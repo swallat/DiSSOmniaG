@@ -60,7 +60,7 @@ class NodeState:
     
     @staticmethod
     def checkIn(state):
-        if 0 <= state < 7:
+        if 0 <= state < 11:
             return True
         else:
             return False

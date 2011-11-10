@@ -9,33 +9,39 @@ import dissomniag
 class AbstractVMState():
     __metaclass__ = ABCMeta
     
-    def __init__(self, vm):
+    def __init__(self, vm, liveCd):
         self.vm = vm
+        self.liveCd = liveCd
         
     @abstractmethod
-    def test(self):
+    def test(self, job):
         raise NotImplementedError()
     
     @abstractmethod
-    def create(self):
+    def prepare(self, job):
         raise NotImplementedError()
     
     @abstractmethod
-    def deploy(self):
+    def deploy(self, job):
         raise NotImplementedError()
     
     @abstractmethod
-    def start(self):
+    def start(self, job):
         raise NotImplementedError()
     
     @abstractmethod
-    def stop(self):
+    def stop(self, job):
         raise NotImplementedError()
     
     @abstractmethod
-    def sanityCheck(self):
+    def sanityCheck(self, job):
         raise NotImplementedError()
     
     @abstractmethod
-    def reset(self):
+    def reset(self, job):
         raise NotImplementedError()
+    
+    def multiLog(self, msg, job, log = None):
+        if log != None:
+            log.info(msg)
+        job.trace(msg)
