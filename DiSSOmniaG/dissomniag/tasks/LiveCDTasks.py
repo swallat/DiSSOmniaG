@@ -225,10 +225,10 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.TaskFailed()
         
         with tarfile.open(omnetTargetTarBall, "r|gz") as tar:
-            tar.exctractall(path = chrootLocalIncludesFolder)
+            tar.extractall(path = chrootLocalIncludesFolder)
         
         with tarfile.open(inetTargetTarBall, "r|gz") as tar:
-            tar.exctractall(path = chrootLocalIncludesFolder)
+            tar.extractall(path = chrootLocalIncludesFolder)
         
         try:
             os.remove(omnetTargetTarBall)
