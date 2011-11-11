@@ -292,6 +292,9 @@ class delUser(CliMethodABCClass.CliMethodABCClass):
         
         try:
             user = session.query(User).filter(User.username == options.username).one()
+            if user.isMaintain:
+                self.printError("Permission denied: You cannot delete a maintainance User!")
+                return
             session.delete(user)
             session.commit()
             session.flush()

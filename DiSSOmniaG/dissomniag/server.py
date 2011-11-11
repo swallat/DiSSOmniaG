@@ -81,8 +81,8 @@ class APIServer(xmlrpc.XMLRPC):
     def execute(self, function, args, user):
         try:
             #self.log(function, args, user)
-            #return function(*(args[0]), user = user, **(args[1]))
-            return function(*(args))
+            return function(user, *args)
+            #return function(*(args))
         except xmlrpc.Fault, exc:
             #fault.log(exc)
             raise exc

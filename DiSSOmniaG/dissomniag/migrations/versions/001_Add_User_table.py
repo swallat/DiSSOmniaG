@@ -14,6 +14,7 @@ users = Table('users', meta,
              Column('loginSSH', Boolean, default = False),
              Column('loginManhole', Boolean, default = False),
              Column('isHtpasswd', Boolean, default = False),
+             Column('isMaintain', Boolean, default = False),
 )
 
 public_keys = Table('public_keys', meta,
@@ -148,9 +149,11 @@ vms = Table('vms', meta,
            Column('vncPort', String),
            Column('vncPassword', String(40)),
            Column('dynamicAptList', String),
+           Column('lastSeenClient', DateTime),
            Column('topology_id', Integer, ForeignKey('topologies.id')),
            Column('host_id', Integer, ForeignKey('hosts.id')),
            Column('liveCd_id', Integer, ForeignKey('livecds.id')),
+           Column("maintainUser_id", Integer, ForeignKey('users.id')),
 )
 
 

@@ -24,13 +24,16 @@ class vms(CliMethodABCClass.CliMethodABCClass):
         print("UUID: %s" % str(vm.uuid))
         print("State: %s" % str(dissomniag.model.NodeState.getStateName(vm.state)))
         print("RamSize: %s" % str(vm.ramSize))
-        print("HD Created?: %s" % str(vm.isHdCreated))
-        print("Use HD: %s" % str(vm.useHD))
+        #print("HD Created?: %s" % str(vm.isHdCreated))
+        #print("Use HD: %s" % str(vm.useHD))
         print("HdSize: %s" % str(vm.hdSize))
         print("VNC Port: %s" % str(vm.vncPort))
         print("VNC Password: %s" % str(vm.vncPassword))
         print("InstalledSoftware: %s" % str(vm.dynamicAptList))
-        
+        if vm.lastSeenClient == None:
+            self.printError("Live Client last seen: %s" % str(vm.lastSeenClient))
+        else:
+            self.printSuccess("Live Client last seen: %s" % str(vm.lastSeenClient))
         for interface in vm.interfaces:
             print("InterfaceName: %s Mac: %s" % (str(interface.name), str(interface.macAddress)))
             if interface.ipAddresses != []:
@@ -427,6 +430,7 @@ class refreshVm(CliMethodABCClass.CliMethodABCClass):
             return
         
         vm.createTestJob(self.user)
+        vm.createLiveClientTestJob(self.user)
         
 class resetVm(CliMethodABCClass.CliMethodABCClass):
     

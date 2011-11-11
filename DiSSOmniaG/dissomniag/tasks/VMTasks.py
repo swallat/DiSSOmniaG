@@ -235,6 +235,18 @@ class pushConfigVM(dissomniag.taskManager.AtomicTask):
     def revert(self):
         pass
     
+class updateLiveClientVM(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
+            self.job.trace("udateLiveClientVM: In Context missing vm object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing vm object.")
+        
+        
+    
+    def revert(self):
+        pass
+    
     
 """    
 class createVMOnHost(dissomniag.taskManager.AtomicTask):

@@ -28,6 +28,7 @@ class VM(AbstractNode):
     vncPort = sa.Column(sa.String)
     vncPassword = sa.Column(sa.String(40))
     dynamicAptList = sa.Column(sa.String)
+    lastSeenClient = sa.Column(sa.DateTime)
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))
     host = orm.relationship("Host", primaryjoin = "VM.host_id == Host.host_id", backref = "virtualMachines")
@@ -35,6 +36,8 @@ class VM(AbstractNode):
     #liveCd = orm.relationship("LiveCd", backref = orm.backref('livecds', uselist = False))
     #liveCd = orm.relationship("LiveCd", backref = "vm")
     liveCd = orm.relationship("LiveCd", backref=orm.backref("vm", uselist=False))
+    maintainUser_id = sa.Column(sa.Integer, sa.ForeignKey('users.id'))
+    maintainUser = orm.relationship("User", backref=orm.backref("VM", uselist=False))
     runningState = None
     
     """
@@ -114,6 +117,7 @@ class VM(AbstractNode):
         interface.maintainanceInterface = True
             
         self.liveCd = dissomniag.model.LiveCd(self)
+        self.maintainUser = dissomniag.auth.User(username = self.commonName, password = self.uuid, isAdmin = False, loginRPC = True, loginSSH = False, loginManhole = False, maintain= True)
         
         session = dissomniag.Session()    
         session.commit()
@@ -363,7 +367,7 @@ class VM(AbstractNode):
         return "/usr/bin/kvm"
     
     def authUser(self, user):
-        if user.isAdmin or (self.topology != None and user in self.topology.users):
+        if user.isAdmin or (self.topology != None and user in self.topology.users) or user.id == self.maintainUser.id:
             return True
         raise dissomniag.UnauthorizedFunctionCall()
     
@@ -509,6 +513,12 @@ class VM(AbstractNode):
                 raise dissomniag.utils.MissingJobObject()
         self.selectInitialStateActor()
         self.runningState.reset(job)
+        
+    def createLiveClientTestJob(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Update lastSeenClient", user = user)
     
     def createTestJob(self, user):
         self.authUser(user)
@@ -602,6 +612,12 @@ class VM(AbstractNode):
         #1. Delete LiveCD
         if node.liveCd != None and type(node.liveCd) == dissomniag.model.LiveCd:
             dissomniag.model.LiveCd.deleteLiveCd(user, node.liveCd)
+        
+        #2. Delete maintainance User
+        if node.maintainUser != None and type(node.maintainUser) == dissomniag.auth.User and node.maintainUser.isMaintain:
+            session = dissomniag.Session()
+            session.delete(node.maintainUser)
+            session.commit()
 
         #2. Delete Interfaces
         for interface in node.interfaces:

@@ -5,16 +5,16 @@ Created on 19.07.2011
 @author: Sebastian Wallat
 """
     
-def add(a, b):
-    return MathClasses.AddClass(a, b).getValue()
+def add(user, a, b):
+    return str(MathClasses.AddClass(a, b).getValue()) + str(user)
 
-def sub(a, b):
-    return MathClasses.SubClass(a, b).getValue()
+def sub(user, a, b):
+    return str(MathClasses.SubClass(a, b).getValue()) + str(user)
 
-def mult(a, b):
-    return MathClasses.MultClass(a, b).getValue()
+def mult(user, a, b):
+    return str(MathClasses.MultClass(a, b).getValue())+ str(user)
 
-def div(a, b):
-    return MathClasses.DivClass(a, b).getValue()
+def div(user, a, b):
+    return str(MathClasses.DivClass(a, b).getValue()) + str(user)
 
 import dissomniag.MathClasses as MathClasses

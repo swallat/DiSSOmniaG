@@ -46,11 +46,12 @@ class User(Base):
     loginSSH = Column(Boolean, default = False)
     loginManhole = Column(Boolean, default = False)
     isHtpasswd = Column(Boolean, default = False)
+    isMaintain = Column(Boolean, default = False)
     
     publicKeys = relationship('PublicKey', secondary = user_publickey, backref = 'users')
     
 
-    def __init__(self, username, password, publicKey = None, isAdmin = False, loginRPC = False, loginSSH = False, loginManhole = False, isHtpasswd = False):
+    def __init__(self, username, password, publicKey = None, isAdmin = False, loginRPC = False, loginSSH = False, loginManhole = False, isHtpasswd = False, maintain = False):
         """
         Constructor
         """
@@ -71,6 +72,7 @@ class User(Base):
         self.loginRPC = loginRPC
         self.loginSSH = loginSSH
         self.loginManhole = loginManhole
+        self.isMaintain = maintain
    
     def __repr__(self):
         return "<User: %s, isAdmin: %s, loginRPC: %s, loginSSH: %s, loginManhole: %s, isHtpasswd: %s, PublicKeys: %s>" \
