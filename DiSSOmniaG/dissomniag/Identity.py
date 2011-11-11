@@ -162,15 +162,26 @@ def _getVMIdentity():
     pass
 
 def _getControlIdentity():
-    return dissomniag.model.ControlSystem()
+    session = dissomniag.Session()
+    try:
+        central = session.query(dissomniag.model.ControlSystem).one()
+    except NoResultFound:
+         central = dissomniag.model.ControlSystem()
+         session.commit()
+         session.expire(central)
+         return central
+    except MultipleResultsFound:
+        session.expire(central[0])
+        return central[0]
+    else:
+        session.expire(central)
+        return central
 
 def getIdentity():
-    global identity
-    if identity == None:
-        if dissomniag.config.dissomniag.isCentral:
-            identity = _getControlIdentity()
-        else:
-            identity = _getVMIdentity()
+    if dissomniag.config.dissomniag.isCentral:
+        identity = _getControlIdentity()
+    else:
+        identity = _getVMIdentity()
     
     return identity
 

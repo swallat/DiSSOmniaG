@@ -78,14 +78,15 @@ class LiveCd(dissomniag.Base):
     def getInfoXML(self, user):
         self.authUser(user)
         liveInfo = etree.Element("liveInfo")
-        commonName = etree.SubElement("commonName")
-        commonName = str(self.vm.commonName)
+        commonName = etree.SubElement(liveInfo, "commonName")
+        commonName.text = str(self.vm.commonName)
         password = etree.SubElement(liveInfo, "password")
         password.text = str(self.plainPassword)
         uuid = etree.SubElement(liveInfo, "uuid")
         uuid.text = str(self.vm.uuid)
         serverIp = etree.SubElement(liveInfo, "serverIp")
-        serverIp.text = str(dissomniag.getIdentity().getMaintainanceIP())
+        ident = dissomniag.getIdentity()
+        serverIp.text = str(ident.getMaintainanceIP().addr)
         for interface in self.vm.interfaces:
             inter = etree.SubElement(liveInfo, "interface")
             name = etree.SubElement(inter, "name")

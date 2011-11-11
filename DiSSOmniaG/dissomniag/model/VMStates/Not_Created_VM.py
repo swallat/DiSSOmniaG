@@ -4,6 +4,7 @@ Created on 01.11.2011
 @author: Sebastian Wallat
 '''
 import lockfile
+import thread
 import os
 import shutil
 import dissomniag

@@ -203,7 +203,7 @@ class Job(threading.Thread):
         
     def start(self, dispatcher):
         """
-        Overwrite standard start method.
+        Overwrite stanetdard start method.
         Ensures that only a dispatcher can start a Job
         """
         if not threading.current_thread().name.startswith(dispatcher.startName):

@@ -253,6 +253,8 @@ class AbstractNode(dissomniag.Base):
         for interface in self.interfaces:
             if not (interface in savedInterfaces):
                 Interface.deleteInterface(user, interface, isAdministrative = True)
+        if self.getMaintainanceIP() == None:
+            self.ipAddresses[0].isMaintainance = True
     
     def addInterface(self, user, name, mac = None, ipAddresses = [], net = None):
         """

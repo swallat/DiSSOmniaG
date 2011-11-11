@@ -11,6 +11,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from abc import ABCMeta, abstractmethod
 import datetime
+import thread
 
 import dissomniag
 from dissomniag.model import *
@@ -96,6 +97,8 @@ class VM(AbstractNode):
         #    self.runtimeErrorState = dissomniag.model.VMStates.Runtime_Error_VM(self, self.liveCd)
         #    self.changeState(self.state)
         #return
+        session = dissomniag.Session()
+        session.expire(self.liveCd)
         self.runningState = None
         self.createdState = dissomniag.model.VMStates.Created_VM(self, self.liveCd)
         self.deployErrorState = dissomniag.model.VMStates.Deploy_Error_VM(self, self.liveCd)
@@ -293,7 +296,11 @@ class VM(AbstractNode):
         vncAttrib["type"] = "vnc"
         vncAttrib["port"] = str(self.vncPort)
         vncAttrib["passwd"] = str(self.vncPassword)
-        vncAttrib["keymap"] = "de"
+        #vncAttrib["keymap"] = "de"
+        listen = etree.SubElement(vnc, "listen")
+        listenAttrib = listen.attrib
+        listenAttrib["type"] = "address"
+        listenAttrib["address"] = "0.0.0.0"
         
         sound = etree.SubElement(devices, "sound")
         soundAttrib = sound.attrib
@@ -440,7 +447,7 @@ class VM(AbstractNode):
         maintainIp = self.getMaintainanceIp(user)
         if maintainIp == None:
             raise dissomniag.NoMaintainanceIp()
-        return ("https://%s:%s@%s:%s/" % ("maintain", str(self.uuid), str(self.getMaintainanceIp(user)), str(dissomniag.config.clientConfig.rpcServerPort)))
+        return ("https://%s:%s@%s:%s/RPC2" % ("maintain", str(self.uuid), str(self.getMaintainanceIp(user)), str(dissomniag.config.clientConfig.rpcServerPort)))
         
     
     """
