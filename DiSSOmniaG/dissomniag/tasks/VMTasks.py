@@ -42,6 +42,20 @@ class DeleteVM(dissomniag.taskManager.AtomicTask):
     def revert(self):
         raise dissomniag.taskManager.UnrevertableFailure()
     
+class sanityDeleteVM(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if (not hasattr(self.context, "node") or not isinstance(self.context.node, dissomniag.model.VM) or
+            not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM) or self.context.node != self.context.vm):
+            self.job.trace("DeleteInterfacesOnNode: In Context missing node object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing node object.")
+        
+        vm = self.context.vm
+        dissomniag.model.VM.deleteVm(self.job.getUser(), vm)
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS
     
 class statusVM(dissomniag.taskManager.AtomicTask):
     

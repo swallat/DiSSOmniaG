@@ -182,6 +182,7 @@ class delVm(CliMethodABCClass.CliMethodABCClass):
             self.printError("Query Inconsistency.")
             return
         else:
+            #vm.createSanityDeleteJob(self.user)
             dissomniag.model.VM.deleteVm(self.user, vm)
             return
         

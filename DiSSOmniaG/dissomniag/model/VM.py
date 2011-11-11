@@ -640,6 +640,16 @@ class VM(AbstractNode):
         job.addTask(dissomniag.tasks.totalResetVM())
         dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
         return True
+    
+    def createSanityDeleteJob(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self, "vm")
+        job = dissomniag.taskManager.Job(context, "Totally Reset and delete a VM", user = user)
+        job.addTask(dissomniag.tasks.totalResetVM())
+        job.addTask(dissomniag.tasks.sanityDeleteVM())
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.model.LiveCdEnvironment(), job)
+        return True
         
         
     @staticmethod
