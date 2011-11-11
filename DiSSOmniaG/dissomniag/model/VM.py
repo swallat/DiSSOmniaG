@@ -10,10 +10,12 @@ import os
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from abc import ABCMeta, abstractmethod
+import datetime
 
 import dissomniag
 from dissomniag.model import *
 from logging import thread
+from xml.etree import ElementTree
         
 
 class VM(AbstractNode):
@@ -414,6 +416,33 @@ class VM(AbstractNode):
                 return interface
         return None
     
+    def setMaintainanceIp(self, user, ipAddr):
+        self.authUser(user)
+        self.modMaintainanceIp(user, ipAddrOrNet = ipAddr, deleteOld = True, interface = self.getMaintainanceInterface(user))
+    
+    def recvUpdateLiveClient(self, user, xml):
+        self.authUser(user)
+        
+        if type(xml) == str:
+            xml = ElementTree.XML(xml)
+            
+        maintainIpElem = xml.find("maintainIp")
+        if maintainIpElem == None:
+            return False
+        self.setMainainanceIp(str(maintainIpElem.text))
+        self.lastSeenClient = datetime.datetime.now()
+        session = dissomniag.Session()
+        session.commit()
+        return True
+    
+    def getRPCUri(self, user):
+        self.autUhser(user)
+        maintainIp = self.getMaintainanceIp(user)
+        if maintainIp == None:
+            raise dissomniag.NoMaintainanceIp()
+        return ("https://%s:%s@%s:%s/" % ("maintain", str(self.uuid), str(self.getMaintainanceIp(user)), str(dissomniag.config.clientConfig.rpcServerPort)))
+        
+    
     """
     def start(self, user):
         self.authUser(user)
@@ -519,6 +548,9 @@ class VM(AbstractNode):
         context = dissomniag.taskManager.Context()
         context.add(self, "vm")
         job = dissomniag.taskManager.Job(context, "Update lastSeenClient", user = user)
+        job.addTask(dissomniag.tasks.updateLiveClientVM())
+        dissomniag.taskManager.Dispatcher.addJob(user, job)
+        return True
     
     def createTestJob(self, user):
         self.authUser(user)

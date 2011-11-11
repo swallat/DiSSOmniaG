@@ -78,6 +78,8 @@ class LiveCd(dissomniag.Base):
     def getInfoXML(self, user):
         self.authUser(user)
         liveInfo = etree.Element("liveInfo")
+        commonName = etree.SubElement("commonName")
+        commonName = str(self.vm.commonName)
         password = etree.SubElement(liveInfo, "password")
         password.text = str(self.plainPassword)
         uuid = etree.SubElement(liveInfo, "uuid")

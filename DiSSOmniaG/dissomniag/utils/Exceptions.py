@@ -29,3 +29,6 @@ class UnauthorizedFunctionCall(Exception):
 
 class MissingJobObject(Exception):
     pass
+
+class NoMaintainanceIp(Exception):
+    pass

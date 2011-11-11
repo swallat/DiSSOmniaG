@@ -134,3 +134,11 @@ class hostConfig(ParseSection):
         return self
 
 hostConfig = hostConfig(config, "HOST_CONFIG").parse()
+
+class clientConfig(ParseSection):
+    
+    def parse(self):
+        self.rpcServerPort = int(self.parseOption(self.sectionName, "rpcServerPort", "8008"))
+        return self
+    
+clientConfig = clientConfig(config, "CLIENT_CONFIG")

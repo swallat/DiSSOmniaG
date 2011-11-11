@@ -8,6 +8,7 @@ import libvirt
 import sqlalchemy as sa
 from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+import xmlrpclib
 import traceback, sys
 
 import dissomniag
@@ -227,25 +228,33 @@ class totalResetVM(dissomniag.taskManager.AtomicTask):
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
-class pushConfigVM(dissomniag.taskManager.AtomicTask):
-    
-    def run(self):
-        pass
-    
-    def revert(self):
-        pass
-    
 class updateLiveClientVM(dissomniag.taskManager.AtomicTask):
     
     def run(self):
         if not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM):
             self.job.trace("udateLiveClientVM: In Context missing vm object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing vm object.")
+        try:
+            proxy = xmlrpclib.ServerProxy(self.context.vm.getRPCUri(self.user))
+        except dissomniag.NoMaintainanceIp as e:
+            self.job.trace("No MaintainanceIp for VM available. Wait until it has fully started.")
+            return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
+        except Exception as e:
+            self.job.trace("General RPC Error. Wait until Vm has fully started.")
+        
+        try:
+            xml = proxy.update(self.context.vm.liveCd.getInfoXml(self.job.getUser()))
+            self.context.vm.recvUpdateLiveClient(self.job.getUser(), xml)
+        except Exception as e:
+            self.job.trace("Could not gather informations about a VM.")
+            session = dissomniag.Session()
+            self.context.vm.lastSeenClient = None
+            session.commit()
         
         
     
     def revert(self):
-        pass
+        return dissomniag.taskManager.TaskReturns.SUCCESS
     
     
 """    
