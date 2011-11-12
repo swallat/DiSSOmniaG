@@ -7,6 +7,7 @@ Created on 25.07.2011
 
 import sys, logging
 from dissomniag.dbAccess import Session
+import dissomniag
 
 log = logging.getLogger("utils.wrapper")
 
@@ -130,7 +131,7 @@ def wrap_db(func):
     def callFunc(*args, **kwargs):
         session = Session()
         f = func(*args, **kwargs)
-        session.commit()
+        dissomniag.saveCommit(session)
         Session.remove()
         return f
     return callFunc

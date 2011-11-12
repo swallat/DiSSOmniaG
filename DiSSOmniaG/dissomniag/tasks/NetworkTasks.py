@@ -47,7 +47,7 @@ class DeleteNetwork(dissomniag.taskManager.AtomicTask):
         try:
             session = dissomniag.Session()
             session.delete(self.context.net)
-            session.commit()
+            dissomniag.saveCommit(session)
             self.context.net = None
         except Exception, e:
             self.job.trace("Cannot delete Network. Sqlalchemy Error: %s" % e)
@@ -187,24 +187,24 @@ class statusNetwork(dissomniag.taskManager.AtomicTask):
                 return dissomniag.taskManager.TaskReturns.SUCCESS
             elif self.context.net.state == dissomniag.model.GenNetworkState.CREATED:
                 self.context.net.state = dissomniag.model.GenNetworkState.RUNTIME_ERROR
-                session.flush()
+                dissomniag.saveFlush(session)
                 self.context.net.operate(self.job.getUser())
                 return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
             else:
                 self.context.net.state = dissomniag.model.GenNetworkState.GENERAL_ERROR
-                session.flush()
+                dissomniag.saveFlush(session)
                 self.context.net.operate(self.job.getUser())
                 raise dissomniag.taskManager.TaskFailed("Network Status Check GENERAL_ERROR!")
         
         if net.isActive() == 1:
             if self.context.net.state == dissomniag.model.GenNetworkState.INACTIVE:
                 self.context.net.state = dissomniag.model.GenNetworkState.GENERAL_ERROR
-                session.flush()
+                dissomniag.saveFlush(session)
                 self.context.net.operate(self.job.getUser())
                 raise dissomniag.taskManager.TaskFailed("Network Status Check GENERAL_ERROR!")
             self.context.net.state = dissomniag.model.GenNetworkState.CREATED
         
-        session.flush()
+        dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):

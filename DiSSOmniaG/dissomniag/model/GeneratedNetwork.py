@@ -86,7 +86,7 @@ class generatedNetwork(Network):
         self.setDhcpServerAddress(user)
         self.state = GenNetworkState.INACTIVE
         session = dissomniag.Session()
-        session.commit()
+        dissomniag.saveCommit(session)
         
     def findEmptyName(self, host):
         name = None
@@ -390,7 +390,7 @@ class generatedNetwork(Network):
         else:
             for connection in connections:
                 session.delete(connection)
-            session.commit()
+            dissomniag.saveCommit(session)
             
         #2. Destroy Network on Host
         if network.state == GenNetworkState.CREATED:

@@ -26,7 +26,7 @@ class vms(CliMethodABCClass.CliMethodABCClass):
         print("RamSize: %s" % str(vm.ramSize))
         #print("HD Created?: %s" % str(vm.isHdCreated))
         #print("Use HD: %s" % str(vm.useHD))
-        print("HdSize: %s" % str(vm.hdSize))
+        #print("HdSize: %s" % str(vm.hdSize))
         print("VNC Port: %s" % str(vm.vncPort))
         print("VNC Password: %s" % str(vm.vncPassword))
         print("InstalledSoftware: %s" % str(vm.dynamicAptList))
@@ -182,8 +182,8 @@ class delVm(CliMethodABCClass.CliMethodABCClass):
             self.printError("Query Inconsistency.")
             return
         else:
-            #vm.createSanityDeleteJob(self.user)
-            dissomniag.model.VM.deleteVm(self.user, vm)
+            vm.createSanityDeleteJob(self.user)
+            #dissomniag.model.VM.deleteVm(self.user, vm)
             return
         
 class vmAddInterface(CliMethodABCClass.CliMethodABCClass):

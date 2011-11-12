@@ -29,6 +29,7 @@ class listUser(CliMethodABCClass.CliMethodABCClass):
         session = dissomniag.Session()
         
         for user in session.query(User).all():
+            session.expire(user)
             if (not self.user.isAdmin and user.username != self.user.username) or user.username == dissomniag.Identity.systemUserName:
                 continue
             self.printSuccess(str("User: %s" % user.username))
@@ -63,6 +64,7 @@ class listKeys(CliMethodABCClass.CliMethodABCClass):
                 try:
                     keys = session.query(PublicKey).all()
                     for key in keys:
+                        session.expire(key)
                         self.printInfo("Key-ID: %i" % key.id)
                         self.printInfo(key.publicKey)
                     return
@@ -73,6 +75,7 @@ class listKeys(CliMethodABCClass.CliMethodABCClass):
                 try:
                     user = session.query(User).filter(User.username == options.username).one()
                     for key in user.publicKeys:
+                        session.expire(key)
                         self.printInfo("Key-ID: %i" % key.id)
                         self.printInfo(key.publicKey)
                     return
@@ -80,6 +83,7 @@ class listKeys(CliMethodABCClass.CliMethodABCClass):
                     self.printError("No such User.")
                     
         for key in self.user.publicKeys:
+            session.expire(key)
             self.printInfo("Key-ID: %i" % key.id)
             self.printInfo(key.publicKey)
 
@@ -118,8 +122,8 @@ class addUser(CliMethodABCClass.CliMethodABCClass):
                            options.isAdmin, options.loginRPC, options.loginSSH,
                            options.loginManhole, isHtpasswd = False)
             session.add(newUser)
-            session.commit()
-            session.flush()
+            dissomniag.saveCommit(session)
+            dissomniag.saveFlush(session)
         except MultipleResultsFound:
             print(self.colorString("User already exists.", color = Fore.RED, style = Style.BRIGHT))
             return
@@ -243,8 +247,8 @@ class modUser(CliMethodABCClass.CliMethodABCClass):
                     self.printError("Please enter a valid PublicKey.")
                     return   
             
-            session.commit()
-            session.flush()
+            dissomniag.saveCommit(session)
+            dissomniag.saveFlush(session)
             
             if options.newPassword and user.username != self.user.username:
                 user.saveNewPassword(options.newPassword)
@@ -296,8 +300,8 @@ class delUser(CliMethodABCClass.CliMethodABCClass):
                 self.printError("Permission denied: You cannot delete a maintainance User!")
                 return
             session.delete(user)
-            session.commit()
-            session.flush()
+            dissomniag.saveCommit(session)
+            dissomniag.saveFlush(session)
         except NoResultFound:
             self.printError("User %s does not exists." % options.username)
             return
@@ -333,8 +337,8 @@ class delKey(CliMethodABCClass.CliMethodABCClass):
                     self.printError("Could not find Key.")
                     return
                 session.delete(key)
-                session.commit()
-                session.flush()
+                dissomniag.saveCommit(session)
+                dissomniag.saveFlush(session)
                 return
             
             if options.username and options.username != self.user.username:
@@ -351,8 +355,8 @@ class delKey(CliMethodABCClass.CliMethodABCClass):
                 if len(key.users) == 0:
                     #Only the actual user owns that key
                     session.delete(key)
-                    session.commit()
-                    session.flush()
+                    dissomniag.saveCommit(session)
+                    dissomniag.saveFlush(session)
                 return
                         
         #Key not found

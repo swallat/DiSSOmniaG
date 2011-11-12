@@ -89,7 +89,7 @@ class Host(AbstractNode):
         else:
             session = dissomniag.Session()
             self.bridgedInterfaceName = newName
-            session.commit()
+            dissomniag.saveCommit(session)
             return True
         
     def makeFullCheck(self, user):

@@ -122,8 +122,8 @@ class Job(threading.Thread):
         self.state = JobStates.QUEUED
         self.infoObj = JobInfo(description = description, state = self.state, user = user)
         session.add(self.infoObj)
-        session.commit()
-        session.flush()
+        dissomniag.saveCommit(session)
+        dissomniag.saveFlush(session)
         self.id = self.infoObj.id
         if user != None:
             self.user = user
@@ -149,12 +149,15 @@ class Job(threading.Thread):
             self._reFetchInfoObj()
             self.state = state
             self.infoObj.state = state
+            session = dissomniag.Session()
+            dissomniag.saveCommit(session)
         
     def _reFetchInfoObj(self):
         if self.infoObj == None:
             session = dissomniag.Session()
             try:
                 self.infoObj = session.query(JobInfo).filter(JobInfo.id == self.id).one()
+                session.expire(self.infoObj)
             except NoResultFound:
                 raise NoJobInfoObj()
     
@@ -176,7 +179,7 @@ class Job(threading.Thread):
             if self.state == JobStates.CANCELLED:
                 self.trace("### JOB CANCELLED ###")
             self.infoObj.state = self.state
-            session.commit()
+            dissomniag.saveCommit(session)
         return self.state
     
     def getUserId(self):
@@ -186,7 +189,9 @@ class Job(threading.Thread):
     def getInfo(self):
         session = dissomniag.Session()
         try:
-            return session.query(JobInfo).filter(JobInfo.id == self.id).one()
+            info = session.query(JobInfo).filter(JobInfo.id == self.id).one()
+            session.expire(info)
+            return info
         except NoResultFound:
             raise NoJobInfoObj()
         
@@ -198,7 +203,7 @@ class Job(threading.Thread):
             session = dissomniag.Session()
             self._reFetchInfoObj()
             self.infoObj.endTime = datetime.datetime.now()
-            session.commit()
+            dissomniag.saveCommit(session)
         
         
     def start(self, dispatcher):
@@ -252,7 +257,7 @@ class Job(threading.Thread):
                 
                 session = dissomniag.Session()
                 self._setState(JobStates.RUNNING) 
-                session.commit()
+                dissomniag.saveCommit(session)
                 self.context.parse(self.getUser())
             
             try:
@@ -362,7 +367,7 @@ class Job(threading.Thread):
             if self._getStatePrivate() != JobStates.CANCELLED:   
                 self._setState(JobStates.REVERTING)
             session = dissomniag.Session()
-            session.commit()
+            dissomniag.saveCommit(session)
         
         lastFailed = False
         
@@ -420,7 +425,7 @@ class Job(threading.Thread):
             self._reFetchInfoObj()
             self.state = JobStates.CANCELLED
             self.infoObj.state = self.state
-            session.commit()
+            dissomniag.saveCommit(session)
             self.infoObj = None
             
         
@@ -430,6 +435,9 @@ class Job(threading.Thread):
         """
         with self.writeProperty:
             self._reFetchInfoObj()
+            session = dissomniag.Session()
+            session.expire(self.infoObj)
+            
             #try:
             #    self.infoObj.trace == None
             #except InvalidRequestError:
@@ -439,6 +447,9 @@ class Job(threading.Thread):
                 self.infoObj.trace += "\n"
             else:
                 self.infoObj.trace += traceMessage + "\n"
+                
+            
+            dissomniag.saveCommit(session)
                 
             
     
@@ -594,7 +605,7 @@ class Job(threading.Thread):
         
         for job in jobs:
             session.delete(job)
-        session.commit()
+        dissomniag.saveCommit(session)
         return True
    
     @staticmethod
@@ -615,7 +626,7 @@ class Job(threading.Thread):
             return False
         
         session.delete(job)
-        session.commit()
+        dissomniag.saveCommit(session)
         return True
     
     @staticmethod
@@ -635,7 +646,7 @@ class Job(threading.Thread):
         for job in jobs:
             session.delete(job)
             
-        session.commit()
+        dissomniag.saveCommit(session)
         return True
    
     @staticmethod
@@ -655,7 +666,7 @@ class Job(threading.Thread):
         
         for job in jobs:
             session.delete(job)
-        session.commit()
+        dissomniag.saveCommit(session)
         return True
         
     

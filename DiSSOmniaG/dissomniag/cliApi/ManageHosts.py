@@ -48,6 +48,8 @@ class hosts(CliMethodABCClass.CliMethodABCClass):
             print(str(type(host)))
             print(str(dissomniag.model.Host == type(host)))
             return
+        session = dissomniag.Session()
+        session.expire(host)
         
         print("Common Name: %s" % str(host.commonName))
         print("State: %s" % str(dissomniag.model.NodeState.getStateName(host.state)))
@@ -114,7 +116,7 @@ class addHost(CliMethodABCClass.CliMethodABCClass):
             return
         host = dissomniag.model.Host(self.user, commonName = options.commonName, maintainanceIP = options.ipAddress, administrativeUserName = adminUser, bridgedInterfaceName = bridgeName)
         session.add(host)
-        session.commit()
+        dissomniag.saveCommit(session)
         
         self.printSuccess("Host added. Make sure to add the SSH-Key %s to the admin user on the Host!" % os.path.abspath(dissomniag.config.dissomniag.rsaKeyPublic))
         
@@ -156,7 +158,7 @@ class modHost(CliMethodABCClass.CliMethodABCClass):
         if options.bridgeName != None:
             host.modBridgedInterfaceName(self.user, str(options.bridgeName))
         
-        session.commit()
+        dissomniag.saveCommit(session)
 
         
     

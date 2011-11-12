@@ -68,7 +68,9 @@ class CliJobs(CliMethodABCClass.CliMethodABCClass):
         if jobs == None:
             self.printInfo("No Jobs available")
         else:
+            session = dissomniag.Session()
             for job in jobs:
+                session.expire(job)
                 if job.endTime == None:
                     endTime = "not defined"
                 else:
@@ -244,7 +246,7 @@ class stopJob(CliMethodABCClass.CliMethodABCClass):
         try:
             job = session.query(taskManager.jobs.JobInfo).filter(taskManager.jobs.JobInfo.id == jobId).filter(taskManager.jobs.JobInfo.state.in_(taskManager.jobs.JobStates.getRunningStates())).one()
             job.state = taskManager.jobs.JobStates.CANCELLED
-            session.commit()
+            dissomniag.saveCommit(session)
             self.printInfo("Job canceled without using ")
         except (NoResultFound, MultipleResultsFound):
             self.printError("Could also not cancel Job in other Job List")

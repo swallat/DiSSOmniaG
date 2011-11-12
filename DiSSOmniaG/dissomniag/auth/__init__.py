@@ -27,7 +27,7 @@ def parseHtpasswdFile():
             if username == dissomniag.config.htpasswd.adminUser:
                 if dbUser.passwd != hashedPassword:
                     dbUser.updateHtpasswdPassword(hashedPassword)
-                    session.commit()
+                    dissomniag.saveCommit(session)
                 
             if dbUser.isHtpasswd and dbUser.passwd != hashedPassword:
                 dbUser.updateHtpasswdPassword(hashedPassword)
@@ -42,15 +42,15 @@ def parseHtpasswdFile():
                                isAdmin = False, loginRPC = True, loginSSH = True,
                                loginManhole = False, isHtpasswd = True)
             session.add(newUser)
-            session.commit()
+            dissomniag.saveCommit(session)
     try:
         for user in session.query(User).filter(User.isHtpasswd == True).all():
             if user.username not in usernamesInHtpasswd:
                 session.delete(user)
     except NoResultFound:
         pass
-    session.commit()
-    session.flush()
+    dissomniag.saveCommit(session)
+    dissomniag.saveFlush(session)
 
 def refreshHtpasswdFile():
     #raise NotImplementedError()

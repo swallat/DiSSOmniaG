@@ -98,7 +98,7 @@ class User(Base):
                 thisUser.loginManhole = loginManhole
             if isHtpasswd != None:
                 thisUser.isHtpasswd = isHtpasswd
-            session.commit()
+            dissomniag.saveCommit(session)
             return thisUser                 
         except (NoResultFound, MultipleResultsFound):
             if isAdmin == None:
@@ -130,7 +130,7 @@ class User(Base):
             session.add(newKey)
             self.publicKeys.append(newKey)
         finally:
-            session.commit()
+            dissomniag.saveCommit(session)
         
     def getKeys(self):
         return self.publicKeys
@@ -138,7 +138,7 @@ class User(Base):
     def delKeys(self):
         session = dissomniag.Session()
         self.publicKeys = []
-        session.commit()
+        dissomniag.saveCommit(session)
         
         
     def checkPassword(self, password):
@@ -159,7 +159,7 @@ class User(Base):
         salt += ''.join([ random.choice(saltchars) for x in range(8) ])
         self.passwd = crypt.crypt(password, salt)
         session = Session()
-        session.commit()
+        dissomniag.saveCommit(session)
         
     @staticmethod
     def loginRPCMethod(username, passwd = None):

@@ -22,3 +22,17 @@ Base = declarative_base()
 """
 The declarative Base
 """
+
+def saveFlush(session):
+    try:
+        session.flush()
+    except Exception as e:
+        session.rollback()
+        raise e
+    
+def saveCommit(session):
+    try:
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise e

@@ -33,7 +33,7 @@ class Interface(dissomniag.Base):
         self.macAddress = mac
         self.name = name
         session.add(self)
-        session.commit()
+        dissomniag.saveCommit(session)
             
     def addIp(self, user, ipAddrOrNet, net = None):
         
@@ -70,13 +70,13 @@ class Interface(dissomniag.Base):
             if found == False and ip == None:
                 ip = dissomniag.model.IpAddress(user, ipAddrOrNet, self.node, net = net)
                 self.ipAddresses.append(ip)
-                session.commit()
+                dissomniag.saveCommit(session)
                 return ip
             elif found == True and ip != None:
-                session.commit()
+                dissomniag.saveCommit(session)
                 return ip
             else:
-                session.commit()
+                dissomniag.saveCommit(session)
                 return None
             
     def getLibVirtXML(self, user):

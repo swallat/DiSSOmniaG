@@ -81,7 +81,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         if myDbObj == None:
             session.add(self)
         
-        session.commit()
+        dissomniag.saveCommit(session)
         
     def authUser(self, user):
         if user.isAdmin:

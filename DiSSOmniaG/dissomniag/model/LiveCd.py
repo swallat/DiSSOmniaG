@@ -215,7 +215,7 @@ class LiveCd(dissomniag.Base):
         except Exception:
             failed = True
         else:
-            session.commit()
+            dissomniag.saveCommit(session)
             failed = False
         return not failed
 

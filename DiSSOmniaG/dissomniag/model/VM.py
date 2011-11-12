@@ -84,7 +84,7 @@ class VM(AbstractNode):
             elif nextState == dissomniag.model.NodeState.RUNTIME_ERROR:
                 self.runningState = self.runtimeErrorState
                 self.state = dissomniag.model.NodeState.RUNTIME_ERROR
-            session.commit()
+            dissomniag.saveCommit(session)
                 
     def selectInitialStateActor(self):
         #if self.runningState == None:
@@ -98,7 +98,8 @@ class VM(AbstractNode):
         #    self.changeState(self.state)
         #return
         session = dissomniag.Session()
-        session.expire(self.liveCd)
+        if self.liveCd != None:
+            session.expire(self.liveCd)
         self.runningState = None
         self.createdState = dissomniag.model.VMStates.Created_VM(self, self.liveCd)
         self.deployErrorState = dissomniag.model.VMStates.Deploy_Error_VM(self, self.liveCd)
@@ -125,7 +126,7 @@ class VM(AbstractNode):
         self.maintainUser = dissomniag.auth.User(username = self.commonName, password = self.uuid, isAdmin = False, loginRPC = True, loginSSH = False, loginManhole = False, maintain= True)
         
         session = dissomniag.Session()    
-        session.commit()
+        dissomniag.saveCommit(session)
     
     def getLibVirtXML(self, user):
         self.authUser(user)
@@ -439,7 +440,7 @@ class VM(AbstractNode):
         self.setMainainanceIp(str(maintainIpElem.text))
         self.lastSeenClient = datetime.datetime.now()
         session = dissomniag.Session()
-        session.commit()
+        dissomniag.saveCommit(session)
         return True
     
     def getRPCUri(self, user):
@@ -666,7 +667,7 @@ class VM(AbstractNode):
         if node.maintainUser != None and type(node.maintainUser) == dissomniag.auth.User and node.maintainUser.isMaintain:
             session = dissomniag.Session()
             session.delete(node.maintainUser)
-            session.commit()
+            dissomniag.saveCommit(session)
 
         #2. Delete Interfaces
         for interface in node.interfaces:
@@ -693,7 +694,7 @@ class VM(AbstractNode):
         else:
             for connection in connections:
                 session.delete(connection)
-            session.commit()
+            dissomniag.saveCommit(session)
         
         dissomniag.taskManager.Dispatcher.addJob(user = user, job = job)
         return True

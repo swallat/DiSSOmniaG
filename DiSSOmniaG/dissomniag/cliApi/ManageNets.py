@@ -21,6 +21,9 @@ class nets(CliMethodABCClass.CliMethodABCClass):
     def printNet(self, net, withXml = False, user = None):
         if user == None:
             user = self.user
+        
+        session = dissomniag.Session()
+        session.expire(net)
             
         self.printInfo("Network Name: %s" % net.name)
         

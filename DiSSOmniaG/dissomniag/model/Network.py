@@ -54,7 +54,7 @@ class Network(dissomniag.Base):
         
         if node != None:
             self.addNode(user, node)
-        session.commit()
+        dissomniag.saveCommit(session)
             
     
     def authUser(self, user):

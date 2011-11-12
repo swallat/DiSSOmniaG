@@ -105,5 +105,5 @@ class TopologyConnection(dissomniag.Base):
         
         session = dissomniag.Session()
         session.delete(connection)
-        session.commit()
+        dissomniag.saveCommit(session)
         

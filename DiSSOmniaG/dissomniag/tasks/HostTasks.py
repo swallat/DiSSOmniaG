@@ -81,7 +81,7 @@ class DeleteHost(dissomniag.taskManager.AtomicTask):
         try: 
             session = dissomniag.Session()
             session.delete(self.context.host)
-            session.commit()
+            dissomniag.saveCommit(session)
             self.context.host = None
         except Exception, e:
             raise dissomniag.taskManager.UnrevertableFailure("Cannot delete Host. SqlalchemyError: %s" % e)
@@ -109,7 +109,7 @@ class checkLibvirtVersionOnHost(dissomniag.taskManager.AtomicTask):
         self.context.host.libvirtVersion = output[0]
         self.context.host.lastChecked = datetime.datetime.now()
         session = dissomniag.Session()
-        session.flush()
+        dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
@@ -136,7 +136,7 @@ class checkKvmOnHost(dissomniag.taskManager.AtomicTask):
         self.context.host.kvmUsable = True
         self.context.host.lastChecked = datetime.datetime.now()
         session = dissomniag.Session()
-        session.flush()
+        dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
@@ -166,7 +166,7 @@ class getFreeDiskSpaceOnHost(dissomniag.taskManager.AtomicTask):
         self.context.host.freeDiskspace = freeSpace
         self.context.host.lastChecked = datetime.datetime.now()
         session = dissomniag.Session()
-        session.flush()
+        dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
         
     
@@ -191,7 +191,7 @@ class getRamCapacityOnHost(dissomniag.taskManager.AtomicTask):
         self.context.host.ramCapacity = str(int(line[1]) / 1024) + "MB" # The second fieled in this line is interesting
         self.context.host.lastChecked = datetime.datetime.now()
         session = dissomniag.Session()
-        session.flush()
+        dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
@@ -221,12 +221,12 @@ class checkUtilityDirectory(dissomniag.taskManager.AtomicTask):
             if code != 0 :
                 self.job.trace("createUtilityFolder: Unable To create Utility Folder.")
                 self.context.host.configurationMissmatch = True
-                session.flush()
+                dissomniag.saveFlush(session)
                 self.success = False
                 raise dissomniag.taskManager.UnrevertableFailure("Could not operate on Host!")
         #everything is ok.
         self.context.host.configurationMissmatch = False
-        session.flush()
+        dissomniag.saveFlush(session)
         self.success = True
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
@@ -262,7 +262,7 @@ class gatherLibvirtCapabilities(dissomniag.taskManager.AtomicTask):
             return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
         
         session = dissomniag.Session()
-        session.flush()
+        dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
              
     
@@ -272,7 +272,7 @@ class gatherLibvirtCapabilities(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing host object.")
         self.context.host.libvirtCapabilities = None
         session = dissomniag.Session()
-        session.flush()
+        dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
         
     

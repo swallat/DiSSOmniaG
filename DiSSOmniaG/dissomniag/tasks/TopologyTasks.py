@@ -77,7 +77,7 @@ class DeleteTopology(dissomniag.taskManager.AtomicTask):
         try:
             session = dissomniag.Session()
             session.delete(self.context.topology)
-            session.commit()
+            dissomniag.saveCommit(session)
             self.context.topology = None
         except Exception, e: 
             raise dissomniag.taskManager.UnrevertableFailure("Cannot delete Topology. SqlalchemyError: %s" % e)

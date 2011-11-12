@@ -87,13 +87,16 @@ class Prepared_VM(AbstractVMState):
         # 1. Delete Local Image
         self.multiLog("Delete local LiveCd image.", job, log)
         self.multiLog("Rmtree %s" % self.vm.getLocalUtilityFolder(job.getUser()), job, log)
+        dissomniag.getRoot()
         try:
             shutil.rmtree(self.vm.getLocalUtilityFolder(job.getUser()))
         except (IOError, OSError) as e:
-            self.multiLog("Cannot delete local LiveCd image.", job, log)
-            self.vm.changeState(dissomniag.model.NodeState.PREPARED)
+            self.multiLog("Cannot delete local LiveCd image. LocalFolder: %s " % self.vm.getLocalUtilityFolder(job.getUser()), job, log)
+            self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
         else:
             self.vm.changeState(dissomniag.model.NodeState.NOT_CREATED)
+        finally:
+            dissomniag.resetPermissions()
         return True
     
     def cleanUpDeploy(self, job):    

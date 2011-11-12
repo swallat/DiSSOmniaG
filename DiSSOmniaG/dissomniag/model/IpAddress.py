@@ -71,7 +71,7 @@ class IpAddress(dissomniag.Base):
         elif isinstance(net, (dissomniag.model.Network, dissomniag.model.generatedNetwork)):
             self.network = net
         session.add(self)
-        session.commit()
+        dissomniag.saveCommit(session)
         
     def authUser(self, user):
         return self.node.authUser(user)
@@ -106,7 +106,7 @@ class IpAddress(dissomniag.Base):
     def deleteIpAddress(user, ipAddress, isAdministrative = False):
         session = dissomniag.Session()
         session.delete(ipAddress)
-        session.flush()
+        dissomniag.saveFlush(session)
     
     @staticmethod
     def checkValidIpAddress(ipAddress):

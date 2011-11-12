@@ -102,7 +102,7 @@ class AbstractNode(dissomniag.Base):
             self.state = NodeState.NOT_CREATED
             
         session.add(self)
-        session.commit()
+        dissomniag.saveCommit(session)
         
         if maintainanceIP != None:
             self.addIp(user, maintainanceIP, isMaintainanceIP = True)
@@ -181,7 +181,7 @@ class AbstractNode(dissomniag.Base):
                     if oldMaintainance != None:
                         oldMaintainance.isMaintainance = False
                     ip.isMaintainance = True
-                session.commit()
+                dissomniag.saveCommit(session)
                 return ip
             elif found == True and ip != None:
                 if isMaintainanceIP:
@@ -189,10 +189,10 @@ class AbstractNode(dissomniag.Base):
                     if oldMaintainance != None:
                         oldMaintainance.isMaintainance = False
                     ip.isMaintainance = True
-                session.commit()
+                dissomniag.saveCommit(session)
                 return ip
             else:
-                session.commit()
+                dissomniag.saveCommit(session)
                 return None
     
     def parseLocalInterfaces(self, user):
@@ -313,7 +313,7 @@ class AbstractNode(dissomniag.Base):
             except NoResultFound:
                 pass
             
-            session.commit()
+            dissomniag.saveCommit(session)
             return interface           
     
     def modUtilityFolder(self, user, folder):
@@ -372,7 +372,7 @@ class AbstractNode(dissomniag.Base):
             return False
         else:
             self.state = state
-        session.commit()
+        dissomniag.saveCommit(session)
     
     def getMaintainanceIP(self):
         for ip in self.ipAddresses:

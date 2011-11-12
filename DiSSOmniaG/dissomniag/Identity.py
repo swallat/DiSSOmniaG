@@ -67,7 +67,7 @@ class Identity:
                     loginRPC = False, loginSSH = False, loginManhole = False,
                     isHtpasswd = False)
             session.add(user)
-            session.commit()
+            dissomniag.saveCommit(session)
         finally:
             return user
             
@@ -167,7 +167,7 @@ def _getControlIdentity():
         central = session.query(dissomniag.model.ControlSystem).one()
     except NoResultFound:
          central = dissomniag.model.ControlSystem()
-         session.commit()
+         dissomniag.saveCommit(session)
          session.expire(central)
          return central
     except MultipleResultsFound:

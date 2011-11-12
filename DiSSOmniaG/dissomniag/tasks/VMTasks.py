@@ -18,10 +18,11 @@ class DeleteVM(dissomniag.taskManager.AtomicTask):
     def run(self):
         if (not hasattr(self.context, "node") or not isinstance(self.context.node, dissomniag.model.VM) or
             not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM) or self.context.node != self.context.vm):
-            self.job.trace("DeleteInterfacesOnNode: In Context missing node object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing node object.")
+            self.job.trace("DeleteVM: In Context missing vm object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing vm object.")
         
         vm = self.context.vm
+        self.job.trace("IN DELETE")
         
         if (vm.liveCd != None or (vm.interfaces != None and len(vm.interfaces) != 0) or
             (vm.ipAddresses != None and len(vm.ipAddresses) != 0)):
@@ -31,7 +32,7 @@ class DeleteVM(dissomniag.taskManager.AtomicTask):
         try:
             session = dissomniag.Session()
             session.delete(vm)
-            session.commit()
+            dissomniag.saveCommit(session)
             self.context.vm = None
             self.context.node = None
         except Exception, e:
@@ -45,8 +46,7 @@ class DeleteVM(dissomniag.taskManager.AtomicTask):
 class sanityDeleteVM(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if (not hasattr(self.context, "node") or not isinstance(self.context.node, dissomniag.model.VM) or
-            not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM) or self.context.node != self.context.vm):
+        if (not hasattr(self.context, "vm") or not isinstance(self.context.vm, dissomniag.model.VM)):
             self.job.trace("DeleteInterfacesOnNode: In Context missing node object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing node object.")
         
@@ -222,7 +222,8 @@ class totalResetVM(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing net object.")
         
         cycleCounter = 0
-        
+        session = dissomniag.Session()
+        session.expire(self.context.vm)
         while((self.context.vm.state != dissomniag.model.NodeState.NOT_CREATED) and (cycleCounter <= 4)):
             try:
                 self.context.vm.reset(self.job.getUser(), self.job)
@@ -233,8 +234,9 @@ class totalResetVM(dissomniag.taskManager.AtomicTask):
                 pass
             
             cycleCounter = cycleCounter + 1
+            session.expire(self.context.vm)
         
-        if self.context.vm.state != dissomniag.model.NodeState.NOT_CREATED:
+        if self.context.vm.state == dissomniag.model.NodeState.NOT_CREATED:
             return dissomniag.taskManager.TaskReturns.SUCCESS
         else:
             raise dissomniag.taskManager.UnrevertableFailure("Could not reset VM!")
@@ -263,7 +265,7 @@ class updateLiveClientVM(dissomniag.taskManager.AtomicTask):
             self.job.trace("Could not gather informations about a VM.")
             session = dissomniag.Session()
             self.context.vm.lastSeenClient = None
-            session.commit()
+            dissomniag.saveCommit(session)
         
         
     
@@ -401,24 +403,24 @@ class statusVM(dissomniag.taskManager.AtomicTask):
                 return dissomniag.taskManager.TaskReturns.SUCCESS
             elif self.context.vm.state == dissomniag.model.NodeState.CREATED:
                 self.context.vm.state = dissomniag.model.NodeState.RUNNTIME_ERROR
-                session.flush()
+                dissomniag.saveFlush(session)
                 self.context.vm.operate(self.job.getUser())
                 return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
             else:
                 self.context.vm.state = dissomniag.model.NodeState.RUNNTIME_ERROR
-                session.flush()
+                dissomniag.saveFlush(session)
                 self.context.vm.operate(self.job.getUser())
                 raise dissomniag.taskManager.TaskFailed("VM Status Check RUNTIME_ERROR!")
         
         if vm.isActive() == 1:
             if self.context.vm.state == dissomniag.model.NodeState.NOT_CREATED:
                 self.context.vm.state = dissomniag.model.NodeState.RUNTIME_ERROR
-                session.flush()
+                dissomniag.saveFlush(session)
                 self.context.vm.operate(self.job.getUser())
                 raise dissomniag.taskManager.TaskFailed("VM Status Check RUNTIME_ERROR!")
             self.context.vm.state = dissomniag.model.NodeState.CREATED
         
-        session.flush()
+        dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
