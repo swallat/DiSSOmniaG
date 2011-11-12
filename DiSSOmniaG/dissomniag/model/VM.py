@@ -426,7 +426,7 @@ class VM(AbstractNode):
     
     def setMaintainanceIp(self, user, ipAddr):
         self.authUser(user)
-        self.modMaintainanceIp(user, ipAddrOrNet = ipAddr, deleteOld = True, interface = self.getMaintainanceInterface(user))
+        self.modMaintainanceIP(user, ipAddr, deleteOld = True, interface = self.getMaintainanceInterface(user))
     
     def recvUpdateLiveClient(self, user, xml):
         self.authUser(user)
@@ -437,7 +437,7 @@ class VM(AbstractNode):
         maintainIpElem = xml.find("maintainIp")
         if maintainIpElem == None:
             return False
-        self.setMainainanceIp(str(maintainIpElem.text))
+        self.setMaintainanceIp(user, str(maintainIpElem.text))
         self.lastSeenClient = datetime.datetime.now()
         session = dissomniag.Session()
         dissomniag.saveCommit(session)

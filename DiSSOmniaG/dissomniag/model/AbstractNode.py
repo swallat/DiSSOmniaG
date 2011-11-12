@@ -334,9 +334,9 @@ class AbstractNode(dissomniag.Base):
         if publicKey != None:
             self.sshKey.publicKey = publicKey
     
-    def modMaintainandceIP(self, user, newIp, deleteOld = False, interface = None):
+    def modMaintainanceIP(self, user, newIp, deleteOld = False, interface = None):
         self.authUser(user)
-        if deleteOld:
+        if deleteOld and self.getMaintainanceIP() != None:
             IpAddress.deleteIpAddress(user, self.getMaintainanceIP(), isAdministrative = True)
             
         return self.addIp(user, newIp, isMaintainanceIP = True, interface = interface)

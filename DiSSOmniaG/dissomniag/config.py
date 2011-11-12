@@ -77,10 +77,11 @@ server = server(config, "server").parse()
 
 class ssl(ParseSection):
     def parse(self):
-        if not self.config.has_section(self.sectionName):
-            self.SSL = False
-        else:
-            self.SSL = True
+        #if not self.config.has_section(self.sectionName):
+        #    self.SSL = False
+        #else:
+        #    self.SSL = True
+        self.SSL = True
         self.privateKey = self.parseOption(self.sectionName, "privateKeyFile", "privatekey.pem")
         self.caKey = self.parseOption(self.sectionName, "caKeyFile", "cert.pem")
         return self

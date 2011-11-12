@@ -20,6 +20,8 @@ class Created_VM(AbstractVMState):
         try:
             con = libvirt.open(str(self.vm.host.qemuConnector))
         except libvirt.libvirtError:
+            self.vm.lastSeenCient = None
+            dissomniag.saveCommit(session)
             self.vm.changeState(dissomniag.model.NodeState.RUNTIME_ERROR)
             raise dissomniag.taskManager.TaskFailed("Could Not Connect to Libvirt Host!")
         
@@ -27,6 +29,8 @@ class Created_VM(AbstractVMState):
             vm = con.lookupByName(self.vm.commonName)
         except libvirt.libvirtError:
             job.trace("VM is not Running.")
+            self.vm.lastSeenCient = None
+            dissomniag.saveCommit(session)
             self.vm.changeState(dissomniag.model.NodeState.RUNTIME_ERROR)
             return self.vm.runningState.sanityCheck(job)
         
@@ -39,6 +43,8 @@ class Created_VM(AbstractVMState):
             except libvirt.libvirtError as e:
                 pass
             job.trace("VM is not Running.")
+            self.vm.lastSeenCient = None
+            dissomniag.saveCommit(session)
             self.vm.changestate(dissomniag.model.NodeState.RUNTIME_ERROR)
             return self.vm.runningState.sanityCheck(job)
     
@@ -53,6 +59,9 @@ class Created_VM(AbstractVMState):
         return True
     
     def stop(self, job):
+        session = dissomniag.Session()
+        self.vm.lastSeenCient = None
+        dissomniag.saveCommit(session)
         try:
             con = libvirt.open(str(self.vm.host.qemuConnector))
         except libvirt.libvirtError:
@@ -79,5 +88,8 @@ class Created_VM(AbstractVMState):
     
     def reset(self, job):
         returnMe = self.stop(job)
+        session = dissomniag.Session()
+        self.vm.lastSeenCient = None
+        dissomniag.saveCommit(session)
         self.vm.changeState(dissomniag.model.NodeState.DEPLOYED)
         return returnMe
