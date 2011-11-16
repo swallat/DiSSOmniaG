@@ -143,3 +143,8 @@ class clientConfig(ParseSection):
         return self
     
 clientConfig = clientConfig(config, "CLIENT_CONFIG")
+
+class gitConfig(ParseSection):
+    
+    def parse(self):
+        self.pathToGitRepositories = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/git")
