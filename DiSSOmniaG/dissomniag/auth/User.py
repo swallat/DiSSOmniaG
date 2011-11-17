@@ -237,3 +237,30 @@ class PublicKey(Base):
         
     def __repr__(self):
         return str(self.publicKey)
+    
+    def getUserHostPart(self): 
+        pKey = self.publicKey.split(" ")
+        i = len(pKey) - 1
+        part = pKey[i]
+        part = part.split("@")
+        if len(part) > 1:
+            user = part[0]
+            host = part[1].split("\n")[0]
+        else:
+            user = None
+            host = part[0].split("\n")[0]
+        
+        return user, host
+    
+    def getUser(self):
+        return self.getUserHostPart()[0]
+    
+    def getHost(self):
+        return self.getUserHostPart()[1]
+    
+    def getUserHostString(self):
+        part = self.getUserHostPart()
+        return "%s@%s" % (part[0], part[1])
+    
+    def getPublicFileString(self):
+        return "%s.pub" % self.getUserHostString()

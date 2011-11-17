@@ -106,6 +106,7 @@ class checkLibvirtVersionOnHost(dissomniag.taskManager.AtomicTask):
         if code != 0:
             self.job.trace("checkLibvirtVersionOnHost: Could not execute 'virsh --version'!")
             return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
+        self.context.host.changeState(self.job.getUser(), dissomniag.model.NodeState.UP)
         self.context.host.libvirtVersion = output[0]
         self.context.host.lastChecked = datetime.datetime.now()
         session = dissomniag.Session()
@@ -133,6 +134,7 @@ class checkKvmOnHost(dissomniag.taskManager.AtomicTask):
             self.job.trace("checkLibvirtVersionOnHost: Could not execute 'egrep vmx --color=always /proc/cpuinfo' %s!" % out)
             self.context.host.kvmUsable = False
             return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
+        self.context.host.changeState(self.job.getUser(), dissomniag.model.NodeState.UP)
         self.context.host.kvmUsable = True
         self.context.host.lastChecked = datetime.datetime.now()
         session = dissomniag.Session()
@@ -165,6 +167,7 @@ class getFreeDiskSpaceOnHost(dissomniag.taskManager.AtomicTask):
         freeSpace = shlex.split(line)[3] # Third object in Line if info about Free Diskspace
         self.context.host.freeDiskspace = freeSpace
         self.context.host.lastChecked = datetime.datetime.now()
+        self.context.host.changeState(self.job.getUser(), dissomniag.model.NodeState.UP)
         session = dissomniag.Session()
         dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
@@ -190,6 +193,7 @@ class getRamCapacityOnHost(dissomniag.taskManager.AtomicTask):
         line = shlex.split(output[0]) #The first line is the only interesting line
         self.context.host.ramCapacity = str(int(line[1]) / 1024) + "MB" # The second fieled in this line is interesting
         self.context.host.lastChecked = datetime.datetime.now()
+        self.context.host.changeState(self.job.getUser(), dissomniag.model.NodeState.UP)
         session = dissomniag.Session()
         dissomniag.saveFlush(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS

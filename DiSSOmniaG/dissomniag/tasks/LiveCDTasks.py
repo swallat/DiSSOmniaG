@@ -309,8 +309,8 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                 infiles = os.listdir(staticAutoFolder)
                 for myfile in infiles:
                     try:
-                        print os.path.join(staticAutoFolder, myfile)
-                        print os.path.join(self.autoFolder, myfile)
+                        #print os.path.join(staticAutoFolder, myfile)
+                        #print os.path.join(self.autoFolder, myfile)
                         os.symlink(os.path.join(staticAutoFolder, myfile), os.path.join(self.autoFolder, myfile))
                     except OSError:
                         self.multiLog("Cannot Symlink %s" % myfile , log)

@@ -141,11 +141,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
             pass
         else:
             for host in hosts:
-                context = dissomniag.taskManager.Context()
-                context.add(host, "host")
-                job = dissomniag.taskManager.Job(context, "Check Host up initially.", user = self.user)
-                job.addTask(dissomniag.tasks.CheckHostUpTask())
-                dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, host, job)
+                host.checkFull(self.user)
         
         # Check existing Net's
         

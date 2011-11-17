@@ -74,6 +74,7 @@ class Host(AbstractNode):
         context = dissomniag.taskManager.Context()
         context.add(self, "host")
         job = dissomniag.taskManager.Job(context, description = "CheckUp all needed Parameters of a Host", user = user)
+        job.addTask(dissomniag.tasks.HostTasks.CheckHostUpTask())
         job.addTask(dissomniag.tasks.HostTasks.checkLibvirtVersionOnHost())
         job.addTask(dissomniag.tasks.HostTasks.checkKvmOnHost())
         job.addTask(dissomniag.tasks.HostTasks.checkUtilityDirectory())

@@ -21,6 +21,39 @@ class SSHNodeKey(dissomniag.Base):
     """
     classdocs
     """
+        
+    def __repr__(self):
+        return str(self.publicKey)
+    
+    def getUserHostPart(self):
+        if self.publicKey == None:
+            return None
+        
+        pKey = self.publicKey.split(" ")
+        i = len(pKey) - 1
+        part = pKey[i]
+        part = part.split("@")
+        if len(part) > 1:
+            user = part[0]
+            host = part[1].split("\n")[0]
+        else:
+            user = None
+            host = part[0].split("\n")[0]
+        
+        return user, host
+    
+    def getUser(self):
+        return self.getUserHostPart()[0]
+    
+    def getHost(self):
+        return self.getUserHostPart()[1]
+    
+    def getUserHostString(self):
+        part = self.getUserHostPart()
+        return "%s@%s" % (part[0], part[1])
+    
+    def getPublicFileString(self):
+        return "%s.pub" % self.getUserHostString()
     
     @staticmethod
     def generateVmKey(hostname, user = "user"):
@@ -47,7 +80,7 @@ class SSHNodeKey(dissomniag.Base):
         shutil.rmtree(directory_name)
         
         returnMe = SSHNodeKey()
-        returnMe.privateKeyFile = privateKey
-        returnMe.publicKeyFile = " ".join(pKey)
+        returnMe.privateKey = privateKey
+        returnMe.publicKey = " ".join(pKey)
         return returnMe
         
