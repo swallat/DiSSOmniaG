@@ -25,6 +25,28 @@ class AppVmRelation(dissomniag.Base):
     lastSeen = sa.Column(sa.DateTime)
     state = sa.Column(sa.String)
     log = sa.Column(sa.String)
+    
+    def __init__(self, app, vm):
+        self.app = app
+        self.vm = vm
+        
+        session = dissomniag.Session()
+        session.add(self)
+        dissomniag.saveCommit(session)
+        
+    def authUser(self, user):
+        return self.app.authUser(user)
+    
+    @staticmethod
+    def createRelation(user, app, vm):
+        if app.authUser(user) and vm.authUser(user):
+            return AppVmRelation(app, vm)
+    
+    @staticmethod
+    def deleteRelation(user, relation):
+        #1. Create Delete Job
+        #2. Add Delete Task
+        pass
 
 
 class App(dissomniag.Base):
@@ -34,12 +56,23 @@ class App(dissomniag.Base):
     AppVmRelations = orm.relationship("AppVmRelation", backref="app")
     users = orm.relationship("User", secondary=user_app, backref="apps")
     
-    def __init__(self, user):
+    def __init__(self, user, name):
         self.users.append(user)
+        self.name = name
         
         session = dissomniag.Session()
         session.add(self)
         dissomniag.saveCommit(session)
+        
+    def authUser(self, user):
+        if (hasattr(user, "isAdmin") and user.isAdmin) or user in self.users or user.id == self.maintainUser.id:
+            return True
+        raise dissomniag.UnauthorizedFunctionCall()
+    
+    def addUser(self, user, userToAdd):
+        self.authUser(user)
+        if not userToAdd in self.users:
+            self.users.append(userToAdd)
     
     @staticmethod
     def delApp(user, app):

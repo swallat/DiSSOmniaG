@@ -115,7 +115,9 @@ class VM(AbstractNode):
         if host != None and isinstance(host, dissomniag.model.Host):
             self.host = host
         
-        super(VM, self).__init__(user, commonName, state = dissomniag.model.NodeState.NOT_CREATED)
+        sshKey = SSHNodeKey.generateVmKey(commonName, user="user")
+        
+        super(VM, self).__init__(user, commonName, sshKey = sshKey, state = dissomniag.model.NodeState.NOT_CREATED)
         self.selectInitialStateActor()
         self.vncPort = self.getFreeVNCPortOnHost(user, host)
         

@@ -94,6 +94,12 @@ class LiveCd(dissomniag.Base):
             mac = etree.SubElement(inter, "mac")
             mac.text = str(interface.macAddress)
         
+        vmSSHKeys = etree.SubElement(liveInfo, "vmSSHKeys")
+        publicKey = etree.SubElement(vmSSHKeys, "publicKey")
+        publicKey.text = str(self.vm.sshKey.publicKeyFile)
+        privateKey = etree.SubElement(vmSSHKeys, "privateKey")
+        privateKey.text = str(self.vm.sshKey.privateKeyFile)
+        
         if dissomniag.getIdentity().getAdministrativeUser().publicKeys[0] != None:
             adminKey = etree.SubElement(liveInfo, "sshKey")
             adminKey.text = str(dissomniag.getIdentity().getAdministrativeUser().publicKeys[0].publicKey)
