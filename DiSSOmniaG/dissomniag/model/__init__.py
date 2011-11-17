@@ -9,7 +9,7 @@ from VM import *
 from LiveCd import *
 from Topology import *
 from ControlSystem import *
-from Git import *
 from VMStates import *
+from App import *
 
 

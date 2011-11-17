@@ -141,6 +141,50 @@ def resetVm(*args):
 def totalResetVm(*args):
     import ManageVms
     ManageVms.totalResetVm().call(*args)
+    
+def apps(*args):
+    import ManageApps
+    ManageApps.apps().call(*args)
+    
+def addApp(*args):
+    import ManageApps
+    ManageApps.addApp().call(*args)
+    
+def delApp(*args):
+    import ManageApps
+    ManageApps.delApp().call(*args)
+    
+def addAppUser(*args):
+    import ManageApps
+    ManageApps.addAppUser().call(*args)
+    
+def delAppUser(*args):
+    import ManageApps
+    ManageApps.delAppUser().call(*args)
+    
+def addAppVm(*args):
+    import ManageApps
+    ManageApps.addAppVm().call(*args)
+    
+def delAppVm(*args):
+    import ManageApps
+    ManageApps.delAppVm().call(*args)
+    
+def appUpdate(*args):
+    import ManageApps
+    ManageApps.appUpdate().call(*args)
+
+def appCompile(*args):
+    import ManageApps
+    ManageApps.appCompile().call(*args)
+    
+def appStart(*args):
+    import ManageApps
+    ManageApps.appStart().call(*args)
+    
+def appStop(*args):
+    import ManageApps
+    ManageApps.appStop().call(*args)
 
 def testSubprocess(terminal, user, *args):
     import sys

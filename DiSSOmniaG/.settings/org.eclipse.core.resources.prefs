@@ -1,10 +1,12 @@
-#Fri Nov 11 13:08:13 CET 2011
+#Thu Nov 17 11:34:01 CET 2011
 eclipse.preferences.version=1
+encoding//dissomniag/GitEnvironment.py=utf-8
 encoding//dissomniag/Identity.py=utf-8
 encoding//dissomniag/MathClasses.py=utf-8
 encoding//dissomniag/api/SimpleMath.py=utf-8
 encoding//dissomniag/api/Update.py=utf-8
 encoding//dissomniag/auth/User.py=utf-8
+encoding//dissomniag/cliApi/ManageApps.py=utf-8
 encoding//dissomniag/cliApi/ManageHosts.py=utf-8
 encoding//dissomniag/cliApi/ManageJobs.py=utf-8
 encoding//dissomniag/cliApi/ManageNets.py=utf-8
@@ -16,9 +18,9 @@ encoding//dissomniag/dbAccess.py=utf-8
 encoding//dissomniag/identity/Identity.py=utf-8
 encoding//dissomniag/initMigrate.py=utf-8
 encoding//dissomniag/model/AbstractNode.py=utf-8
+encoding//dissomniag/model/App.py=utf-8
 encoding//dissomniag/model/ControlSystem.py=utf-8
 encoding//dissomniag/model/GeneratedNetwork.py=utf-8
-encoding//dissomniag/model/Git.py=utf-8
 encoding//dissomniag/model/Host.py=utf-8
 encoding//dissomniag/model/Interface.py=utf-8
 encoding//dissomniag/model/IpAddress.py=utf-8

@@ -156,6 +156,25 @@ vms = Table('vms', meta,
            Column("maintainUser_id", Integer, ForeignKey('users.id')),
 )
 
+apps = Table('apps', meta,
+           Column('id', Integer, primary_key = True),
+           Column('name', String(20), nullable = False),
+)
+
+user_app = Table('user_app', meta,
+           Column('user_id', Integer, ForeignKey('users.id'), primary_key = True),
+           Column('key_id', Integer, ForeignKey('apps.id'), primary_key = True),
+)
+
+app_vm = Table('app_vm', meta,
+           Column('app_id', Integer, ForeignKey('users.id'), primary_key = True),
+           Column('vm_id', Integer, ForeignKey('apps.id'), primary_key = True),
+           Column('lastSeen', DateTime),
+           Column('state', String),
+           Column('log', String),
+)
+
+
 
 topology_connections = Table('topologyConnections', meta,
           Column('id', Integer, primary_key = True),
@@ -203,6 +222,12 @@ def upgrade(migrate_engine):
     liveCds.create()
     print("Migrate: Add VMs Table")
     vms.create()
+    print("Migrate: Add Apps Table")
+    apps.create()
+    print("Migrate: Add User_App Table")
+    user_app.create()
+    print("Migrate: Add App_VM Table")
+    app_vm.create()
     print("Migrate: Add Topology_Connections Table")
     topology_connections.create()
     
@@ -210,6 +235,9 @@ def upgrade(migrate_engine):
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
     topology_connections.drop()
+    app_vm.drop()
+    user_app.drop()
+    apps.drop()
     vms.drop()
     liveCds.drop()
     user_topology.drop()

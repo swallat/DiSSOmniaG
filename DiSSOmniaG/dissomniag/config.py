@@ -147,4 +147,5 @@ clientConfig = clientConfig(config, "CLIENT_CONFIG")
 class gitConfig(ParseSection):
     
     def parse(self):
-        self.pathToGitRepositories = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/git")
+        self.pathToGitRepositories = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/gitosis/repositories/")
+        self.pathToLocalUtilFolder = self.parseOption(self.sectionName, "gitUtilFolder", os.path.join(dissomniag.config.utilityFolder, "git"))
