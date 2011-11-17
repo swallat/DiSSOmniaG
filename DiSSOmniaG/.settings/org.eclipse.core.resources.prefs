@@ -1,4 +1,4 @@
-#Thu Nov 17 11:34:01 CET 2011
+#Thu Nov 17 16:38:57 CET 2011
 eclipse.preferences.version=1
 encoding//dissomniag/GitEnvironment.py=utf-8
 encoding//dissomniag/Identity.py=utf-8
@@ -35,6 +35,8 @@ encoding//dissomniag/taskManager/dispatcher.py=utf-8
 encoding//dissomniag/taskManager/jobs.py=utf-8
 encoding//dissomniag/taskManager/tasks.py=utf-8
 encoding//dissomniag/tasks/AbstractNodeTasks.py=utf-8
+encoding//dissomniag/tasks/AppTasks.py=utf-8
+encoding//dissomniag/tasks/GitTasks.py=utf-8
 encoding//dissomniag/tasks/HostTasks.py=utf-8
 encoding//dissomniag/tasks/InterfaceTasks.py=utf-8
 encoding//dissomniag/tasks/LiveCDTasks.py=utf-8
