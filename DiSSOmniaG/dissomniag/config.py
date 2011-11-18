@@ -60,6 +60,7 @@ class dissomniag(ParseSection):
         self.staticFolder = os.path.join(os.getcwd(), "static/")
         self.staticLiveFolder = os.path.join(self.staticFolder, "live/")
         self.pidFile = "/var/run/dissomniag.pid"
+        self.maintainanceInterface = self.parseOption(self.sectionName, "maintainanceInterface", "None")
         return self
     
 dissomniag = dissomniag(config, "dissomniag").parse()
@@ -142,10 +143,14 @@ class clientConfig(ParseSection):
         self.rpcServerPort = int(self.parseOption(self.sectionName, "rpcServerPort", "8008"))
         return self
     
-clientConfig = clientConfig(config, "CLIENT_CONFIG")
+clientConfig = clientConfig(config, "CLIENT_CONFIG").parse()
 
 class gitConfig(ParseSection):
     
     def parse(self):
         self.pathToGitRepositories = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/gitosis/repositories/")
-        self.pathToLocalUtilFolder = self.parseOption(self.sectionName, "gitUtilFolder", os.path.join(dissomniag.config.utilityFolder, "git"))
+        self.pathToLocalUtilFolder = self.parseOption(self.sectionName, "gitUtilFolder", os.path.join(dissomniag.utilityFolder, "gitosis"))
+        self.gitUser = self.parseOption(self.sectionName, "gitUser", "gitosis")
+        return self
+    
+git = gitConfig(config, "GIT_CONFIG").parse()

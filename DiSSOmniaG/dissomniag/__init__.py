@@ -21,4 +21,5 @@ import cliApi
 import auth
 import taskManager
 import tasks
+from GitEnvironment import GitEnvironment
 

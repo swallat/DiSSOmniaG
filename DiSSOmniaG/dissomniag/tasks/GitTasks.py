@@ -6,6 +6,9 @@ Created on 17.11.2011
 '''
 
 import dissomniag
+import logging
+
+log = logging.getLogger("tasks.GitTasks")
 
 
 class DeleteAppVMRelationInGit(dissomniag.taskManager.AtomicTask):
@@ -38,3 +41,20 @@ class GitPushAdminRepo(dissomniag.taskManager.AtomicTask):
     
     def revert(self):
         pass
+    
+class CheckGitEnvironment(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        try:
+            env = dissomniag.GitEnvironment()
+            self.multiLog("Entering GitEnvironment()._checkAdmin", log)
+            env._checkAdmin(self.job)
+            self.multiLog("Entering GitEnvironment()._checkRepoFolder", log)
+            env._checkRepoFolder(self.job)
+        except Exception as e:
+            self.multiLog(e, log)
+            
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS

@@ -131,6 +131,9 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         job.addTask(dissomniag.tasks.PrepareLiveCdEnvironment())
         dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user,dissomniag.model.LiveCdEnvironment(), job)
         
+        #Check Git Environment
+        dissomniag.GitEnvironment().createCheckJob()
+        
         # Check existing Hosts
         
         session = dissomniag.Session()

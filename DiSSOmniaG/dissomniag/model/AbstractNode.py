@@ -14,6 +14,7 @@ import uuid
 
 import dissomniag
 from dissomniag.model import *
+from numpy.core.defchararray import startswith
 
 log = logging.getLogger("model.AbstractNode")
 
@@ -254,7 +255,20 @@ class AbstractNode(dissomniag.Base):
             if not (interface in savedInterfaces):
                 Interface.deleteInterface(user, interface, isAdministrative = True)
         if self.getMaintainanceIP() == None:
-            self.ipAddresses[0].isMaintainance = True
+            self._selectInitialMaintainanceInterface(user)
+            
+    def _selectInitialMaintainanceInterface(self, user):
+        self.authUser(user)
+        if dissomniag.config.dissomniag.maintainanceInterface != None:
+            for inter in self.interfaces:
+                if inter.name == dissomniag.config.dissomniag.maintainanceInterface:
+                    inter.ipAddresses[0].isMaintainance = True
+                    inter.maintainanceInterface = True
+                    return
+        for inter in self.interfaces:
+            if inter.name.startswith("eth") or inter.name.startswith("br"):
+                inter.maintainanceInterface = True
+                inter.ipAddresses[0].isMaintainance = True
     
     def addInterface(self, user, name, mac = None, ipAddresses = [], net = None):
         """

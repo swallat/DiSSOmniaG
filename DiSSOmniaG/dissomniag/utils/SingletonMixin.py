@@ -11,13 +11,13 @@ class Singleton(object):
     """
 
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         # Store instance on cls._instance_dict with cls hash
         key = str(hash(cls))
         if not hasattr(cls, '_instance_dict'):
             cls._instance_dict = {}
         if key not in cls._instance_dict:
             cls._instance_dict[key] = \
-                super(Singleton, cls).__new__(cls, *args, **kwargs)
+                super(Singleton, cls).__new__(cls)
         return cls._instance_dict[key]
         
