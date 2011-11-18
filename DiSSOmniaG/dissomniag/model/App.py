@@ -57,7 +57,7 @@ class AppVmRelation(dissomniag.Base):
         job.addTask(dissomniag.tasks.DeleteAppVMRelation())
         if triggerPush:
             job.addTask(dissomniag.tasks.GitPushAdminRepo())
-        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job)
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
         return True
 
 
@@ -104,7 +104,7 @@ class App(dissomniag.Base):
         job.addTask(dissomniag.tasks.DeleteAppRepository())
         job.addTask(dissomniag.tasks.DeleteAppFinally())
         job.addTask(dissomniag.tasks.GitPushAdminRepo())
-        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job)
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
         return True
     
     @staticmethod
@@ -117,7 +117,7 @@ class App(dissomniag.Base):
         job.addTask(dissomniag.tasks.DeleteUserFromApp())
         if triggerPush:
             job.addTask(dissomniag.tasks.GitPushAdminRepo())
-        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job)
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
     
     @staticmethod
     def delVmFromApp(user, app, vm, triggerPush = True):
@@ -128,6 +128,6 @@ class App(dissomniag.Base):
         context = dissomniag.taskManager.Context()
         job = dissomniag.taskManager.Job(context, "Commit admin Repo", user = user)
         job.addTask(dissomniag.tasks.GitPushAdminRepo())
-        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job)
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
         
         return False
