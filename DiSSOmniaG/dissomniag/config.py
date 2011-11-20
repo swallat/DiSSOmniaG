@@ -150,7 +150,10 @@ class gitConfig(ParseSection):
     def parse(self):
         self.pathToGitRepositories = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/gitosis/repositories/")
         self.pathToLocalUtilFolder = self.parseOption(self.sectionName, "gitUtilFolder", os.path.join(dissomniag.utilityFolder, "gitosis"))
+        self.pathToKeyFolder = os.path.join(self.pathToLocalUtilFolder, "/keydir")
+        self.pathToConfigFile = os.path.join(self.pathToLocalUtilFolder, "/gitosis.conf")
         self.gitUser = self.parseOption(self.sectionName, "gitUser", "gitosis")
+        self.gitosisHost = self.parseOption(self.sectionName, "gitosisHost", "localhost")
         return self
     
 git = gitConfig(config, "GIT_CONFIG").parse()

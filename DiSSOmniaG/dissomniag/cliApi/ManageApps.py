@@ -46,13 +46,13 @@ class delAppUser(CliMethodABCClass.CliMethodABCClass):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
         
-class addAppVm(CliMethodABCClass.CliMethodABCClass):
+class addAppLiveCd(CliMethodABCClass.CliMethodABCClass):
     
     def implementation(self, *args):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
         
-class delAppVm(CliMethodABCClass.CliMethodABCClass):
+class delAppLiveCd(CliMethodABCClass.CliMethodABCClass):
     
     def implementation(self, *args):
         sys.stdout = self.terminal

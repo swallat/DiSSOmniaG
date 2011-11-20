@@ -16,12 +16,12 @@ class DeleteAppFinally(dissomniag.taskManager.AtomicTask):
     def revert(self):
         pass
 
-class DeleteAppVMRelation(dissomniag.taskManager.AtomicTask):
+class DeleteAppLiveCdRelation(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if not hasattr(self.context, "appVmRel") or  type(self.context.appVmRel) != dissomniag.model.AppVmRelation:
-            self.job.trace("DeleteAppVMRelation: In Context missing appVmRel object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appVmRel object.")
+        if not hasattr(self.context, "appLiveCdRel") or  type(self.context.appLiveCdRel) != dissomniag.model.AppLiveCdRelation:
+            self.job.trace("DeleteAppVMRelation: In Context missing appLiveCdRel object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appLiveCdRel object.")
         
     
     def revert(self):
@@ -30,9 +30,9 @@ class DeleteAppVMRelation(dissomniag.taskManager.AtomicTask):
 class DeleteAppOnVmRemote(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if not hasattr(self.context, "appVmRel") or  type(self.context.appVmRel) != dissomniag.model.AppVmRelation:
-            self.job.trace("DeleteAppOnRemote: In Context missing appVmRel object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appVmRel object.")
+        if not hasattr(self.context, "appLiveCdRel") or  type(self.context.appLiveCdRel) != dissomniag.model.AppLiveCdRelation:
+            self.job.trace("DeleteAppOnRemote: In Context missing appLiveCdRel object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appLiveCdRel object.")
         
     def revert(self):
         pass
@@ -42,7 +42,7 @@ class DeleteUserFromApp(dissomniag.taskManager.AtomicTask):
     def run(self):
         if not hasattr(self.context, "app") or  type(self.context.app) != dissomniag.model.App:
             self.job.trace("DeleteAppOnRemote: In Context missing  object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appVmRel object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing app object.")
         
         if not hasattr(self.context, "user") or  type(self.context.user) != dissomniag.auth.User:
             self.job.trace("DeleteAppOnRemote: In Context missing User object.")

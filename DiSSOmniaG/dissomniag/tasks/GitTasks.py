@@ -11,13 +11,13 @@ import logging
 log = logging.getLogger("tasks.GitTasks")
 
 
-class DeleteAppVMRelationInGit(dissomniag.taskManager.AtomicTask):
+class DeleteAppLiveCdRelationInGit(dissomniag.taskManager.AtomicTask):
     
     def run(self):
         ### DELETE BRANCH ###
-        if not hasattr(self.context, "appVmRel") or type(self.context.appVmRel) != dissomniag.model.AppVmRelation:
-            self.job.trace("DeleteAppVMRelationInGit: In Context missing appVmRel object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appVmRel object.")
+        if not hasattr(self.context, "appLiveCdRel") or type(self.context.appLiveCdRel) != dissomniag.model.AppLiveCdRelation:
+            self.job.trace("DeleteAppLiveCdRelationInGit: In Context missing appLiveCdRel object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appLiveCdRel object.")
         
     
     def revert(self):

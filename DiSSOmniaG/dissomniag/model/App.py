@@ -17,18 +17,18 @@ user_app = sa.Table('user_app', dissomniag.Base.metadata,
                        sa.Column('key_id', sa.Integer, sa.ForeignKey('apps.id'), primary_key = True),
 )
 
-class AppVmRelation(dissomniag.Base):
-    __tablename__= 'app_vm'
+class AppLiveCdRelation(dissomniag.Base):
+    __tablename__= 'app_livecd'
     app_id = sa.Column(sa.Integer, sa.ForeignKey('apps.id'), primary_key = True)
-    vm_id = sa.Column(sa.Integer, sa.ForeignKey('vms.id'), primary_key = True)
-    vm = orm.relationship("VM", backref="AppVmRelations")
+    liveCd_id = sa.Column(sa.Integer, sa.ForeignKey('livecds.id'), primary_key = True)
+    liveCd = orm.relationship("LiveCd", backref="AppLiveCdRelations")
     lastSeen = sa.Column(sa.DateTime)
     state = sa.Column(sa.String)
     log = sa.Column(sa.String)
     
-    def __init__(self, app, vm):
+    def __init__(self, app, liveCd):
         self.app = app
-        self.vm = vm
+        self.liveCd = liveCd
         
         session = dissomniag.Session()
         session.add(self)
@@ -38,23 +38,23 @@ class AppVmRelation(dissomniag.Base):
         return self.app.authUser(user)
     
     @staticmethod
-    def createRelation(user, app, vm):
-        if app.authUser(user) and vm.authUser(user):
-            return AppVmRelation(app, vm)
+    def createRelation(user, app, liveCd):
+        if app.authUser(user) and liveCd.authUser(user):
+            return AppLiveCdRelation(app, liveCd)
     
     @staticmethod
     def deleteRelation(user, relation, totalDeleteApp = False, triggerPush = True):
         relation.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add(relation, "appVmRel")
-        job = dissomniag.taskManager.Job(context, "Delete a App VM relation", user = user)
-        #1. Delete VM Remotely
-        job.addTask(dissomniag.tasks.DeleteAppOnVmRemote())
+        context.add(relation, "appLiveCdRel")
+        job = dissomniag.taskManager.Job(context, "Delete a App LiveCd relation", user = user)
+        #1. Delete App on LiveCd Remotely
+        job.addTask(dissomniag.tasks.DeleteAppOnLiveCdRemote())
         #2. Delete Git Branch
         if not totalDeleteApp:
-            job.addTask(dissomniag.tasks.DeleteAppVMRelationInGit())
+            job.addTask(dissomniag.tasks.DeleteAppLiveCdRelationInGit())
         #3. Add Delete Task
-        job.addTask(dissomniag.tasks.DeleteAppVMRelation())
+        job.addTask(dissomniag.tasks.DeleteAppLiveCdRelation())
         if triggerPush:
             job.addTask(dissomniag.tasks.GitPushAdminRepo())
         dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
@@ -64,8 +64,8 @@ class AppVmRelation(dissomniag.Base):
 class App(dissomniag.Base):
     __tablename__ = 'apps'
     id = sa.Column(sa.Integer, primary_key = True)
-    name = sa.Column(sa.String(20), nullable = False)
-    AppVmRelations = orm.relationship("AppVmRelation", backref="app")
+    name = sa.Column(sa.String(20), nullable = False, unique = True)
+    AppLiveCdRelations = orm.relationship("AppLiveCdRelation", backref="app")
     users = orm.relationship("User", secondary=user_app, backref="apps")
     
     def __init__(self, user, name):
@@ -85,14 +85,20 @@ class App(dissomniag.Base):
         self.authUser(user)
         if not userToAdd in self.users:
             self.users.append(userToAdd)
+            
+    def _addBranchFromApp(self, user, job, branchName):
+        self.authUser()
+    
+    def _delBranchFromApp(self, user, job, branchName):
+        self.authUser()
     
     @staticmethod
     def delApp(user, app):
         app.authUser(user)
         
         #1. Delete all Relations
-        for rel in app.AppVmRelations:
-            AppVmRelation.deleteRelation(user, app, totalDeleteApp = True, triggerPush = False)
+        for rel in app.AppLiveCdRelations:
+            AppLiveCdRelation.deleteRelation(user, app, totalDeleteApp = True, triggerPush = False)
             
         #2. Delete all Users
         for mUser in app.users:
@@ -120,11 +126,11 @@ class App(dissomniag.Base):
         dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
     
     @staticmethod
-    def delVmFromApp(user, app, vm, triggerPush = True):
+    def delLiveCdFromApp(user, app, liveCd, triggerPush = True):
         app.authUser(user)
-        for rel in app.AppVmRelations:
-            if rel.vm == vm:
-                return AppVmRelation.deleteRelation(user, rel, triggerPush = False)
+        for rel in app.AppLivecdRelations:
+            if rel.liveCd == liveCd:
+                return AppLiveCdRelation.deleteRelation(user, rel, triggerPush = False)
         context = dissomniag.taskManager.Context()
         job = dissomniag.taskManager.Job(context, "Commit admin Repo", user = user)
         job.addTask(dissomniag.tasks.GitPushAdminRepo())

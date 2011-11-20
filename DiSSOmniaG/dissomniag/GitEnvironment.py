@@ -8,9 +8,14 @@ import os
 import git
 import subprocess
 import shlex
+import ConfigParser
+import time
+import shutil
+import re
 import dissomniag
 import logging
 import threading, thread
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from dissomniag.utils.wrapper import synchronized
 
 log = logging.getLogger("GitEnvironment")
@@ -25,6 +30,7 @@ class GitEnvironment(object):
     isAdminUsable = False
     isRepoFolderUsable = False
     lock = threading.RLock()
+    adminRepo = None
     
         
     def __new__(cls, *args, **kwargs):
@@ -39,6 +45,10 @@ class GitEnvironment(object):
 
     def __init__(self):
         pass
+    
+    def multiLog(self, msg, job):
+        log.info(msg)
+        job.trace(msg)
         
     def createCheckJob(self):
         context = dissomniag.taskManager.Context()
@@ -56,7 +66,7 @@ class GitEnvironment(object):
         job.trace("Start _checkAdmin in GitEnvironment")
         try:
             if not os.access(dissomniag.config.git.pathToLocalUtilFolder, os.F_OK):
-                job.trace("No %s Folder. Try to create it." % dissomniag.config.git.pathToLocalUtilFolder)
+                self.multiLog("No %s Folder. Try to create it." % dissomniag.config.git.pathToLocalUtilFolder, job)
                 try:
                     dissomniag.getRoot()
                     os.makedirs(dissomniag.config.git.pathToLocalUtilFolder)
@@ -64,8 +74,7 @@ class GitEnvironment(object):
                              dissomniag.config.dissomniag.userId,
                              dissomniag.config.dissomniag.groupId)
                 except OSError, e:
-                    job.trace("Could not create utility folder. %s" % e)
-                    log.info("Could not create utility folder. %s" % e)
+                    self.multiLog("Could not create utility folder. %s" % e, job)
                     self.isAdminUsable = False
                     return
                 finally:
@@ -73,40 +82,81 @@ class GitEnvironment(object):
                 
                 if self._makeInitialCheckout(job):
                     self.isAdminUsable = True
+                    try:
+                        self.adminRepo = git.Repo(dissomniag.config.git.pathToLocalUtilFolder)
+                        self.update(job)
+                    except Exception as e:
+                        self.multiLog(str(e), job)
+                        self.isAdminUsable = False
+                        return False
                 else:
                     self.isAdminUsable = False
             else:
-                self.pull(job)
+                try:
+                    self.adminRepo = git.Repo(dissomniag.config.git.pathToLocalUtilFolder)
+                except Exception as e:
+                    self.multiLog(str(e), job)
+                    self.isAdminUsable = False
+                    return False
+                self._pull(job)
+                return True
                 
         except Exception as e:
-            job.trace("GENERAL ERROR %s" % e)
-            log.info("GENERAL ERROR %s" % e)
-            return      
+            self.multiLog("GENERAL ERROR %s" % e, job)
+            return
+        
+    @synchronized(GitEnvironmentLock)
+    def update(self, job):
+        if not isinstance(job, dissomniag.taskManager.Job):
+            raise dissomniag.utils.MissingJobObject()
+        
+        if not self.isAdminUsable:
+            return False
+        self.multiLog("Entering git.update", job)
+        #1. git pull
+        self._pull(job)
+        
+        #2. getNewConfig
+        config = self._getNewConfig(job)
+        with open(dissomniag.config.git.pathToConfigFile, 'w') as f:
+            config.write(f)
+        index = self.adminRepo.index
+        index.add(["gitosis.conf"])
+        
+        #3a) getUsedKeyList
+        #3b) getHdKeyList
+        #3c) addNewKeys
+        self._addKeys(job, config)
+        
+        #3d) calc hdKeyList - usedKeyList
+        #3e) delete not used keys (5.) on Hd
+        self._deleteNotLongerUsedKeys(job, config)
+        
+        #5. commit repo
+        self._commit(job)
+        
+        #6. push repo
+        self._push(job)
         
     @synchronized(GitEnvironmentLock)            
     def _makeInitialCheckout(self, job):
         if not isinstance(job, dissomniag.taskManager.Job):
             raise dissomniag.utils.MissingJobObject()
-        
-        gitosisPath = os.path.join(dissomniag.config.git.pathToGitRepositories, "gitosis-admin.git")
-        job.trace("GitosisPath %s" % gitosisPath)
+        self.multiLog("Entering git._makeInitialCheckout", job)
+        gitosisAdminRepo = ("%s@%s:gitosis-admin.git" % (dissomniag.config.git.gitUser, dissomniag.config.git.gitosisHost))
+        job.trace("GitosisAdminRepo %s" % gitosisAdminRepo)
         try:
-            origRepo = git.Repo(gitosisPath)
-            origRepo.clone(dissomniag.config.git.pathToLocalUtilFolder)
+            origRepo = git.Repo.clone_from(gitosisAdminRepo, dissomniag.config.git.pathToLocalUtilFolder)
         except Exception as e:
             job.trace(str(e))
+            job.trace("Could not clone gitosis-admin Repository. Please add DiSSOmniag ssh_key file to the gitosis-admin group!")
+            try:
+                shutil.rmtree(dissomniag.config.git.pathToLocalUtilFolder)
+            except Exception:
+                pass
             return False
         else:
             return True
-        
-        cmd = shlex.split("git clone %s %s" %(gitosisPath, dissomniag.config.git.pathToLocalUtilFolder))
-        proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-        job.multiLog(str(proc.communicate()))
-        returnCode = proc.returncode
-        if returnCode == 0:
-            return True
-        else:
-            return False
         
     @synchronized(GitEnvironmentLock)
     def _checkRepoFolder(self, job):
@@ -124,56 +174,219 @@ class GitEnvironment(object):
             return
         
     @synchronized(GitEnvironmentLock)
-    def prepare(self):
-        pass
+    def _getNewConfig(self, job):
+        self.multiLog("Entering git._getNewConfig", job)
+        session = dissomniag.Session()
+        config = ConfigParser.SafeConfigParser()
+        
+        config.add_section("gitosis")
+        config.add_section("group gitosis-admin")
+        adminUser = dissomniag.getIdentity().getAdministrativeUser()
+        keys = adminUser.publicKeys
+        adminUserKeys = self._getMembersSet(keys)
+        try:
+            adminUsers = session.query(dissomniag.auth.User).filter(dissomniag.auth.User.isAdmin == True).all()
+            for user in adminUsers:
+                if user.publicKeys != None:
+                    adminUserKeys = adminUserKeys.union(self._getMembersSet(user.publicKeys))
+        except NoResultFound:
+            pass
+        
+        
+        config.set("group gitosis-admin", "members", " ".join(adminUserKeys))
+        config.set("group gitosis-admin", "writable", "gitosis-admin")
+        
+        try:
+            apps = session.query(dissomniag.model.App).all()
+            
+            for app in apps:
+                repoName = app.name
+                sectionName = "group %s" % repoName
+                config.add_section(sectionName)
+                config.add(sectionName, "writable", repoName)
+                keys = adminUserKeys
+                #Add user keys
+                for user in app.users:
+                    if user.publicKeys != None:
+                        keys = keys.union(self._getMembersSet(user.publicKeys))
+                        
+                #Add Admin LiveCd Node Keys
+                for relation in app.AppLiveCdRelations:
+                    keys.add(str(relation.liveCd.vm.sshKey.getUserHostString()))
+                
+                config.add(sectionName, "members", " ".join(keys))
+                        
+        except NoResultFound as e:
+            pass
+        
+        return config
     
     @synchronized(GitEnvironmentLock)
-    def isUpTodate(self):
-        pass
+    def _getMembersSet(self, keys):
+        keyIds = set()
+        for key in keys:
+            keyIds.add(str(key.getUserHostString()))
+        return keyIds
     
     @synchronized(GitEnvironmentLock)
-    def getNewConfig(self):
-        pass
+    def _getAppsFromConfig(self, job, config):
+        apps = set()
+        prog = re.compile("group (.*)")
+        for section in config.sections():
+            result = prog.match(section)
+            if result:
+                apps.add(str(result.group(1)))
+                continue
+        return apps
     
     @synchronized(GitEnvironmentLock)
-    def getConfigAndHash(self):
-        pass
+    def _getKeysFromSection(self, job, config, sectionName):
+        keys = set()
+        try:
+            my_keys = config.get(sectionName, 'members')
+            my_keys = my_keys.split(" ")
+            for mKey in my_keys:
+                keys.add(str(mKey))
+        except Exception:
+            pass
+        return keys
     
     @synchronized(GitEnvironmentLock)
-    def getUserApps(self, user):
+    def _getConfigKeySet(self, job, config):
         """
-        Get all sections in config where user is used
+        Get all keys used in config
         """
-        pass
+        keys = set()
+        sections = self._getAppsFromConfig(job, config)
+        for section in sections:
+            keys = keys.union(self._getKeysFromSection(job, config, section))
+        return keys
     
     @synchronized(GitEnvironmentLock)
-    def commit(self, job):
-        if not isinstance(job, dissomniag.taskManager.Job):
-            raise dissomniag.utils.MissingJobObject()
+    def _getHdKeySet(self, job):
+        """
+        Get all Keys used on Hd
+        """
+        hdKeys = set()
+        prog = re.compile("(.*).pub")
+        for dirname, dirnames, filenames in os.walk(dissomniag.config.git.pathToKeyFolder):
+            for filename in filenames:
+                result = prog.match(filename)
+                if result:
+                    hdKeys.add(str(result.group(1)))
+        return hdKeys
     
     @synchronized(GitEnvironmentLock)
-    def addKeyToKeyDir(self, job, pubKeyString):
-        if not isinstance(job, dissomniag.taskManager.Job):
-            raise dissomniag.utils.MissingJobObject()
+    def _getKeysToAdd(self, job, config):
+        """
+        return _getConfigKeys - _getHdKeys
+        """
+        inConfig = self._getConfigKeySet(job, config)
+        onHd = self._getHdKeySet(job)
+        return inConfig.difference(onHd)
     
     @synchronized(GitEnvironmentLock)
-    def updateConfig(self, job):
-        if not isinstance(job, dissomniag.taskManager.Job):
-            raise dissomniag.utils.MissingJobObject()
+    def _getKeysToDelete(self, job, config):
+        """
+        return _getHdKeys - _getConfigKeys
+        """
+        inConfig = self._getConfigKeySet(job, config)
+        onHd = self._getHdKeySet(job)
+        return onHd.difference(inConfig)
     
-    @synchronized(GitEnvironmentLock)
-    def pull(self, job):
-        if not isinstance(job, dissomniag.taskManager.Job):
-            raise dissomniag.utils.MissingJobObject()
-        repo = git.Repo(dissomniag.config.git.pathToLocalUtilFolder)
-        assert repo.bare == False
-        if repo.is_dirty():
-            self.commit(job)
-        origin = repo.remotes.origin
-        origin.pull()
+    def _deleteNotLongerUsedKeys(self, job, config):
+        self.multiLog("Entering git._deleteNotLongerUsedKeys", job)
+        deleteSet = self._getKeysToDelete(job, config)
+        for key in deleteSet:
+            filename = ("%s.pub" % key)
+            fullFileName = os.path.join(dissomniag.config.pathToKeyFolder, filename)
+            try:
+                os.remove(fullFileName)
+            except OSError as e:
+                msg = "Could not delete a key:  %s." % filename
+                log.info(msg)
+                job.trace(msg)
+            else:
+                msg = "Deleted key %s" % filename
+                log.info(msg)
+                job.trace(msg)
+    @synchronized(GitEnvironmentLock)#
+    def _addKeys(self, job, config):
+        self.multiLog("Entering git._addKeys", job)
+        addSet = self._getKeysToAdd(job, config)
+        keys = set()
+        session = dissomniag.Session()
+        index = self.adminRepo.index
+        #Get User Keys
+        try:
+            mkeys = session.query(dissomniag.auth.PublicKey).all()
+            for key in mkeys:
+                if key.getUserHostString() in addSet:
+                    keys.add(key)
+        except NoResultFound:
+            pass
+        
+        #GetNodeKeys
+        try:
+            mkeys = session.query(dissomniag.model.SSHNodeKey).all()
+            for key in mkeys:
+                if key.getUserHostString() in addSet:
+                    keys.add(key)
+        except NoResultFound:
+            pass
+        
+        for key in keys:
+            localFileName = "keydir/%s" % key.getPublicFileString()
+            pathToFile = os.path.join(dissomniag.config.git.pathToKeyFolder, key.getPublicFileString())
+            try:
+                with open(pathToFile, 'w') as f:
+                    f.write(key.publicKey)
+            except Exception:
+                pass
+            index.add([localFileName])
         return
+            
+        
+    @synchronized(GitEnvironmentLock)
+    def _commit(self, job, commitMessage = None):
+        if not isinstance(job, dissomniag.taskManager.Job):
+            raise dissomniag.utils.MissingJobObject()
+        self.multiLog("Entering git._commit", job)
+        if commitMessage == None:
+            commitMessage = time.strftime("%d.%m.%Y, %H:%M:%S")
+        index = self.adminRepo.index
+        msg = ("Commit gitosis-admin Repo %s" % commitMessage)
+        log.info(msg)
+        job.trace(msg)
+        ret = index.commit(commitMessage)
+        return True
+
+    @synchronized(GitEnvironmentLock)
+    def _pull(self, job):
+        if not isinstance(job, dissomniag.taskManager.Job):
+            raise dissomniag.utils.MissingJobObject()
+        self.multiLog("Entering git._pull", job)
+        if self.adminRepo.is_dirty():
+            self._commit(job, "Dirty repo commit")
+        origin = self.adminRepo.remotes.origin
+        try:
+            origin.pull()
+        except Exception:
+            dissomniag.getIdentity().refreshSSHEnvironment()
+            self.multiLog("Entering git._pull AGAIN", job)
+            origin.pull()
+        return True
     
     @synchronized(GitEnvironmentLock)
-    def push(self, job):
+    def _push(self, job):
         if not isinstance(job, dissomniag.taskManager.Job):
             raise dissomniag.utils.MissingJobObject() 
+        self.multiLog("Entering git._push", job)
+        origin = self.adminRepo.remotes.origin
+        try:
+            origin.push()
+        except Exception:
+            dissomniag.getIdentity().refreshSSHEnvironment()
+            self.multiLog("Entering git._push AGAIN", job)
+            origin.push()
+        return True

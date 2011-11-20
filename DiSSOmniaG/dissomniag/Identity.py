@@ -154,6 +154,12 @@ class Identity:
                     continue
                 log.info(command)
                 os.environ[pointers[0]] = pointers[1]
+                
+    def refreshSSHEnvironment(self):
+        self._prepareSSHEnvironment()
+        sshKey = dissomniag.getIdentity().sshKey
+        return self._checkRsaKeyAdded(sshKey.privateKeyFile, sshKey.publicKey)
+        
             
 
 identity = None
