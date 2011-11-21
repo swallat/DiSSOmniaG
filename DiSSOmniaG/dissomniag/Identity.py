@@ -124,8 +124,8 @@ class Identity:
                 return
             
         #Key not found
-        print privateKeyFd
-        ret = subprocess.call(shlex.split("ssh-add %s" % privateKeyFd),
+        log.info(str(privateKeyFd))
+        ret = subprocess.call(shlex.split("ssh-add %s" % str(privateKeyFd)),
                             stdout = open('/dev/null', 'w'),
                             stderr = subprocess.STDOUT)
             

@@ -67,15 +67,15 @@ class GitEnvironment(object):
             job.trace("Start _checkAdmin in GitEnvironment")
         
         ### FIX: Delete every time before creation. Not clean but it works. So git repo doesn't get unusable
-        try:
-            if os.access(dissomniag.config.git.pathToLocalUtilFolder, os.F_OK):
-                dissomniag.getRoot()
-                shutil.rmtree(dissomniag.config.git.pathToLocalUtilFolder)
-        except Exception as e:
-            if job != None:
-                self.multiLog("INITIAL DELETE ERROR %s" % str(e), job)
-        finally:
-            dissomniag.resetPermissions()
+        #try:
+        #    if os.access(dissomniag.config.git.pathToLocalUtilFolder, os.F_OK):
+        #        dissomniag.getRoot()
+        #        shutil.rmtree(dissomniag.config.git.pathToLocalUtilFolder)
+        #except Exception as e:
+        #    if job != None:
+        #        self.multiLog("INITIAL DELETE ERROR %s" % str(e), job)
+        #finally:
+        #    dissomniag.resetPermissions()
         
         try:
             if not os.access(dissomniag.config.git.pathToLocalUtilFolder, os.F_OK):
@@ -116,8 +116,12 @@ class GitEnvironment(object):
                     self.isAdminUsable = False
                     return False
                 self._pull(job)
-                #if not self._checkRunningConfig(job):
-                #    self.update(job)
+                self.isAdminUsable = True
+                if not self._checkRunningConfig(job):
+                    log.info("Config needs update")
+                    self.update(job)
+                    
+                
                 return True
                 
         except Exception as e:
@@ -176,6 +180,10 @@ class GitEnvironment(object):
         
         actHash = hashlib.sha256()
         actHash.update(actualConfig)
+        
+        if not ((self._getConfigKeySet(config, job) <= self._getHdKeySet(job)) and (self._getConfigKeySet(config, job) <= self._getHdKeySet(job))):
+            log.info("HD Keys and Config Keys differ!")
+            return False
         
         if inHash.hexdigest() == actHash.hexdigest():
             return True
@@ -290,6 +298,7 @@ class GitEnvironment(object):
     def _getKeysFromSection(self, config, sectionName, job = None):
         keys = set()
         try:
+            sectionName = "group %s" % sectionName
             my_keys = config.get(sectionName, 'members')
             my_keys = my_keys.split(" ")
             for mKey in my_keys:
@@ -306,7 +315,7 @@ class GitEnvironment(object):
         keys = set()
         sections = self._getAppsFromConfig(config, job)
         for section in sections:
-            keys = keys.union(self._getKeysFromSection(config, section, job))
+            keys = keys.union(self._getKeysFromSection(config, str(section), job))
         return keys
     
     @synchronized(GitEnvironmentLock)
@@ -330,7 +339,7 @@ class GitEnvironment(object):
         """
         inConfig = self._getConfigKeySet(config, job)
         onHd = self._getHdKeySet(job)
-        return onHd.difference(inConfig)
+        return inConfig.difference(onHd)
     
     @synchronized(GitEnvironmentLock)
     def _getKeysToDelete(self, config, job = None):
@@ -339,7 +348,7 @@ class GitEnvironment(object):
         """
         inConfig = self._getConfigKeySet(config, job)
         onHd = self._getHdKeySet(job)
-        return inConfig.difference(onHd)
+        return onHd.difference(inConfig)
     
     @synchronized(GitEnvironmentLock)
     def _deleteNotLongerUsedKeys(self, config, job = None):
