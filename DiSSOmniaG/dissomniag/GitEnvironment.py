@@ -31,6 +31,7 @@ class GitEnvironment(object):
     '''
     isAdminUsable = False
     isRepoFolderUsable = False
+    isSkeletonUsable = False
     lock = threading.RLock()
     adminRepo = None
     
@@ -190,8 +191,6 @@ class GitEnvironment(object):
         else:
             return False
         
-        
-        
     @synchronized(GitEnvironmentLock)            
     def _makeInitialCheckout(self, job = None):
         if job != None:
@@ -228,6 +227,43 @@ class GitEnvironment(object):
             return
         
     @synchronized(GitEnvironmentLock)
+    def _checkSkeletonFolder(self, job = None):
+        if os.access(dissomniag.config.git.pathToSkeleton, os.F_OK):
+            try:
+                shutil.rmtree(dissomniag.config.git.pathToSkeleton)
+            except Exception as e:
+                self.multiLog("Could not delete git Skeleton folder %s" % dissomniag.config.git.pathToSkeleton, job)
+                self.isSkeletonUsable = False
+                return False
+            
+        if job != None:
+            self.multiLog("No %s Folder. Try to create it." % dissomniag.config.git.pathToSkeleton, job)
+        try:
+            dissomniag.getRoot()
+            shutil.copytree(dissomniag.config.git.pathToStaticSkeleton, dissomniag.config.git.pathToSkeleton)
+            os.chown(dissomniag.config.git.pathToSkeleton,
+                     dissomniag.config.dissomniag.userId,
+                     dissomniag.config.dissomniag.groupId)
+            repo = git.Repo.init(dissomniag.config.git.pathToSkeleton)
+            commitableFiles = []
+            for dirname, dirnames, filenames in os.walk(dissomniag.config.git.pathToSkeleton):
+                for filename in filenames:
+                    pathToFile = os.path.relpath(os.path.join(dirname, filename), dissomniag.config.git.pathToSkeleton)
+                    if not pathToFile.startswith(".git"):
+                        commitableFiles.append(pathToFile)
+                        
+            repo.index.add(commitableFiles)
+            repo.index.commit("Initial Commit")
+            self.isSkeletonUsable = True
+        except OSError, e:
+            if job != None:
+                self.multiLog("Could not create skeleton folder. %s" % e, job)
+            self.isSkeletonUsable = False
+            return
+        finally:
+            dissomniag.resetPermissions()
+                        
+    @synchronized(GitEnvironmentLock)
     def _getNewConfig(self, job = None):
         if job != None:
             self.multiLog("Entering git._getNewConfig", job)
@@ -258,7 +294,7 @@ class GitEnvironment(object):
                 repoName = app.name
                 sectionName = "group %s" % repoName
                 config.add_section(sectionName)
-                config.add(sectionName, "writable", repoName)
+                config.set(sectionName, "writable", repoName)
                 keys = adminUserKeys
                 #Add user keys
                 for user in app.users:
@@ -269,7 +305,7 @@ class GitEnvironment(object):
                 for relation in app.AppLiveCdRelations:
                     keys.add(str(relation.liveCd.vm.sshKey.getUserHostString()))
                 
-                config.add(sectionName, "members", " ".join(keys))
+                config.set(sectionName, "members", " ".join(keys))
                         
         except NoResultFound as e:
             pass

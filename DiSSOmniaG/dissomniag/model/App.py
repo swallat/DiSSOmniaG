@@ -4,6 +4,7 @@ Created on 17.11.2011
 
 @author: Sebastian Wallat
 '''
+import threading
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
@@ -50,10 +51,7 @@ class AppLiveCdRelation(dissomniag.Base):
         job = dissomniag.taskManager.Job(context, "Delete a App LiveCd relation", user = user)
         #1. Delete App on LiveCd Remotely
         job.addTask(dissomniag.tasks.DeleteAppOnLiveCdRemote())
-        #2. Delete Git Branch
-        if not totalDeleteApp:
-            job.addTask(dissomniag.tasks.DeleteAppLiveCdRelationInGit())
-        #3. Add Delete Task
+        #2. Add Delete Task
         job.addTask(dissomniag.tasks.DeleteAppLiveCdRelation())
         if triggerPush:
             job.addTask(dissomniag.tasks.GitPushAdminRepo())
@@ -67,6 +65,7 @@ class App(dissomniag.Base):
     name = sa.Column(sa.String(20), nullable = False, unique = True)
     AppLiveCdRelations = orm.relationship("AppLiveCdRelation", backref="app")
     users = orm.relationship("User", secondary=user_app, backref="apps")
+    lock = threading.RLock()
     
     def __init__(self, user, name):
         self.users.append(user)
@@ -76,21 +75,36 @@ class App(dissomniag.Base):
         session.add(self)
         dissomniag.saveCommit(session)
         
+    def _prepare(self, user):
+        self.authUser(user)
+        
+        
+        
+    def multiLog(self, msg, job = None):
+        if job != None:
+            job.trace(msg)
+        log.info(msg)
+        
     def authUser(self, user):
-        if (hasattr(user, "isAdmin") and user.isAdmin) or user in self.users or user.id == self.maintainUser.id:
+        if (hasattr(user, "isAdmin") and user.isAdmin) or user in self.users:
             return True
+        for rel in self.AppLiveCdRelation:
+            if user == rel.liveCd.vm.maintainUser.id:
+                return True
         raise dissomniag.UnauthorizedFunctionCall()
+    
+    def addLiveCdRelation(self, user, liveCd):
+        self.authUser(user)
+        
     
     def addUser(self, user, userToAdd):
         self.authUser(user)
         if not userToAdd in self.users:
             self.users.append(userToAdd)
-            
-    def _addBranchFromApp(self, user, job, branchName):
-        self.authUser()
-    
-    def _delBranchFromApp(self, user, job, branchName):
-        self.authUser()
+        context = dissomniag.taskManager.Context()
+        job = dissomniag.taskManager.Job(context, "Update git config", user)
+        job.add(dissomniag.tasks.GitPushAdminRepo())
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.GitEnvironment(), job)
     
     @staticmethod
     def delApp(user, app):
@@ -100,14 +114,9 @@ class App(dissomniag.Base):
         for rel in app.AppLiveCdRelations:
             AppLiveCdRelation.deleteRelation(user, app, totalDeleteApp = True, triggerPush = False)
             
-        #2. Delete all Users
-        for mUser in app.users:
-            App.deleteUserFromApp(user, app, mUser, triggerPush = False)
-            
         context = dissomniag.taskManager.Context()
         context.add(app, "app")
         job = dissomniag.taskManager.Job(context, "Delete a App", user = user)
-        job.addTask(dissomniag.tasks.DeleteAppRepository())
         job.addTask(dissomniag.tasks.DeleteAppFinally())
         job.addTask(dissomniag.tasks.GitPushAdminRepo())
         dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
@@ -116,14 +125,19 @@ class App(dissomniag.Base):
     @staticmethod
     def delUserFromApp(user, app, userToDelete, triggerPush = True):
         app.authUser(user)
-        context = dissomniag.taskManager.Context()
-        context.add(app, "app")
-        context.add(userToDelete, "user")
-        job = dissomniag.taskManager.Job(context, "Delete a user from a app", user = user)
-        job.addTask(dissomniag.tasks.DeleteUserFromApp())
+        
+        if not isinstance(userToDelete, dissomniag.auth.User):
+            return False
+        
+        session = dissomniag.Session()
+        session.delete(userToDelete)
+        dissomniag.saveCommit(session)
+        
         if triggerPush:
+            context = dissomniag.taskManager.Context()
+            job = dissomniag.taskManager.Job(context, "Delete a user from a app", user = user)
             job.addTask(dissomniag.tasks.GitPushAdminRepo())
-        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
     
     @staticmethod
     def delLiveCdFromApp(user, app, liveCd, triggerPush = True):
