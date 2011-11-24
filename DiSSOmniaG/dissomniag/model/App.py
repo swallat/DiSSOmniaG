@@ -34,10 +34,6 @@ class AppLiveCdRelation(dissomniag.Base):
         session = dissomniag.Session()
         session.add(self)
         dissomniag.saveCommit(session)
-        self._prepare(user)
-        
-    def _prepare(self, user):
-        self.authUser(user)
         
         
     def authUser(self, user):
@@ -46,19 +42,38 @@ class AppLiveCdRelation(dissomniag.Base):
     @staticmethod
     def createRelation(user, app, liveCd):
         if app.authUser(user) and liveCd.authUser(user):
-            rel = AppLiveCdRelation(app, liveCd)
-            context = dissomniag.taskManager.Context()
-            context.add(rel, "appLiveCdRel")
-            job = dissomniag.taskManager.Job(context, "Create initially an AppLiveCdRelation", user)
-            job.addTask(dissomniag.tasks.GitPushAdminRepo())
-            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.GitEnvironment(), job)
-            return rel
+            try:
+                session = dissomniag.Session()
+                rels = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.liveCd == liveCd).filter(dissomniag.model.AppLiveCdRelation.app == app).one()
+            except NoResultFound:
+                rel = AppLiveCdRelation(app, liveCd)
+                context = dissomniag.taskManager.Context()
+                context.add(app, "app")
+                context.add(liveCd, "liveCd")
+                job = dissomniag.taskManager.Job(context, "Create initially an AppLiveCdRelation", user)
+                job.addTask(dissomniag.tasks.AddAppBranch())
+                job.addTask(dissomniag.tasks.GitPushAdminRepo())
+                dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.GitEnvironment(), job)
+                return rel
+            except MultipleResultsFound:
+                first = True
+                rels = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.liveCd == liveCd).filter(dissomniag.model.AppLiveCdRelation.app == app).all()
+                for rel in rels:
+                    if first:
+                        first = False
+                        continue
+                    session.delete(rel)
+                dissomniag.saveCommit(session)
+            else:
+                return rels
+                 
     
     @staticmethod
     def deleteRelation(user, relation, totalDeleteApp = False, triggerPush = True):
         relation.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add(relation, "appLiveCdRel")
+        context.add(relation.app, "app")
+        context.add(relation.liveCd, "liveCd")
         job = dissomniag.taskManager.Job(context, "Delete a App LiveCd relation", user = user)
         #1. Delete App on LiveCd Remotely
         job.addTask(dissomniag.tasks.DeleteAppOnLiveCdRemote())
@@ -85,11 +100,6 @@ class App(dissomniag.Base):
         session = dissomniag.Session()
         session.add(self)
         dissomniag.saveCommit(session)
-        self._prepare(user)
-        
-        
-    def _prepare(self, user):
-        self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add(self, "app")
         job = dissomniag.taskManager.Job(context, "Create initially an App", user)

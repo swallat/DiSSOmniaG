@@ -9,6 +9,7 @@ import shutil
 import git
 import dissomniag
 import logging
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 log = logging.getLogger("tasks.AppTasks")
 
@@ -49,12 +50,26 @@ class DeleteAppFinally(dissomniag.taskManager.AtomicTask):
 class DeleteAppLiveCdRelation(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if not hasattr(self.context, "appLiveCdRel") or  type(self.context.appLiveCdRel) != dissomniag.model.AppLiveCdRelation:
-            self.job.trace("DeleteAppVMRelation: In Context missing appLiveCdRel object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appLiveCdRel object.")
+        if not hasattr(self.context, "app") or  type(self.context.app) != dissomniag.model.App:
+            self.job.trace("DeleteAppLiveCdRelation: In Context missing app object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing app object.")
         
-        pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % self.context.appLiveCdRel.app.name)
-        branchName = self.context.appLiveCdRel.liveCd.vm.commonName
+        if not hasattr(self.context, "liveCd") or  type(self.context.liveCd) != dissomniag.model.LiveCd:
+            self.job.trace("DeleteAppLiveCdRelation: In Context missing liveCd object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object.")
+        
+        session = dissomniag.Session()
+        try:
+            appLiveCdRel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == self.context.app).filter(dissomniag.model.AppLiveCdRelation.liveCd == self.context.liveCd).one()
+        except NoResultFound:
+            self.job.trace("DeleteAppLiveCdRelation: No Relation object found.")
+            raise dissomniag.taskManager.UnrevertableFailure("No Relation object found.")
+        except MultipleResultsFound:
+            appLiveCdRel = appLiveCdRel[0]
+            
+        
+        pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % appLiveCdRel.app.name)
+        branchName = self.context.liveCd.vm.commonName
         
         try:
             repo = git.Repo(pathToRepository)
@@ -66,7 +81,7 @@ class DeleteAppLiveCdRelation(dissomniag.taskManager.AtomicTask):
         
         self.deleted = True
         session = dissomniag.Session()
-        session.delete(self.context.appLiveCdRel)
+        session.delete(appLiveCdRel)
         dissomniag.saveCommit(session)
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
@@ -74,12 +89,25 @@ class DeleteAppLiveCdRelation(dissomniag.taskManager.AtomicTask):
         if hasattr(self, "deleted") and self.deleted == True:
             return dissomniag.taskManager.UnrevertableFailure("Cannot undelete Relation")
         
-        if not hasattr(self.context, "appLiveCdRel") or  type(self.context.appLiveCdRel) != dissomniag.model.AppLiveCdRelation:
-            self.job.trace("DeleteAppVMRelation: In Context missing appLiveCdRel object. REVERT")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appLiveCdRel object.")
+        if not hasattr(self.context, "app") or  type(self.context.app) != dissomniag.model.App:
+            self.job.trace("DeleteAppLiveCdRelation: In Context missing app object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing app object. REVERT")
         
-        pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % self.context.appLiveCdRel.app.name)
-        branchName = self.context.appLiveCdRel.liveCd.vm.commonName
+        if not hasattr(self.context, "liveCd") or  type(self.context.liveCd) != dissomniag.model.LiveCd:
+            self.job.trace("DeleteAppLiveCdRelation: In Context missing liveCd object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object. REVERT")
+        
+        session = dissomniag.Session()
+        try:
+            appLiveCdRel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == self.context.app).filter(dissomniag.model.AppLiveCdRelation.liveCd  == self.context.liveCd).one()
+        except NoResultFound:
+            self.job.trace("DeleteAppLiveCdRelation: No Relation object found. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("No Relation object found. REVERT")
+        except MultipleResultsFound:
+            appLiveCdRel = appLiveCdRel[0]
+        
+        pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % appLiveCdRel.app.name)
+        branchName = self.context.liveCd.vm.commonName
         
         try:
             repo = git.Repo(pathToRepository)
@@ -95,9 +123,22 @@ class DeleteAppLiveCdRelation(dissomniag.taskManager.AtomicTask):
 class DeleteAppOnLiveCdRemote(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if not hasattr(self.context, "appLiveCdRel") or  type(self.context.appLiveCdRel) != dissomniag.model.AppLiveCdRelation:
-            self.job.trace("DeleteAppOnRemote: In Context missing appLiveCdRel object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appLiveCdRel object.")
+        if not hasattr(self.context, "app") or  type(self.context.app) != dissomniag.model.App:
+            self.job.trace("DeleteAppLiveCdRelation: In Context missing app object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing app object.")
+        
+        if not hasattr(self.context, "liveCd") or  type(self.context.liveCd) != dissomniag.model.LiveCd:
+            self.job.trace("DeleteAppLiveCdRelation: In Context missing liveCd object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object.")
+        
+        session = dissomniag.Session()
+        try:
+            appLiveCdRel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == self.context.app).filter(dissomniag.model.AppLiveCdRelation.liveCd == self.context.liveCd).one()
+        except NoResultFound:
+            self.job.trace("DeleteAppLiveCdRelation: No Relation object found.")
+            raise dissomniag.taskManager.UnrevertableFailure("No Relation object found.")
+        except MultipleResultsFound:
+            appLiveCdRel = appLiveCdRel[0]
         
         return dissomniag.taskManager.TaskReturns.SUCCESS
         
@@ -107,12 +148,25 @@ class DeleteAppOnLiveCdRemote(dissomniag.taskManager.AtomicTask):
 class AddAppBranch(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if not hasattr(self.context, "appLiveCdRel") or  type(self.context.appLiveCdRel) != dissomniag.model.AppLiveCdRelation:
-            self.job.trace("AddAppBranch: In Context missing appLiveCdRel object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appLiveCdRel object.")
+        if not hasattr(self.context, "app") or  type(self.context.app) != dissomniag.model.App:
+            self.job.trace("AddAppBranch: In Context missing app object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing app object.")
         
-        pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % self.context.appLiveCdRel.app.name)
-        branchName = self.context.appLiveCdRel.liveCd.vm.commonName
+        if not hasattr(self.context, "liveCd") or  type(self.context.liveCd) != dissomniag.model.LiveCd:
+            self.job.trace("AddAppBranch: In Context missing liveCd object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object.")
+        
+        session = dissomniag.Session()
+        try:
+            appLiveCdRel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == self.context.app).filter(dissomniag.model.AppLiveCdRelation.liveCd == self.context.liveCd).one()
+        except NoResultFound:
+            self.job.trace("AddAppBranch: No Relation object found.")
+            raise dissomniag.taskManager.UnrevertableFailure("No Relation object found.")
+        except MultipleResultsFound:
+            appLiveCdRel = appLiveCdRel[0]
+        
+        pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % appLiveCdRel.app.name)
+        branchName = self.context.liveCd.vm.commonName
         
         try:
             repo = git.Repo(pathToRepository)
@@ -125,12 +179,25 @@ class AddAppBranch(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
-        if not hasattr(self.context, "appLiveCdRel") or  type(self.context.appLiveCdRel) != dissomniag.model.AppLiveCdRelation:
-            self.job.trace("AddAppBranch: In Context missing appLiveCdRel object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing appLiveCdRel object.")
+        if not hasattr(self.context, "app") or  type(self.context.app) != dissomniag.model.App:
+            self.job.trace("AddAppBranch: In Context missing app object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing app object. REVERT")
         
-        pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % self.context.appLiveCdRel.app.name)
-        branchName = self.context.appLiveCdRel.liveCd.vm.commonName
+        if not hasattr(self.context, "liveCd") or  type(self.context.liveCd) != dissomniag.model.LiveCd:
+            self.job.trace("AddAppBranch: In Context missing liveCd object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object. REVERT")
+        
+        session = dissomniag.Session()
+        try:
+            appLiveCdRel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == self.context.app).filter(dissomniag.model.AppLiveCdRelation.liveCd == self.context.liveCd).one()
+        except NoResultFound:
+            self.job.trace("AddAppBranch: No Relation object found. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("No Relation object found. REVERT")
+        except MultipleResultsFound:
+            appLiveCdRel = appLiveCdRel[0]
+        
+        pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % appLiveCdRel.app.name)
+        branchName = self.context.liveCd.vm.commonName
         
         try:
             repo = git.Repo(pathToRepository)

@@ -173,6 +173,7 @@ class GitEnvironment(object):
         try:
             gitosisRepo = str("%s@%s:%s.git" % (dissomniag.config.git.gitUser, dissomniag.config.git.gitosisHost, app.name))
             skeletonRepo.create_remote("origin", gitosisRepo)
+            dissomniag.getIdentity().refreshSSHEnvironment()
             skeletonRepo.git.push("origin", "master:refs/heads/master")
         except Exception as e:
             self.multiLog("Cannot push to origin repo. %s" % gitosisRepo, job)
