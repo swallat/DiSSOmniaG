@@ -33,8 +33,6 @@ class CheckGitEnvironment(dissomniag.taskManager.AtomicTask):
             env._checkAdmin(self.job)
             self.multiLog("Entering GitEnvironment()._checkRepoFolder", log)
             env._checkRepoFolder(self.job)
-            self.multiLog("Entering GitEnvironment()._checkSkeletonFolder", log)
-            env._checkSkeletonFolder(self.job)
         except Exception as e:
             self.multiLog(str(e), log)
             

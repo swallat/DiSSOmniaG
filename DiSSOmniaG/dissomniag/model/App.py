@@ -34,6 +34,11 @@ class AppLiveCdRelation(dissomniag.Base):
         session = dissomniag.Session()
         session.add(self)
         dissomniag.saveCommit(session)
+        self._prepare(user)
+        
+    def _prepare(self, user):
+        self.authUser(user)
+        
         
     def authUser(self, user):
         return self.app.authUser(user)
@@ -41,7 +46,13 @@ class AppLiveCdRelation(dissomniag.Base):
     @staticmethod
     def createRelation(user, app, liveCd):
         if app.authUser(user) and liveCd.authUser(user):
-            return AppLiveCdRelation(app, liveCd)
+            rel = AppLiveCdRelation(app, liveCd)
+            context = dissomniag.taskManager.Context()
+            context.add(rel, "appLiveCdRel")
+            job = dissomniag.taskManager.Job(context, "Create initially an AppLiveCdRelation", user)
+            job.addTask(dissomniag.tasks.GitPushAdminRepo())
+            dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.GitEnvironment(), job)
+            return rel
     
     @staticmethod
     def deleteRelation(user, relation, totalDeleteApp = False, triggerPush = True):
@@ -74,10 +85,17 @@ class App(dissomniag.Base):
         session = dissomniag.Session()
         session.add(self)
         dissomniag.saveCommit(session)
+        self._prepare(user)
+        
         
     def _prepare(self, user):
         self.authUser(user)
-        
+        context = dissomniag.taskManager.Context()
+        context.add(self, "app")
+        job = dissomniag.taskManager.Job(context, "Create initially an App", user)
+        job.addTask(dissomniag.tasks.GitPushAdminRepo())
+        job.addTask(dissomniag.tasks.MakeInitialCommit())
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.GitEnvironment(), job)
         
         
     def multiLog(self, msg, job = None):
@@ -95,7 +113,7 @@ class App(dissomniag.Base):
     
     def addLiveCdRelation(self, user, liveCd):
         self.authUser(user)
-        
+        AppLiveCdRelation.createRelation(user, self, liveCd)  
     
     def addUser(self, user, userToAdd):
         self.authUser(user)
