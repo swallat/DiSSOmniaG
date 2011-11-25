@@ -131,7 +131,7 @@ class App(dissomniag.Base):
             self.users.append(userToAdd)
         context = dissomniag.taskManager.Context()
         job = dissomniag.taskManager.Job(context, "Update git config", user)
-        job.add(dissomniag.tasks.GitPushAdminRepo())
+        job.addTask(dissomniag.tasks.GitPushAdminRepo())
         dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.GitEnvironment(), job)
     
     @staticmethod
@@ -157,9 +157,8 @@ class App(dissomniag.Base):
         if not isinstance(userToDelete, dissomniag.auth.User):
             return False
         
-        session = dissomniag.Session()
-        session.delete(userToDelete)
-        dissomniag.saveCommit(session)
+        if userToDelete in app.users:
+            app.users.remove(userToDelete)
         
         if triggerPush:
             context = dissomniag.taskManager.Context()
@@ -170,12 +169,7 @@ class App(dissomniag.Base):
     @staticmethod
     def delLiveCdFromApp(user, app, liveCd, triggerPush = True):
         app.authUser(user)
-        for rel in app.AppLivecdRelations:
+        for rel in app.AppLiveCdRelations:
             if rel.liveCd == liveCd:
-                return AppLiveCdRelation.deleteRelation(user, rel, triggerPush = False)
-        context = dissomniag.taskManager.Context()
-        job = dissomniag.taskManager.Job(context, "Commit admin Repo", user = user)
-        job.addTask(dissomniag.tasks.GitPushAdminRepo())
-        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, syncObj = dissomniag.GitEnvironment(), job = job)
-        
+                return AppLiveCdRelation.deleteRelation(user, rel, triggerPush)
         return False

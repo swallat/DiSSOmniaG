@@ -62,7 +62,7 @@ class vms(CliMethodABCClass.CliMethodABCClass):
         sys.stderr = self.terminal
         
         if not self.user.isAdmin:
-            self.printError("Only Admin Users can list Nets!")
+            self.printError("Only Admin Users can list VMs!")
             return
         
         parser = argparse.ArgumentParser(description = 'List VMs', prog = args[0])

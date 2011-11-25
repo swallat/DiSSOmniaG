@@ -138,31 +138,35 @@ class GitEnvironment(object):
         
         if not self.isAdminUsable:
             return False
-        self.multiLog("Entering git.update", job)
-        #1. git pull
-        self._pull(job)
-        
-        #2. getNewConfig
-        config = self._getNewConfig(job)
-        with open(dissomniag.config.git.pathToConfigFile, 'w') as f:
-            config.write(f)
-        index = self.adminRepo.index
-        index.add(["gitosis.conf"])
-        
-        #3a) getUsedKeyList
-        #3b) getHdKeyList
-        #3c) addNewKeys
-        self._addKeys(config, job)
-        
-        #3d) calc hdKeyList - usedKeyList
-        #3e) delete not used keys (5.) on Hd
-        self._deleteNotLongerUsedKeys(config, job = None)
-        
-        #5. commit repo
-        self._commit(job)
-        
-        #6. push repo
-        self._push(job)
+        try:
+            dissomniag.getRoot()
+            self.multiLog("Entering git.update", job)
+            #1. git pull
+            self._pull(job)
+            
+            #2. getNewConfig
+            config = self._getNewConfig(job)
+            with open(dissomniag.config.git.pathToConfigFile, 'w') as f:
+                config.write(f)
+            index = self.adminRepo.index
+            index.add(["gitosis.conf"])
+            
+            #3a) getUsedKeyList
+            #3b) getHdKeyList
+            #3c) addNewKeys
+            self._addKeys(config, job)
+            
+            #3d) calc hdKeyList - usedKeyList
+            #3e) delete not used keys (5.) on Hd
+            self._deleteNotLongerUsedKeys(config, job = None)
+            
+            #5. commit repo
+            self._commit(job)
+            
+            #6. push repo
+            self._push(job)
+        finally:
+            dissomniag.resetPermissions()
         
     @synchronized(GitEnvironmentLock)
     def makeInitialCommit(self, app, job = None):
@@ -171,9 +175,9 @@ class GitEnvironment(object):
             self.multiLog("Could not create tmp skeleton folder", job)
             raise dissomniag.taskManager.TaskFailed("Could not create tmp skeleton folder")
         try:
+            dissomniag.getRoot()
             gitosisRepo = str("%s@%s:%s.git" % (dissomniag.config.git.gitUser, dissomniag.config.git.gitosisHost, app.name))
             skeletonRepo.create_remote("origin", gitosisRepo)
-            dissomniag.getIdentity().refreshSSHEnvironment()
             skeletonRepo.git.push("origin", "master:refs/heads/master")
         except Exception as e:
             self.multiLog("Cannot push to origin repo. %s" % gitosisRepo, job)
@@ -184,6 +188,7 @@ class GitEnvironment(object):
                 shutil.rmtree(skeletonFolder)
             except Exception as e:
                 pass
+            dissomniag.resetPermissions()
         return True
     
     @synchronized(GitEnvironmentLock)
