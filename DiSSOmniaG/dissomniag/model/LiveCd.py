@@ -207,21 +207,20 @@ class LiveCd(dissomniag.Base):
             return False
         livecd.authUser(user)
         
+        # Delete App LiveCd Relations
+        one = False
+        for rel in livecd.AppLiveCdRelations:
+            if not one:
+                one = True
+            dissomniag.model.AppLiveCdRelation.deleteRelation(user, rel, triggerPush = False)
+        
         # Add Job for file system sanity
         context = dissomniag.taskManager.Context()
         context.add(livecd)
-        job = dissomniag.taskManager.Job(context, "Delete a VM", user)
+        job = dissomniag.taskManager.Job(context, "Delete a LiveCd", user)
+        if one:
+            job.addTask(dissomniag.tasks.GitPushAdminRepo())
         job.addTask(dissomniag.tasks.LiveCDTasks.deleteLiveCd())
         dissomniag.taskManager.Dispatcher.addJobSyncronized(user, livecd, job)
         
-        session = dissomniag.Session()
-        
-        try:
-            session.delete(livecd)
-        except Exception:
-            failed = True
-        else:
-            dissomniag.saveCommit(session)
-            failed = False
-        return not failed
 

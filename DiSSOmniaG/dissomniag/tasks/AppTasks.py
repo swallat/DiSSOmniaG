@@ -75,7 +75,8 @@ class DeleteAppLiveCdRelation(dissomniag.taskManager.AtomicTask):
             dissomniag.getRoot()
             repo = git.Repo(pathToRepository)
             if branchName in repo.heads:
-                repo.delete_head(branchName)
+                #repo.delete_head(branchName)
+                repo.git.branch("-D", branchName)
         except Exception as e:
             self.multiLog("Cannot delete branch in Revert %s" % str(e), log)
             raise dissomniag.taskManager.TaskFailed("Cannot delete branch in Revert %s" % str(e))
@@ -212,7 +213,8 @@ class AddAppBranch(dissomniag.taskManager.AtomicTask):
             dissomniag.getRoot()
             repo = git.Repo(pathToRepository)
             if branchName in repo.heads:
-                repo.delete_head(branchName)
+                #repo.delete_head(branchName)
+                repo.git.branch("-D", branchName)
         except Exception as e:
             self.multiLog("Cannot delete branch in Revert %s" % str(e), log)
             raise dissomniag.taskManager.TaskFailed("Cannot delete branch in Revert %s" % str(e))

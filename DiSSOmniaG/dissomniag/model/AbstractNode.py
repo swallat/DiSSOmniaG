@@ -266,10 +266,10 @@ class AbstractNode(dissomniag.Base):
                     inter.maintainanceInterface = True
                     return
         for inter in self.interfaces:
-            if inter.name.startswith("eth") or inter.name.startswith("br"):
-                inter.maintainanceInterface = True
+            if inter.name.startswith("eth") or inter.name.startswith("br") or inter.name.startswith("wlan"):
                 if len(inter.ipAddresses) == 0:
                     continue
+                inter.maintainanceInterface = True
                 inter.ipAddresses[0].isMaintainance = True
     
     def addInterface(self, user, name, mac = None, ipAddresses = [], net = None):

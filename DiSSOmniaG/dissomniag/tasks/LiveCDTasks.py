@@ -609,7 +609,20 @@ class deleteLiveCd(dissomniag.taskManager.AtomicTask):
         if ret != 0:
             return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
         else:
-            return dissomniag.taskManager.TaskReturns.SUCCESS
+            session = dissomniag.Session()
+        
+            try:
+                session.delete(self.context.liveCd)
+                dissomniag.saveCommit(session)
+            except Exception:
+                failed = True
+            else:
+                failed = False
+            
+            if not failed:
+                return dissomniag.taskManager.TaskReturns.SUCCESS
+            else:
+                return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
     
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS
