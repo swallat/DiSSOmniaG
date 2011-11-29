@@ -13,6 +13,10 @@ user=user
 adduser --home /home/$user --quiet --gecos ,,,, --disabled-password $user
 usermod -G sudo,$user $user
 
+aptitude install -y python3-dev python3-setuptools
+
+easy_install3 setproctitle
+
 ln -s /usr/share/dissomniag-live/dissomniag_live.py /usr/sbin/dissomniag_live
 
 update-rc.d dissomniag_live defaults 99

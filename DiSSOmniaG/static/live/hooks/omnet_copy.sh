@@ -16,7 +16,7 @@ inetHome=${execDir}/INET
 adduser --home /home/$user --quiet --gecos ,,,, --disabled-password $user
 usermod -G sudo,$user $user
 
-aptitude install -y gcc g++ bison flex perl tcl-dev tk-dev blt libxml2-dev zlib1g-dev openjdk-6-jre doxygen graphviz openmpi-bin libopenmpi-dev libpcap-dev
+aptitude install -y gcc g++ bison flex perl tcl-dev tk-dev blt libxml2-dev zlib1g-dev openjdk-6-jre doxygen graphviz openmpi-bin libopenmpi-dev libpcap-dev 
 
 # Export environment parameter
 export omnetpp_root=${omnetHome}

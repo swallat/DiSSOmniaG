@@ -589,14 +589,14 @@ class deleteLiveCd(dissomniag.taskManager.AtomicTask):
     
     def run(self):
         if not hasattr(self.context, "liveCd"):
-            self.multiLog("No LiveCd in Context", log)
-            raise dissomniag.taskManager.TaskFailed("No LiveCd in Context")
+            self.multiLog("deleteLiveCd: No LiveCd in Context", log)
+            raise dissomniag.taskManager.TaskFailed("deleteLiveCd: No LiveCd in Context")
         
         # 1. Delete Local Image
         self.multiLog("Delete local LiveCd image.", log)
         try:
-            shutil.rmtree(self.context.vm.getLocalUtilityFolder(self.job.getUser()))
-        except IOError, OSError:
+            shutil.rmtree(self.context.liveCd.vm.getLocalUtilityFolder(self.job.getUser()))
+        except OSError:
             self.multiLog("Cannot delete local LiveCd image.", log)
             
         # 2. Delete Remote Image
@@ -606,23 +606,21 @@ class deleteLiveCd(dissomniag.taskManager.AtomicTask):
                                              self.context.liveCd.vm.host.administrativeUserName)
         ret, output = sshCmd.callAndGetOutput()
         self.multiLog("Delete LiveCd image remote. ret: %d, output: %s" % (ret, output))
-        if ret != 0:
-            return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
-        else:
-            session = dissomniag.Session()
         
-            try:
-                session.delete(self.context.liveCd)
-                dissomniag.saveCommit(session)
-            except Exception:
-                failed = True
-            else:
-                failed = False
-            
-            if not failed:
-                return dissomniag.taskManager.TaskReturns.SUCCESS
-            else:
-                return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
+        session = dissomniag.Session()
+    
+        try:
+            session.delete(self.context.liveCd)
+            dissomniag.saveCommit(session)
+        except Exception:
+            failed = True
+        else:
+            failed = False
+        
+        if not failed:
+            return dissomniag.taskManager.TaskReturns.SUCCESS
+        else:
+            return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
     
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS

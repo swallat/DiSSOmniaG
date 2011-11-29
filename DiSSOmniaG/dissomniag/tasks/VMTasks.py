@@ -24,9 +24,9 @@ class DeleteVM(dissomniag.taskManager.AtomicTask):
         vm = self.context.vm
         self.job.trace("IN DELETE")
         
-        if (vm.liveCd != None or (vm.interfaces != None and len(vm.interfaces) != 0) or
-            (vm.ipAddresses != None and len(vm.ipAddresses) != 0)):
-            self.job.trace("VM %s cannot be deleted securely: Make sure that the LiveCD, all Interfaces and all IP Addresses of the VM are deleted.")
+        if (vm.liveCd != None or (len(vm.interfaces) != 0) or
+            ( len(vm.ipAddresses) != 0)):
+            self.job.trace("VM %s cannot be deleted securely: Make sure that the LiveCD, all Interfaces and all IP Addresses of the VM are deleted." % vm.commonName)
             raise dissomniag.taskManager.UnrevertableFailure("Not all IPs, Interfaces or the LiveCD are deleted of the VM.")
         
         try:

@@ -216,7 +216,7 @@ class LiveCd(dissomniag.Base):
         
         # Add Job for file system sanity
         context = dissomniag.taskManager.Context()
-        context.add(livecd)
+        context.add(livecd, "liveCd")
         job = dissomniag.taskManager.Job(context, "Delete a LiveCd", user)
         if one:
             job.addTask(dissomniag.tasks.GitPushAdminRepo())

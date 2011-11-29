@@ -698,7 +698,7 @@ class VM(AbstractNode):
                 session.delete(connection)
             dissomniag.saveCommit(session)
         
-        dissomniag.taskManager.Dispatcher.addJob(user = user, job = job)
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user = user, syncObj = dissomniag.GitEnvironment(), job = job)
         return True
         
     
