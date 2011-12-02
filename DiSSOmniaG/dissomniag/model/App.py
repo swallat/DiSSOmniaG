@@ -132,7 +132,23 @@ class AppLiveCdRelation(dissomniag.Base):
         dissomniag.saveCommit(session)
         
     def _getActionXml(self, user, action):
+        self.authUser(user)
         tree = etree.Element("AppOperate")
+        
+        tree = self._addCommonInfoToTree(user, tree)
+        
+        action = etree.SubElement(tree, "action")
+        action.text = str(action)
+        return tree
+    
+    def _getAppAddInfo(self, user):
+        self.authUser(user)
+        tree = etree.Element("app")
+        
+        return self._addCommonInfoToTree(user, tree)
+    
+    def _addCommonInfoToTree(self, user, tree):
+        self.authUser(user)
         name = etree.SubElement(tree, "name")
         name.text = str(self.app.name)
         
@@ -142,9 +158,6 @@ class AppLiveCdRelation(dissomniag.Base):
         serverIpOrHost = etree.SubElement(tree, "serverIpOrHost")
         ident = dissomniag.getIdentity()
         serverIpOrHost.text = str(ident.getMaintainanceIP().addr)
-        
-        action = etree.SubElement(tree, "action")
-        action.text = str(action)
         return tree
     
     def _getServerProxy(self, user):
@@ -175,6 +188,19 @@ class AppLiveCdRelation(dissomniag.Base):
         
         return proxy.appOperate(xmlString)
     
+    def addAppOnRemote(self, user):
+        self.authUser(user)
+        
+        tree = etree.Element("AppAdd")
+        tree.append_child(self._getAppAddInfo(user))
+        
+        xmlString = self._getXmlString(tree)
+        
+        proxy = self._getServerProxy(user)
+        
+        return proxy.addApps(xmlString)
+        
+    
     def deleteAppOnRemote(self, user):
         self.authUser(user)
         tree = self._getActionXml(user, AppActions.DELETE)
@@ -188,7 +214,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createStartJob(self, user, scriptName = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("appRel", self)
+        context.add("app", self.app)
+        context.add("liveCd", self.liveCd)
         context.scriptName = scriptName
         context.action = AppActions.START
         
@@ -199,7 +226,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createStopJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("appRel", self)
+        context.add("app", self.app)
+        context.add("liveCd", self.liveCd)
         context.action = AppActions.STOP
         
         job = dissomniag.taskManager.Job(context, "Stop an App on a VM", user)
@@ -209,7 +237,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createCompileJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("appRel", self)
+        context.add("app", self.app)
+        context.add("liveCd", self.liveCd)
         context.action = AppActions.COMPILE
         
         job = dissomniag.taskManager.Job(context, "Compile an App on a VM", user)
@@ -219,7 +248,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createResetJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("appRel", self)
+        context.add("app", self.app)
+        context.add("liveCd", self.liveCd)
         context.action = AppActions.RESET
         
         job = dissomniag.taskManager.Job(context, "Reset an App on a VM", user)
@@ -229,7 +259,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createInterruptJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("appRel", self)
+        context.add("app", self.app)
+        context.add("liveCd", self.liveCd)
         context.action = AppActions.INTERRUPT
         
         job = dissomniag.taskManager.Job(context, "Interrupt an App on a VM", user)
@@ -239,7 +270,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createRefreshGitJob(self, user, tagOrCommit = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("appRel", self)
+        context.add("app", self.app)
+        context.add("liveCd", self.liveCd)
         context.tagOrCommit = tagOrCommit
         context.action = AppActions.REFRESH_GIT
         
@@ -250,7 +282,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createRefreshAndResetJob(self, user, tagOrCommit = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("appRel", self)
+        context.add("app", self.app)
+        context.add("liveCd", self.liveCd)
         context.tagOrCommit = tagOrCommit
         context.action = AppActions.REFRESH_AND_RESET
         
@@ -261,13 +294,12 @@ class AppLiveCdRelation(dissomniag.Base):
     def createCloneJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("appRel", self)
+        context.add("app", self.app)
+        context.add("liveCd", self.liveCd)
         context.action = AppActions.CLONE
         
         job = dissomniag.taskManager.Job(context, "Clone an App on a VM", user)
-        job.addTask(dissomniag.self.tagOrCommit = options.tagOrCommit
-        if self.tagOrCommit != None:
-            self.tagOrCommit = str(self.tagOrCommit)tasks.operateOnApp())
+        job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
     @staticmethod
@@ -284,6 +316,8 @@ class AppLiveCdRelation(dissomniag.Base):
                 job = dissomniag.taskManager.Job(context, "Create initially an AppLiveCdRelation", user)
                 job.addTask(dissomniag.tasks.AddAppBranch())
                 job.addTask(dissomniag.tasks.GitPushAdminRepo())
+                if liveCd.vm.state == dissomniag.model.NodeState.CREATED:
+                    job.addTask(dissomniag.tasks.addAppOnRemote())
                 dissomniag.taskManager.Dispatcher.addJobSyncronized(user, dissomniag.GitEnvironment(), job)
                 return rel
             except MultipleResultsFound:
@@ -399,7 +433,8 @@ class App(dissomniag.Base):
     
     def addLiveCdRelation(self, user, liveCd):
         self.authUser(user)
-        AppLiveCdRelation.createRelation(user, self, liveCd)  
+        rel = AppLiveCdRelation.createRelation(user, self, liveCd)
+             
     
     def addUser(self, user, userToAdd):
         self.authUser(user)

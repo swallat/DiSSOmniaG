@@ -32,7 +32,13 @@ def update(user, infoXml):
             log.info("Unauthorized RPC Call for UUID %s with user %s" % (uuid, str(user)))
             return False
         else:
-            return vm.recvUpdateLiveClient(user, xml)
+            ret = vm.recvUpdateLiveClient(user, xml)
+            """
+            Push app info
+            """
+            vm.liveCd.addAllCurrentAppsOnRemote(user)
+            return ret
+            
         
 def updateAppInfo(user, appInfoXml):
     

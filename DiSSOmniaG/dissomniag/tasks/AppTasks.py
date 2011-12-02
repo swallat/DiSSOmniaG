@@ -146,7 +146,13 @@ class DeleteAppOnLiveCdRemote(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.UnrevertableFailure("No Relation object found.")
         except MultipleResultsFound:
             appLiveCdRel = appLiveCdRel[0]
-        
+            
+        try:
+            appLiveCdRel.deleteAppOnRemote(self.job.getUser())
+        except Exception as e:
+            self.multiLog("DeleteAppOnLiveCdRemote: Generall Exception %s" % str(e), log)
+            return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD
+                
         return dissomniag.taskManager.TaskReturns.SUCCESS
         
     def revert(self):
@@ -242,20 +248,104 @@ class MakeInitialCommit(dissomniag.taskManager.AtomicTask):
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
+class addAllAppsOnRemote(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "liveCd") or  type(self.context.liveCd) != dissomniag.model.LiveCd:
+            self.job.trace("addAppOnRemote: In Context missing liveCd object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object. REVERT")
+        
+        self.multiLog("Adding all apps on Remote %s" % (self.context.liveCd.vm.commonName), log)
+        
+        try:
+            ret = self.context.liveCd.addAllCurrentAppsOnRemote(self.job.getUser())
+        except dissomniag.NoMaintainanceIp:
+            self.multiLog("Add app on Remote. No Maintainance IP resolvable.", log)
+            raise dissomniag.taskManager.TaskFailed("Add app on Remote. No Maintainance IP resolvable.")
+        except Exception as e:
+            self.multiLog("GENERAL EXCEPTION while adding all apps on Remote %s" % (self.context.liveCd.vm.commonName), log)
+            raise dissomniag.taskManager.TaskFailed("GENERAL EXCEPTION while adding apps.")
+        if ret != 0:
+            self.multiLog("Remote error while adding all apps on Remote %s" % (self.context.liveCd.vm.commonName), log)
+            raise dissomniag.taskManager.TaskFailed("Remote error while adding apps.")
+        
+        self.multiLog("Adding all apps on Remote %s SUCCEDED" % (self.context.liveCd.vm.commonName), log)
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+        
+        
+    
+class addAppOnRemote(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "app") or  type(self.context.app) != dissomniag.model.App:
+            self.job.trace("addAppOnRemote: In Context missing app object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing app object. REVERT")
+        
+        if not hasattr(self.context, "liveCd") or  type(self.context.liveCd) != dissomniag.model.LiveCd:
+            self.job.trace("addAppOnRemote: In Context missing liveCd object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object. REVERT")
+        
+        session = dissomniag.Session()
+        try:
+            appLiveCdRel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == self.context.app).filter(dissomniag.model.AppLiveCdRelation.liveCd == self.context.liveCd).one()
+        except NoResultFound:
+            self.job.trace("addAppOnRemote: No Relation object found. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("No Relation object found. REVERT")
+        except MultipleResultsFound:
+            appLiveCdRel = appLiveCdRel[0]
+            
+            
+        self.multiLog("Adding app %s on Remote %s" % (self.context.app.name, self.context.liveCd.vm.commonName), log)
+        
+        try:
+            ret = appLiveCdRel.addAppOnRemote(self.job.getUser())
+        except dissomniag.NoMaintainanceIp:
+            self.multiLog("Add app on Remote. No Maintainance IP resolvable.", log)
+            raise dissomniag.taskManager.TaskFailed("Add app on Remote. No Maintainance IP resolvable.")
+        except Exception as e:
+            self.multiLog("GENERAL EXCEPTION while adding app %s on Remote %s" % (self.context.app.name, self.context.liveCd.vm.commonName), log)
+            raise dissomniag.taskManager.TaskFailed("GENERAL EXCEPTION while adding app.")
+        if ret != 0:
+            self.multiLog("Remote error while adding app %s on Remote %s" % (self.context.app.name, self.context.liveCd.vm.commonName), log)
+            raise dissomniag.taskManager.TaskFailed("Remote error while adding app.")
+        
+        self.multiLog("Adding app %s on Remote %s SUCCEDED" % (self.context.app.name, self.context.liveCd.vm.commonName), log)
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+    
 
 class operateOnApp(dissomniag.taskManager.AtomicTask):
     
     def run(self):
-        if not hasattr(self.context, "appRel") or type(self.context.appRel) != dissomniag.model.AppLiveCdRelation:
-            self.job.trace("Operate on app: In Context missing AppLiveCdRelation object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing AppLiveCdRelation object.")
+        if not hasattr(self.context, "app") or  type(self.context.app) != dissomniag.model.App:
+            self.job.trace("operateOnApp: In Context missing app object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing app object. REVERT")
         
+        if not hasattr(self.context, "liveCd") or  type(self.context.liveCd) != dissomniag.model.LiveCd:
+            self.job.trace("operateOnApp: In Context missing liveCd object. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object. REVERT")
+        
+        session = dissomniag.Session()
+        try:
+            appLiveCdRel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == self.context.app).filter(dissomniag.model.AppLiveCdRelation.liveCd == self.context.liveCd).one()
+        except NoResultFound:
+            self.job.trace("operateOnApp: No Relation object found. REVERT")
+            raise dissomniag.taskManager.UnrevertableFailure("No Relation object found. REVERT")
+        except MultipleResultsFound:
+            appLiveCdRel = appLiveCdRel[0]
+            
+            
         if not hasattr(self.context, "action") or not dissomniag.model.AppActions.isValid(self.context.action):
             self.job.trace("Operate on app: In Context missing action.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing action.")
         
         
-        self.multiLog("Starting Action %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.appRel.app.name, self.context.appRel.liveCd.vm.commonName), log)
+        self.multiLog("Starting Action %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.app.name, self.context.liveCd.vm.commonName), log)
         
         scriptName = None
         if hasattr(self.context, "scriptName"):
@@ -265,7 +355,7 @@ class operateOnApp(dissomniag.taskManager.AtomicTask):
         if hasattr(self.context, "tagOrCommit"):
             tagOrCommit = self.context.tagOrCommit
         try:
-            result = self.context.appRel.operateOnRemote(self.job.getUser, self.context.action, scriptName = scriptName, tagOrCommit = tagOrCommit, job = self.job)
+            result = appLiveCdRel.operateOnRemote(self.job.getUser, self.context.action, scriptName = scriptName, tagOrCommit = tagOrCommit, job = self.job)
         except dissomniag.InvalidAction as e:
             self.multiLog("No valid action provided by operateOnApp. %s" % str(e), log)
             return dissomniag.taskManager.TaskFailed("No valid action provided by operateOnApp.")
@@ -277,11 +367,11 @@ class operateOnApp(dissomniag.taskManager.AtomicTask):
             return dissomniag.taskManager.TaskFailed("Execute exception %s" % str(e))
         else:
             if result == True:
-                self.multiLog("Action succeded %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.appRel.app.name, self.context.appRel.liveCd.vm.commonName), log)
+                self.multiLog("Action succeded %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.app.name, self.context.liveCd.vm.commonName), log)
                 return dissomniag.taskManager.TaskReturns.SUCCESS
             else:
-                self.multiLog("Action FAILED %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.appRel.app.name, self.context.appRel.liveCd.vm.commonName), log)
-                return dissomniag.taskManager.TaskFailed("Action FAILED %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.appRel.app.name, self.context.appRel.liveCd.vm.commonName))
+                self.multiLog("Action FAILED %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.app.name, self.context.liveCd.vm.commonName), log)
+                return dissomniag.taskManager.TaskFailed("Action FAILED %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.app.name, self.context.liveCd.vm.commonName))
 
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS

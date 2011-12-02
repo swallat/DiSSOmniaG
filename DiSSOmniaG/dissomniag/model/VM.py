@@ -451,8 +451,7 @@ class VM(AbstractNode):
         if maintainIp == None:
             raise dissomniag.NoMaintainanceIp()
         return ("https://%s:%s@%s:%s/RPC2" % ("maintain", str(self.uuid), str(self.getMaintainanceIp(user)), str(dissomniag.config.clientConfig.rpcServerPort)))
-        
-    
+            
     """
     def start(self, user):
         self.authUser(user)

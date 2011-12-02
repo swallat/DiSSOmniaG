@@ -179,6 +179,27 @@ class LiveCd(dissomniag.Base):
             return True
         else:
             return False
+        
+    def _getServerProxy(self, user):
+        self.authUser(user)
+        return xmlrpclib.ServerProxy(self.vm.getRPCUri(user))
+    
+    def addAllCurrentAppsOnRemote(self, user):
+        self.authUser(user)
+        
+        tree = etree.Element("AppAdd")
+        #Wenn keine relationen vorhanden sind überspringen.
+        if self.AppLiveCdRelations == []:
+            return True
+        
+        for rel in self.AppLiveCdRelations:
+            tree.append_child(rel._getAppAddInfo(user))
+        
+        xmlString = self._getXmlString(tree)
+        
+        proxy = self._getServerProxy(user)
+        
+        return proxy.addApps(xmlString)
     
     @staticmethod
     def checkUptODateOnHd(user, livecd):

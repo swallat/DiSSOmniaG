@@ -18,12 +18,18 @@ import logging
 import StringIO
 import hashlib
 import threading, thread
+import pyinotify
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from dissomniag.utils.wrapper import synchronized
 
 log = logging.getLogger("GitEnvironment")
 
 GitEnvironmentLock = threading.RLock()
+
+class GitEventHandler(pyinotify.ProcessEvent):
+    
+    def process_IN_CREATE(self, event):
+        filename = event.filename
 
 
 class GitEnvironment(object):
