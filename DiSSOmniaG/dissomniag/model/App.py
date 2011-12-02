@@ -185,7 +185,7 @@ class AppLiveCdRelation(dissomniag.Base):
         
         return proxy.appOperate(xmlString)
         
-    def createStartJob(self, user, scriptName = None):
+    def createStartJob(self, user, scriptName = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add("appRel", self)
@@ -196,17 +196,17 @@ class AppLiveCdRelation(dissomniag.Base):
         job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
-    def createStopJob(self, user):
+    def createStopJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add("appRel", self)
         context.action = AppActions.STOP
         
         job = dissomniag.taskManager.Job(context, "Stop an App on a VM", user)
-        job.addTask(dissomnMakeInitialCommitiag.tasks.operateOnApp())
+        job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
-    def createCompileJob(self, user):
+    def createCompileJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add("appRel", self)
@@ -216,7 +216,7 @@ class AppLiveCdRelation(dissomniag.Base):
         job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
-    def createResetJob(self, user):
+    def createResetJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add("appRel", self)
@@ -226,7 +226,7 @@ class AppLiveCdRelation(dissomniag.Base):
         job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
-    def createInterruptJob(self, user):
+    def createInterruptJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add("appRel", self)
@@ -236,7 +236,7 @@ class AppLiveCdRelation(dissomniag.Base):
         job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
-    def createRefreshGitJob(self, user, tagOrCommit = None):
+    def createRefreshGitJob(self, user, tagOrCommit = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add("appRel", self)
@@ -247,7 +247,7 @@ class AppLiveCdRelation(dissomniag.Base):
         job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
-    def createRefreshAndResetJob(self, user, tagOrCommit = None):
+    def createRefreshAndResetJob(self, user, tagOrCommit = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add("appRel", self)
@@ -258,14 +258,16 @@ class AppLiveCdRelation(dissomniag.Base):
         job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
-    def createCloneJob(self, user):
+    def createCloneJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
         context.add("appRel", self)
         context.action = AppActions.CLONE
         
         job = dissomniag.taskManager.Job(context, "Clone an App on a VM", user)
-        job.addTask(dissomniag.tasks.operateOnApp())
+        job.addTask(dissomniag.self.tagOrCommit = options.tagOrCommit
+        if self.tagOrCommit != None:
+            self.tagOrCommit = str(self.tagOrCommit)tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
     @staticmethod
@@ -349,6 +351,51 @@ class App(dissomniag.Base):
             if user == rel.liveCd.vm.maintainUser.id:
                 return True
         raise dissomniag.UnauthorizedFunctionCall()
+    
+    def operateOnSet(self, user, action, set = [], **kwargs):
+        self.authUser(user)
+        filteredSet = []
+        for rel in set:
+            if rel in self.AppLiveCdRelations:
+                filteredSet.append(rel)
+        return self._operateOnSet(user, action, filteredSet, **kwargs)
+            
+    
+    def _operateOnSet(self, user, action, set = [], **kwargs):
+        self.authUser(user)
+        doneOne = False
+        for rel in set:
+            if action == AppActions.START:
+                rel.createStartJob(user, **kwargs)
+            elif action == AppActions.STOP:
+                rel.createStopJob(user, **kwargs)
+            elif action == AppActions.COMPILE:
+                rel.createCompileJob(user, **kwargs)
+            elif action == AppActions.RESET:
+                rel.createResetJob(user, **kwargs)
+            elif action == AppActions.INTERRUPT:
+                rel.createInterruptJob(user, **kwargs)
+            elif action == AppActions.REFRESH_GIT:
+                rel.createRefreshGitJob(user, **kwargs)
+            elif action == AppActions.REFRESH_AND_RESET:
+                rel.createRefreshAndResetJob(user, **kwargs)
+            elif action == AppActions.CLONE:
+                rel.createCloneJob(user, **kwargs)
+            else:
+                continue
+            doneOne = True
+        return doneOne
+    
+    def operate(self, user, action, appRel = None, **kwargs):
+        if isinstance(appRel, list):
+            return self.operateOnSet(user, action, appRel, **kwargs)
+        elif isinstance(appRel, dissomniag.model.AppLiveCdRelation) and appRel in self.AppLiveCdRelations:
+            return self._operateOnSet(user, action, [appRel], **kwargs)
+        elif appRel == None:
+            return self._operateOnSet(user, action, self.AppLiveCdRelations, **kwargs)
+        else:
+            return False
+    
     
     def addLiveCdRelation(self, user, liveCd):
         self.authUser(user)

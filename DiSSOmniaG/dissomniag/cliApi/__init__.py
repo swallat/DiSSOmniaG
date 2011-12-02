@@ -170,9 +170,9 @@ def delAppVm(*args):
     import ManageApps
     ManageApps.delAppVm().call(*args)
     
-def appUpdate(*args):
+def appReset(*args):
     import ManageApps
-    ManageApps.appUpdate().call(*args)
+    ManageApps.appReset().call(*args)
 
 def appCompile(*args):
     import ManageApps
@@ -185,6 +185,22 @@ def appStart(*args):
 def appStop(*args):
     import ManageApps
     ManageApps.appStop().call(*args)
+
+def appInterrupt(*args):
+    import ManageApps
+    ManageApps.appInterrupt().call(*args)
+    
+def appRefreshGit(*args):
+    import ManageApps
+    ManageApps.appRefreshGit().call(*args)
+    
+def appRefreshAndReset(*args):
+    import ManageApps
+    ManageApps.appRefreshAndReset().call(*args)
+    
+def appClone(*args):
+    import ManageApps
+    ManageApps.appClone().call(*args)
 
 def testSubprocess(terminal, user, *args):
     import sys

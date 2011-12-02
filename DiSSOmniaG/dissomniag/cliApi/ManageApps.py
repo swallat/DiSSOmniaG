@@ -9,10 +9,12 @@ from colorama import Fore, Style, Back
 import sys, time
 import getpass
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from abc import ABCMeta, abstractmethod
 
 import dissomniag
 from dissomniag.utils import CliMethodABCClass
 from dissomniag import taskManager
+from abc import abstractproperty
 
 log = logging.getLogger("cliApi.ManageApps")
 
@@ -412,27 +414,159 @@ class delAppVm(CliMethodABCClass.CliMethodABCClass):
             else:
                 self.printSuccess("VM %s deleted from app %s." % (vmName, appName))
                 return
-        
-class appUpdate(CliMethodABCClass.CliMethodABCClass):
+            
+class AbstractAppAction(CliMethodABCClass.CliMethodABCClass):
+    __metaclass__ = ABCMeta
     
-    def implementation(self, *args):
+    @abstractproperty
+    def msg(self):
+        raise NotImplementedError()
+    
+    @abstractproperty
+    def action(self):
+        raise NotImplementedError()
+    
+    def implementation(self, msg, *args):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
         
-class appCompile(CliMethodABCClass.CliMethodABCClass):
-    
-    def implementation(self, *args):
-        sys.stdout = self.terminal
-        sys.stderr = self.terminal
+        parser = argparse.ArgumentParser(description = self.msg(), prog = args[0])
+        CliMethodABCClass.CliMethodABCClass
+        parser.add_argument("appName", action = "store")        
+        parser.add_argument("-v" , "--vmName", dest = "vmName", action = "store", default = None)
+        parser.add_argument("-s" , "--scriptName", dest = "scriptName", action = "store", default = None)
+        parser.add_argument("-t" , "--tagOrCommit", dest = "tagOrCommit", action = "store", default = None)
+        parser.add_argument("-T" , "--topology", dest = "topology", action = "store", default = None)
         
-class appStop(CliMethodABCClass.CliMethodABCClass):
-    
-    def implementation(self, *args):
-        sys.stdout = self.terminal
-        sys.stderr = self.terminal
+        options = parser.parse_args(args[1:])
         
-class appStart(CliMethodABCClass.CliMethodABCClass):
+        self.appName = str(options.appName)
+        
+        self.vmName = options.vmName
+        if self.vmName != None:
+            self.vmName = str(self.vmName)
+            
+        self.scriptName = options.scriptName
+        if self.scriptName != None:
+            self.scriptName = str(self.scriptName)
+            
+        self.tagOrCommit = options.tagOrCommit
+        if self.tagOrCommit != None:
+            self.tagOrCommit = str(self.tagOrCommit)
+        
+        self.topology = options.topology
+        if self.topology != None:
+            self.topology = str(self.topology)
+        
+        session = dissomniag.Session()
+        app = None
+        try:
+            app = session.query(dissomniag.model.App).filter(dissomniag.model.App.name == self.appName).one()
+        except NoResultFound as e:
+            self.printError("There is no app with name %s." % self.appName)
+            return
+        except MultipleResultsFound as e:
+            app = app[0]
+        
+        try:
+            app.authUser(self.user)
+        except Exception as e:CliMethodABCClass.CliMethodABCClass
+            self.printError("There is no app with name %s." % self.appName)
+            return False
+        
+        relObj = None
+        
+        if self.vmName != None:
+            vm = None
+            try:
+                vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == self.vmName).one()
+            except NoResultFound as e:
+                self.printError("There is no VM with name %s." % self.vmName)
+                return False
+            except MultipleResultsFound as e:
+                self.printError("There are multiple VM's with name %s. DB ERROR." % self.vmName)
+                return False
+            
+            if not hasattr(vm, "liveCd"):
+                self.printError("VM has no liveCd!")
+                return False
+            liveCd = vm.liveCd
+            
+            try:
+                relObj = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == app).filter(dissomniag.model.AppLiveCdRelation.liveCd == liveCd).one()
+            except NoResultFound as e:
+                self.printError("There is no Relation between app %s and vm %s." % (self.appName, self.vmName))
+                return False
+            except MultipleResultsFound as e:
+                self.printError("There are multiple relations between add %s and vm %s." % (self.appName, self.vmName))
+                return False
+            
+        try:
+            ret = app.operate(self.user, self.action(), relObj, scriptName = self.scriptName, tagOrCommit = self.tagOrCommit)
+        except Exception as e:
+            self.printError("General Exception %s." % str(e))
+        return ret
+        
+class appCompile(AbstractAppAction):
     
-    def implementation(self, *args):
-        sys.stdout = self.terminal
-        sys.stderr = self.terminal
+    def msg(self):
+        return "Compile an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.COMPILE
+        
+class appStop(AbstractAppAction):
+    
+    def msg(self):
+        return "Stop an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.STOP
+        
+class appStart(AbstractAppAction):
+    
+    def msg(self):
+        return "Start an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.START
+        
+class appClone(AbstractAppAction):
+    
+    def msg(self):
+        return "Clone an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.CLONE
+
+class appInterrupt(AbstractAppAction):
+    
+    def msg(self):
+        return "Interrupt an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.INTERRUPT
+        
+class appReset(AbstractAppAction):
+    
+    def msg(self):
+        return "Reset an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.RESET
+        
+class appRefreshGit(AbstractAppAction):
+    
+    def msg(self):
+        return "Refresh Git repo on an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.REFRESH_GIT
+        
+class appRefreshAndReset(AbstractAppAction):
+    
+    def msg(self):
+        return "Refresh and reset an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.REFRESH_AND_RESET
