@@ -32,3 +32,6 @@ class MissingJobObject(Exception):
 
 class NoMaintainanceIp(Exception):
     pass
+
+class InvalidAction(Exception):
+    pass

@@ -241,3 +241,48 @@ class MakeInitialCommit(dissomniag.taskManager.AtomicTask):
     
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+
+class operateOnApp(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "appRel") or type(self.context.appRel) != dissomniag.model.AppLiveCdRelation:
+            self.job.trace("Operate on app: In Context missing AppLiveCdRelation object.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing AppLiveCdRelation object.")
+        
+        if not hasattr(self.context, "action") or not dissomniag.model.AppActions.isValid(self.context.action):
+            self.job.trace("Operate on app: In Context missing action.")
+            raise dissomniag.taskManager.UnrevertableFailure("In Context missing action.")
+        
+        
+        self.multiLog("Starting Action %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.appRel.app.name, self.context.appRel.liveCd.vm.commonName), log)
+        
+        scriptName = None
+        if hasattr(self.context, "scriptName"):
+            scriptName = self.context.scriptName
+        
+        tagOrCommit = None
+        if hasattr(self.context, "tagOrCommit"):
+            tagOrCommit = self.context.tagOrCommit
+        try:
+            result = self.context.appRel.operateOnRemote(self.job.getUser, self.context.action, scriptName = scriptName, tagOrCommit = tagOrCommit, job = self.job)
+        except dissomniag.InvalidAction as e:
+            self.multiLog("No valid action provided by operateOnApp. %s" % str(e), log)
+            return dissomniag.taskManager.TaskFailed("No valid action provided by operateOnApp.")
+        except dissomniag.NoMaintainanceIp as e:
+            self.multiLog("NoMaintainanceIp resolvable %s" % str(e), log)
+            return dissomniag.taskManager.TaskFailed("NoMaintainanceIp resolvable .")
+        except Exception as e:
+            self.multiLog("Execute exception %s" % str(e), log)
+            return dissomniag.taskManager.TaskFailed("Execute exception %s" % str(e))
+        else:
+            if result == True:
+                self.multiLog("Action succeded %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.appRel.app.name, self.context.appRel.liveCd.vm.commonName), log)
+                return dissomniag.taskManager.TaskReturns.SUCCESS
+            else:
+                self.multiLog("Action FAILED %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.appRel.app.name, self.context.appRel.liveCd.vm.commonName), log)
+                return dissomniag.taskManager.TaskFailed("Action FAILED %s over App %s on Remote %s" % (dissomniag.model.AppActions.getName(self.context.action), self.context.appRel.app.name, self.context.appRel.liveCd.vm.commonName))
+
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS
+        pass

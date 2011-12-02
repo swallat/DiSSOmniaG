@@ -4,11 +4,14 @@ Created on 17.11.2011
 
 @author: Sebastian Wallat
 '''
+import lxml
+from lxml import etree
 import threading
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import ipaddr, random
+import xmlrpclib
 
 import dissomniag
 from dissomniag.model import *
@@ -17,6 +20,82 @@ user_app = sa.Table('user_app', dissomniag.Base.metadata,
                        sa.Column('user_id', sa.Integer, sa.ForeignKey('users.id'), primary_key = True),
                        sa.Column('key_id', sa.Integer, sa.ForeignKey('apps.id'), primary_key = True),
 )
+
+class AppState:
+    INIT = 0
+    CLONED = 1
+    COMPILED = 2
+    STARTED = 3
+    CLONE_ERROR = 4
+    PULL_ERROR = 5
+    COMPILE_ERROR = 6
+    RUNTIME_ERROR = 7
+    
+    @staticmethod
+    def isValid(appState):
+        if 0 <= appState < 8 and isinstance(appState, int):
+            return True
+        else:
+            return False
+    
+    @staticmethod
+    def getName(appState):
+        if appState == AppState.INIT:
+            return "INIT"
+        elif appState == AppState.CLONED:
+            return "CLONED"
+        elif appState == AppState.COMPILED:
+            return "COMPILED"
+        elif appState == AppState.STARTED:
+            return "STARTED"
+        elif appState == AppState.CLONE_ERROR:
+            return "CLONE_ERROR"
+        elif appState == AppState.PULL_ERROR:
+            return "PULL_ERROR"
+        elif appState == AppState.COMPILE_ERROR:
+            return "COMPILE_ERROR"
+        elif appState == AppState.RUNTIME_ERROR:
+            return "RUNTIME_ERROR"
+        
+class AppActions:
+    START = 0
+    STOP = 1
+    COMPILE = 2
+    RESET = 3
+    INTERRUPT = 4
+    REFRESH_GIT = 5
+    REFRESH_AND_RESET = 6
+    CLONE = 7
+    DELETE = 8
+    
+    @staticmethod
+    def isValid(appState):
+        if 0 <= appState < 9 and isinstance(appState, int):
+            return True
+    
+        else:
+            return False
+    
+    @staticmethod
+    def getName(appState):
+        if appState == AppActions.START:
+            return "START"
+        elif appState == AppActions.STOP:
+            return "STOP"
+        elif appState == AppActions.COMPILE:
+            return "COMPILE"
+        elif appState == AppActions.RESET:
+            return "RESET"
+        elif appState == AppActions.INTERRUPT:
+            return "INTERRUPT"
+        elif appState == AppActions.REFRESH_GIT:
+            return "REFRESH_GIT"
+        elif appState == AppActions.REFRESH_AND_RESET:
+            return "REFRESH_AND_RESET"
+        elif appState == AppActions.CLONE:
+            return "CLONE"
+        elif appState == AppActions.DELETE:
+            return "DELETE"
 
 class AppLiveCdRelation(dissomniag.Base):
     __tablename__= 'app_livecd'
@@ -38,6 +117,156 @@ class AppLiveCdRelation(dissomniag.Base):
         
     def authUser(self, user):
         return self.app.authUser(user)
+    
+    def updateInfo(self, user, state, log):
+        session = dissomniag.Session()
+        
+        self.authUser(user)
+        if AppState.isValid(state):
+            self.state = state
+            
+        if log == None or not isinstance(log, str):
+            self.log = ""
+        else:
+            self.log = log
+        dissomniag.saveCommit(session)
+        
+    def _getActionXml(self, user, action):
+        tree = etree.Element("AppOperate")
+        name = etree.SubElement(tree, "name")
+        name.text = str(self.app.name)
+        
+        serverUser = etree.SubElement(tree, "serverUser")
+        serverUser.text = str(dissomniag.config.git.gitUser)
+        
+        serverIpOrHost = etree.SubElement(tree, "serverIpOrHost")
+        ident = dissomniag.getIdentity()
+        serverIpOrHost.text = str(ident.getMaintainanceIP().addr)
+        
+        action = etree.SubElement(tree, "action")
+        action.text = str(action)
+        return tree
+    
+    def _getServerProxy(self, user):
+        self.authUser(user)
+        return xmlrpclib.ServerProxy(self.liveCd.vm.getRPCUri(user))
+    
+    def _getXmlString(self, xml):
+        return etree.tostring(xml, pretty_print = True)
+    
+    def operateOnRemote(self, user, action, scriptName = None, tagOrCommit = None, job = None):
+        self.authUser(user)
+        if not AppActions.isValid(action):
+            raise dissomniag.InvalidAction("Action %s not known." % action)
+        
+        tree = self._getActionXml(user, action)
+        
+        if scriptName != None:
+            scriptName = etree.SubElement(tree, "scriptName")
+            scriptName.text = str(scriptName)
+        
+        if tagOrCommit != None:
+            tagOrCommit = etree.SubElement(tree, "tagOrCommit")
+            tagOrCommit.text = str(scriptName)
+            
+        xmlString = self._getXmlString(tree)
+        
+        proxy = self._getServerProxy(user)
+        
+        return proxy.appOperate(xmlString)
+    
+    def deleteAppOnRemote(self, user):
+        self.authUser(user)
+        tree = self._getActionXml(user, AppActions.DELETE)
+        
+        xmlString = self._getXmlString(tree)
+        
+        proxy = self._getServerProxy(user)
+        
+        return proxy.appOperate(xmlString)
+        
+    def createStartJob(self, user, scriptName = None):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add("appRel", self)
+        context.scriptName = scriptName
+        context.action = AppActions.START
+        
+        job = dissomniag.taskManager.Job(context, "Start an App on a VM", user)
+        job.addTask(dissomniag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
+    
+    def createStopJob(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add("appRel", self)
+        context.action = AppActions.STOP
+        
+        job = dissomniag.taskManager.Job(context, "Stop an App on a VM", user)
+        job.addTask(dissomnMakeInitialCommitiag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
+    
+    def createCompileJob(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add("appRel", self)
+        context.action = AppActions.COMPILE
+        
+        job = dissomniag.taskManager.Job(context, "Compile an App on a VM", user)
+        job.addTask(dissomniag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
+    
+    def createResetJob(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add("appRel", self)
+        context.action = AppActions.RESET
+        
+        job = dissomniag.taskManager.Job(context, "Reset an App on a VM", user)
+        job.addTask(dissomniag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
+    
+    def createInterruptJob(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add("appRel", self)
+        context.action = AppActions.INTERRUPT
+        
+        job = dissomniag.taskManager.Job(context, "Interrupt an App on a VM", user)
+        job.addTask(dissomniag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
+    
+    def createRefreshGitJob(self, user, tagOrCommit = None):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add("appRel", self)
+        context.tagOrCommit = tagOrCommit
+        context.action = AppActions.REFRESH_GIT
+        
+        job = dissomniag.taskManager.Job(context, "Refresh Git on an App on a VM", user)
+        job.addTask(dissomniag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
+    
+    def createRefreshAndResetJob(self, user, tagOrCommit = None):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add("appRel", self)
+        context.tagOrCommit = tagOrCommit
+        context.action = AppActions.REFRESH_AND_RESET
+        
+        job = dissomniag.taskManager.Job(context, "Refresh And Reset an App on a VM", user)
+        job.addTask(dissomniag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
+    
+    def createCloneJob(self, user):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add("appRel", self)
+        context.action = AppActions.CLONE
+        
+        job = dissomniag.taskManager.Job(context, "Clone an App on a VM", user)
+        job.addTask(dissomniag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
     @staticmethod
     def createRelation(user, app, liveCd):
