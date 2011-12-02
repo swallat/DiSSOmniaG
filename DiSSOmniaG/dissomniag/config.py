@@ -155,7 +155,9 @@ class gitConfig(ParseSection):
         self.pathToKeyFolder = os.path.join(self.pathToLocalUtilFolder, "keydir")
         self.pathToConfigFile = os.path.join(self.pathToLocalUtilFolder, "gitosis.conf")
         self.gitUser = self.parseOption(self.sectionName, "gitUser", "gitosis")
+        self.gitGroup = self.parseOption(self.sectionName, "gitGroup", "gitosis")
         self.gitosisHost = self.parseOption(self.sectionName, "gitosisHost", "localhost")
+        self.scriptSyncFolder = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/gitosis/sync/")
         return self
     
 git = gitConfig(config, "GIT_CONFIG").parse()
