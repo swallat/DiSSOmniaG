@@ -36,7 +36,10 @@ def update(user, infoXml):
             """
             Push app info
             """
-            vm.liveCd.addAllCurrentAppsOnRemote(user)
+            #try:
+            #vm.liveCd.addAllCurrentAppsOnRemote(user)
+            #except Exception as e:
+            #    log.error("Cannot push App info to LiveCd! %s" % str(e))
             return ret
             
         
@@ -73,7 +76,6 @@ def updateAppInfo(user, appInfoXml):
     
     logElem = xml.find("log")
     log = None
-    
     if log != None:
         log = str(logElem.text)
     else:

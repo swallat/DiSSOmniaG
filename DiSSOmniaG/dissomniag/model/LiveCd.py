@@ -10,7 +10,7 @@ import sqlalchemy.orm as orm
 from lxml import etree
 import hashlib
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-
+import xmlrpclib
 import dissomniag
 from dissomniag.model import *
 from dissomniag.auth import User
@@ -179,7 +179,10 @@ class LiveCd(dissomniag.Base):
             return True
         else:
             return False
-        
+    
+    def _getXmlString(self, xml):
+        return etree.tostring(xml, pretty_print = True)
+    
     def _getServerProxy(self, user):
         self.authUser(user)
         return xmlrpclib.ServerProxy(self.vm.getRPCUri(user))
@@ -193,7 +196,7 @@ class LiveCd(dissomniag.Base):
             return True
         
         for rel in self.AppLiveCdRelations:
-            tree.append_child(rel._getAppAddInfo(user))
+            tree.append(rel._getAppAddInfo(user))
         
         xmlString = self._getXmlString(tree)
         

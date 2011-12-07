@@ -31,6 +31,7 @@ class DeleteVM(dissomniag.taskManager.AtomicTask):
         
         try:
             session = dissomniag.Session()
+            session.delete(vm.sshKey)
             session.delete(vm)
             dissomniag.saveCommit(session)
             self.context.vm = None

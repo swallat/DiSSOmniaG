@@ -316,7 +316,7 @@ class addAppOnRemote(dissomniag.taskManager.AtomicTask):
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
     def revert(self):
-        return dissomniag.taskManager.TaskReturns.SUCCESS
+        return dissomniag.taskManager.UnrevertableFailure("Cannot directly delete relation from here.")
     
 
 class operateOnApp(dissomniag.taskManager.AtomicTask):

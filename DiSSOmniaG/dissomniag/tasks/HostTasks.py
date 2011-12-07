@@ -102,7 +102,7 @@ class checkLibvirtVersionOnHost(dissomniag.taskManager.AtomicTask):
         self.job.trace("checkLibvirtVersionOnHost: (Host: %s) virsh --version" % self.context.host.commonName)
         
         sshCmd = dissomniag.utils.SSHCommand("virsh --version", hostOrIp = maintainanceIp, username = self.context.host.administrativeUserName)
-        code, output = sshCmd.callAndGetOutput()
+        code, output = sshCmd.callAndGetOutput(withError = False)
         if code != 0:
             self.job.trace("checkLibvirtVersionOnHost: Could not execute 'virsh --version'!")
             return dissomniag.taskManager.TaskReturns.FAILED_BUT_GO_AHEAD

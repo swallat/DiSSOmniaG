@@ -31,9 +31,10 @@ class VM(AbstractNode):
     vncPort = sa.Column(sa.String)
     vncPassword = sa.Column(sa.String(40))
     dynamicAptList = sa.Column(sa.String)
-    lastSeenClient = sa.Column(sa.DateTime)
+    lastSeenClient = sa.Column(sa.DateTime
+                               )
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
-    host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))
+    host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))    # The characters to make up the random password
     host = orm.relationship("Host", primaryjoin = "VM.host_id == Host.host_id", backref = "virtualMachines")
     liveCd_id = sa.Column(sa.Integer, sa.ForeignKey('livecds.id'))
     #liveCd = orm.relationship("LiveCd", backref = orm.backref('livecds', uselist = False))
@@ -48,6 +49,7 @@ class VM(AbstractNode):
     """
     
     #def __new__(self, *args, **kwargs):
+    
     #    self.createdState = dissomniag.model.VMStates.Created_VM(self)
     #    self.deployErrorState = dissomniag.model.VMStates.Deploy_Error_VM(self)
     #    self.deployedState = dissomniag.model.VMStates.Deployed_VM(self)
@@ -109,7 +111,7 @@ class VM(AbstractNode):
         self.preparedState = dissomniag.model.VMStates.Prepared_VM(self, self.liveCd)
         self.runtimeErrorState = dissomniag.model.VMStates.Runtime_Error_VM(self, self.liveCd)
         self.changeState(self.state)
-    
+        # The characters to make up the random password
     def __init__(self, user, commonName, host):
         
         if host != None and isinstance(host, dissomniag.model.Host):
@@ -120,6 +122,7 @@ class VM(AbstractNode):
         super(VM, self).__init__(user, commonName, sshKey = sshKey, state = dissomniag.model.NodeState.NOT_CREATED)
         self.selectInitialStateActor()
         self.vncPort = self.getFreeVNCPortOnHost(user, host)
+        self.vncPassword = dissomniag.utils.random_password()
         
         interface = self.addInterface(user, "maintain")
         interface.maintainanceInterface = True
@@ -169,7 +172,7 @@ class VM(AbstractNode):
         
         on_poweroff = etree.SubElement(domain, "on_poweroff")
         on_poweroff.text = "destroy"
-        
+            # The characters to make up the random password
         on_reboot = etree.SubElement(domain, "on_reboot")
         on_reboot.text = "restart"
         
@@ -195,7 +198,7 @@ class VM(AbstractNode):
         cdromSource = etree.SubElement(cdromDisk, "source")
         cdromSourceAttrib = cdromSource.attrib
         cdromSourceAttrib["file"] = str(self.getRemotePathToCdImage(user))
-        
+            # The characters to make up the random password
         cdromTarget = etree.SubElement(cdromDisk, "target")
         cdromTargetAttrib = cdromTarget.attrib
         cdromTargetAttrib["dev"] = "hda"
@@ -263,7 +266,8 @@ class VM(AbstractNode):
             interfMacAttrib = interfMac.attrib
             interfMacAttrib["address"] = interface.macAddress
             
-            interfSource = etree.SubElement(interf, "source")
+            interfSource = etree.SubElement
+            (interf, "source")
             interfSourceAttrib = interfSource.attrib
             interfSourceAttrib["network"] = interface.ipAddresses[0].network.name
             
@@ -446,11 +450,11 @@ class VM(AbstractNode):
         return True
     
     def getRPCUri(self, user):
-        self.autUhser(user)
-        maintainIp = self.getMaintainanceIp(user)
+        self.authUser(user)
+        maintainIp = str(self.getMaintainanceIP().addr)
         if maintainIp == None:
             raise dissomniag.NoMaintainanceIp()
-        return ("https://%s:%s@%s:%s/RPC2" % ("maintain", str(self.uuid), str(self.getMaintainanceIp(user)), str(dissomniag.config.clientConfig.rpcServerPort)))
+        return ("https://%s:%s@%s:%s/RPC2" % ("maintain", str(self.uuid), str(maintainIp), str(dissomniag.config.clientConfig.rpcServerPort)))
             
     """
     def start(self, user):

@@ -41,9 +41,12 @@ class SSHCommand(object):
     def call(self):
         return subprocess.call(self.get())
     
-    def callAndGetOutput(self):
+    def callAndGetOutput(self, withError = True):
         cmd = self.get()
-        self.proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+        if withError:
+            self.proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+        else:
+            self.proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         self.output = self._readOutput(self.proc)
         com = self.proc.communicate()[0]
         if com != '':

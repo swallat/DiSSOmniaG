@@ -470,7 +470,7 @@ class AbstractAppAction(CliMethodABCClass.CliMethodABCClass):
         
         try:
             app.authUser(self.user)
-        except Exception as e:CliMethodABCClass.CliMethodABCClass
+        except Exception as e:
             self.printError("There is no app with name %s." % self.appName)
             return False
         

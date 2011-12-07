@@ -8,3 +8,4 @@ from SSHCommand import *
 from SubprocessCommand import *
 from SingletonMixin import *
 from RsyncCommand import *
+from RandomPassword import *

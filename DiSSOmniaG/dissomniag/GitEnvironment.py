@@ -31,13 +31,15 @@ GitEnvironmentLock = threading.RLock()
 class GitEventHandler(pyinotify.ProcessEvent):
     
     def process_IN_CREATE(self, event):
-        filename = event.filename
+        log.error("GIT(EVENT) %s" % event.pathname)
+        filename = event.pathname
+        time.sleep(1)
         
         lines = None
         try:
             dissomniag.getRoot()
             with open(filename, 'r') as f:
-                lines = f.readLines()
+                lines = f.readlines()
         except Exception as e:
             log.error("GitEventHandler: Cannot read file %s." % filename)
             return
@@ -63,11 +65,14 @@ class GitEventHandler(pyinotify.ProcessEvent):
                     except Exception as e:
                         log.error("SKIPPED App %s auto git update executed on branch %s." % (appName, branchName))
                 except Exception as e:
-                    pass
+                    log.error("process_GIT_EVENT: No valid request.")
         try:
-            shutil.rmtree(filename)
+            dissomniag.getRoot()
+            os.remove(filename)
         except OSError as e:
-            log.error("Could not dele file %s in git event handler." % filename)
+            log.error("Could not delete file %s in git event handler." % filename)
+        finally:
+            dissomniag.resetPermissions()
 
 class GitEnvironment(object):
     '''
@@ -95,6 +100,27 @@ class GitEnvironment(object):
             self._setUpGitFileChangeListener()
             
     def _setUpGitFileChangeListener(self):
+        if os.access(dissomniag.config.git.scriptSyncFolder, os.F_OK):
+            try:
+                dissomniag.getRoot()
+                shutil.rmtree(dissomniag.config.git.scriptSyncFolder)
+            except Exception as e:
+                pass
+            
+        self.multiLog("No %s Folder. Try to create it." % dissomniag.config.git.scriptSyncFolder)
+        try:
+            dissomniag.getRoot()
+            os.makedirs(dissomniag.config.git.scriptSyncFolder)
+            uid, gid = self._getGitUserGroup()
+            os.chown(dissomniag.config.git.scriptSyncFolder, uid, gid)
+        except OSError, e:
+            self.multiLog("Could not create script Sync folder. %s" % e)
+            self.isAdminUsable = False
+            return
+        finally:
+            dissomniag.resetPermissions()
+            
+        self.multiLog("Adding Watch to %s" % dissomniag.config.git.scriptSyncFolder)
         self.wm = pyinotify.WatchManager()
         mask = pyinotify.IN_CREATE
         
@@ -114,7 +140,7 @@ class GitEnvironment(object):
     def createCheckJob(self):
         context = dissomniag.taskManager.Context()
         user = dissomniag.getIdentity().getAdministrativeUser()
-        job = dissomniag.taskManager.Job(context, "Make initial check git environment", user = user)
+        job = dissomniag.taskManager.Job(context, "Makce initial check git environment", user = user)
         job.addTask(dissomniag.tasks.CheckGitEnvironment())
         dissomniag.taskManager.Dispatcher.addJobSyncronized(user, self, job)
         return True
@@ -129,7 +155,7 @@ class GitEnvironment(object):
         #try:
         #    if os.access(dissomniag.config.git.pathToLocalUtilFolder, os.F_OK):
         #        dissomniag.getRoot()
-        #        shutil.rmtree(dissomniag.config.git.pathToLocalUtilFolder)
+        #        shutil.rmtree(dissomniag.config.git.dissomniag.config.git.scriptSyncFolderpathToLocalUtilFolder)
         #except Exception as e:
         #    if job != None:
         #        self.multiLog("INITIAL DELETE ERROR %s" % str(e), job)
@@ -137,23 +163,23 @@ class GitEnvironment(object):
         #    dissomniag.resetPermissions()
         
         try:
-            if not os.access(dissomniag.config.git.scriptSyncFolder):
+            if not os.access(dissomniag.config.git.scriptSyncFolder, os.F_OK):
                 if job != None:
                     self.multiLog("No %s Folder. Try to create it." % dissomniag.config.git.scriptSyncFolder, job)
-                    try:
-                        dissomniag.getRoot()
-                        os.makedirs(dissomniag.config.git.scriptSyncFolder)
-                        uid, gid = self._getGitUserGroup()
-                        os.chown(dissomniag.config.git.pathToLocalUtilFolder,
-                             uid,
-                             gid)
-                    except OSError, e:
-                        if job != None:
-                            self.multiLog("Could not create script Sync folder. %s" % e, job)
-                        self.isAdminUsable = False
-                        return
-                    finally:
-                        dissomniag.resetPermissions()
+                try:
+                    dissomniag.getRoot()
+                    os.makedirs(dissomniag.config.git.scriptSyncFolder)
+                    uid, gid = self._getGitUserGroup()
+                    os.chown(dissomniag.config.git.scriptSyncFolder,
+                         uid,
+                         gid)
+                except OSError, e:
+                    if job != None:
+                        self.multiLog("Could not create script Sync folder. %s" % e, job)
+                    self.isAdminUsable = False
+                    return
+                finally:
+                    dissomniag.resetPermissions()
                     
 
             
@@ -258,7 +284,7 @@ class GitEnvironment(object):
             skeletonRepo.git.push("origin", "master:refs/heads/master")
             self.addUpdateScript(app, job)
         except Exception as e:
-            self.multiLog("Cannot push to origin repo. %s" % gitosisRepo, job)
+            self.multiLog("Cannot push to origin repo. %s, Exception: %s" % (gitosisRepo, str(e)), job)
             raise dissomniag.taskManager.TaskFailed("Cannot push to origin repo. %s" % gitosisRepo)
         finally:
             try:
@@ -284,6 +310,7 @@ class GitEnvironment(object):
             dissomniag.resetPermissions()
         
         try:
+            dissomniag.getRoot()
             uid, gid = self._getGitUserGroup()
             os.chown(targetFile, uid, gid)
             os.chmod(targetFile, 0o755)
@@ -365,7 +392,7 @@ class GitEnvironment(object):
         if not ((self._getConfigKeySet(config, job) <= self._getHdKeySet(job)) and (self._getConfigKeySet(config, job) <= self._getHdKeySet(job))):
             log.info("HD Keys and Config Keys differ!")
             return False
-        
+        grp.getgrnam(str(dissomniag.config.git.gitGroup)).gr_gid
         if inHash.hexdigest() == actHash.hexdigest():
             return True
         else:
@@ -633,8 +660,9 @@ class GitEnvironment(object):
     
     @synchronized(GitEnvironmentLock)
     def _getGitUserGroup(self):
-        uid = pwd.getpwnam(dissomniag.config.git.gitUser).pw_uid
-        gid = grp.getgrnam(dissomniag.config.git.gitGroup).gr_gid
+        user = pwd.getpwnam(str(dissomniag.config.git.gitUser))
+        uid = user.pw_uid
+        gid = user.pw_gid
         return uid, gid 
     
     @synchronized(GitEnvironmentLock)

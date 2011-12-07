@@ -116,7 +116,10 @@ class AppLiveCdRelation(dissomniag.Base):
         
         
     def authUser(self, user):
-        return self.app.authUser(user)
+        try:
+            return self.app.authUser(user)
+        except Exception:
+            return self.liveCd.authUser(user)
     
     def updateInfo(self, user, state, log):
         session = dissomniag.Session()
@@ -192,7 +195,7 @@ class AppLiveCdRelation(dissomniag.Base):
         self.authUser(user)
         
         tree = etree.Element("AppAdd")
-        tree.append_child(self._getAppAddInfo(user))
+        tree.append(self._getAppAddInfo(user))
         
         xmlString = self._getXmlString(tree)
         
@@ -381,7 +384,7 @@ class App(dissomniag.Base):
     def authUser(self, user):
         if (hasattr(user, "isAdmin") and user.isAdmin) or user in self.users:
             return True
-        for rel in self.AppLiveCdRelation:
+        for rel in self.AppLiveCdRelations:
             if user == rel.liveCd.vm.maintainUser.id:
                 return True
         raise dissomniag.UnauthorizedFunctionCall()
@@ -406,7 +409,7 @@ class App(dissomniag.Base):
             elif action == AppActions.COMPILE:
                 rel.createCompileJob(user, **kwargs)
             elif action == AppActions.RESET:
-                rel.createResetJob(user, **kwargs)
+                rel.createResetJob
             elif action == AppActions.INTERRUPT:
                 rel.createInterruptJob(user, **kwargs)
             elif action == AppActions.REFRESH_GIT:
@@ -429,7 +432,6 @@ class App(dissomniag.Base):
             return self._operateOnSet(user, action, self.AppLiveCdRelations, **kwargs)
         else:
             return False
-    
     
     def addLiveCdRelation(self, user, liveCd):
         self.authUser(user)
