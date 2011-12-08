@@ -36,10 +36,12 @@ def update(user, infoXml):
             """
             Push app info
             """
-            #try:
-            #vm.liveCd.addAllCurrentAppsOnRemote(user)
-            #except Exception as e:
-            #    log.error("Cannot push App info to LiveCd! %s" % str(e))
+            try:
+                vm.liveCd.addAllCurrentAppsOnRemote(user)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                log.error("Cannot push App info to LiveCd! %s" % str(e))
             return ret
             
         
@@ -51,13 +53,13 @@ def updateAppInfo(user, appInfoXml):
     uuid = None
     
     if uuidElem != None:
-       uuid = str(uuidElem.text)
+        uuid = str(uuidElem.text)
        
     appNameElem = xml.find("appName")
     appName = None
     
     if appNameElem != None:
-        appName = str(appName.text)
+        appName = str(appNameElem.text)
         
     if uuidElem == None or appName == None:
         log.info("updateAppInfo: UUID or appName not provided!")
@@ -75,12 +77,12 @@ def updateAppInfo(user, appInfoXml):
         return False
     
     logElem = xml.find("log")
-    log = None
-    if log != None:
-        log = str(logElem.text)
+    myLog = None
+    if myLog != None:
+        myLog = str(logElem.text)
     else:
         log.info("updateAppInfo: No log provided.")
-        return False
+        myLog = ""
     
     session = dissomniag.Session()
     
@@ -107,5 +109,11 @@ def updateAppInfo(user, appInfoXml):
     except (NoResultFound, MultipleResultsFound) as e:
         log.info("No App LiveCd relation found for VM %s and app %s for user %s" % (uuid, appName, str(user)))
         return False
-    
+    else:
+        try:
+            relObj.updateInfo(user, state, myLog)
+            dissomniag.saveCommit(session)
+            return True
+        except Exception as e:
+            return False    
     

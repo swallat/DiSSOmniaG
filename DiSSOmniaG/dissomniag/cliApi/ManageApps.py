@@ -31,9 +31,10 @@ class apps(CliMethodABCClass.CliMethodABCClass):
         print("\n")
         self.printInfo("\tRelated LiveCD's:")
         for rel in app.AppLiveCdRelations:
+            session.expire(rel)
             self.printInfo("\t\tNode Name: %s" % str(rel.liveCd.vm.commonName))
             self.printInfo("\t\tApp Last Seen: %s" % str(rel.lastSeen))
-            self.printInfo("\t\tState: %s" % str(rel.state))
+            self.printInfo("\t\tState: %s" % str(dissomniag.model.AppState.getName(rel.state)))
             if withLog:
                 self.printInfo("\t\tLog:")
                 print(str(rel.log))
@@ -426,17 +427,23 @@ class AbstractAppAction(CliMethodABCClass.CliMethodABCClass):
     def action(self):
         raise NotImplementedError()
     
-    def implementation(self, msg, *args):
+    @abstractproperty
+    def name(self):
+        raise NotImplementedError()
+    
+    def implementation(self, *args):
         sys.stdout = self.terminal
         sys.stderr = self.terminal
         
+    
         parser = argparse.ArgumentParser(description = self.msg(), prog = args[0])
-        CliMethodABCClass.CliMethodABCClass
-        parser.add_argument("appName", action = "store")        
+               
         parser.add_argument("-v" , "--vmName", dest = "vmName", action = "store", default = None)
         parser.add_argument("-s" , "--scriptName", dest = "scriptName", action = "store", default = None)
         parser.add_argument("-t" , "--tagOrCommit", dest = "tagOrCommit", action = "store", default = None)
         parser.add_argument("-T" , "--topology", dest = "topology", action = "store", default = None)
+        
+        parser.add_argument("appName", action = "store")
         
         options = parser.parse_args(args[1:])
         
@@ -504,8 +511,12 @@ class AbstractAppAction(CliMethodABCClass.CliMethodABCClass):
         try:
             ret = app.operate(self.user, self.action(), relObj, scriptName = self.scriptName, tagOrCommit = self.tagOrCommit)
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             self.printError("General Exception %s." % str(e))
-        return ret
+            return False
+        else:
+            return ret
         
 class appCompile(AbstractAppAction):
     
@@ -514,6 +525,9 @@ class appCompile(AbstractAppAction):
     
     def action(self):
         return dissomniag.model.AppActions.COMPILE
+    
+    def name(self):
+        return "appCompile"
         
 class appStop(AbstractAppAction):
     
@@ -522,6 +536,9 @@ class appStop(AbstractAppAction):
     
     def action(self):
         return dissomniag.model.AppActions.STOP
+    
+    def name(self):
+        return "appStop"
         
 class appStart(AbstractAppAction):
     
@@ -530,6 +547,9 @@ class appStart(AbstractAppAction):
     
     def action(self):
         return dissomniag.model.AppActions.START
+    
+    def name(self):
+        return "appStart"
         
 class appClone(AbstractAppAction):
     
@@ -538,6 +558,9 @@ class appClone(AbstractAppAction):
     
     def action(self):
         return dissomniag.model.AppActions.CLONE
+    
+    def name(self):
+        return "appClone"
 
 class appInterrupt(AbstractAppAction):
     
@@ -546,6 +569,9 @@ class appInterrupt(AbstractAppAction):
     
     def action(self):
         return dissomniag.model.AppActions.INTERRUPT
+    
+    def name(self):
+        return "appInterrupt"
         
 class appReset(AbstractAppAction):
     
@@ -554,6 +580,9 @@ class appReset(AbstractAppAction):
     
     def action(self):
         return dissomniag.model.AppActions.RESET
+    
+    def name(self):
+        return "appReset"
         
 class appRefreshGit(AbstractAppAction):
     
@@ -562,6 +591,9 @@ class appRefreshGit(AbstractAppAction):
     
     def action(self):
         return dissomniag.model.AppActions.REFRESH_GIT
+    
+    def name(self):
+        return "appRefreshGit"
         
 class appRefreshAndReset(AbstractAppAction):
     
@@ -570,3 +602,6 @@ class appRefreshAndReset(AbstractAppAction):
     
     def action(self):
         return dissomniag.model.AppActions.REFRESH_AND_RESET
+    
+    def name(self):
+        return "appRefreshAndReset"

@@ -204,6 +204,8 @@ class AddAppBranch(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing liveCd object. REVERT")
         
         session = dissomniag.Session()
+        
+        self.multiLog("IN REVERT Delete App Branch.")
         try:
             appLiveCdRel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == self.context.app).filter(dissomniag.model.AppLiveCdRelation.liveCd == self.context.liveCd).one()
         except NoResultFound:
@@ -308,7 +310,7 @@ class addAppOnRemote(dissomniag.taskManager.AtomicTask):
         except Exception as e:
             self.multiLog("GENERAL EXCEPTION while adding app %s on Remote %s" % (self.context.app.name, self.context.liveCd.vm.commonName), log)
             raise dissomniag.taskManager.TaskFailed("GENERAL EXCEPTION while adding app.")
-        if ret != 0:
+        if ret != True:
             self.multiLog("Remote error while adding app %s on Remote %s" % (self.context.app.name, self.context.liveCd.vm.commonName), log)
             raise dissomniag.taskManager.TaskFailed("Remote error while adding app.")
         
@@ -355,7 +357,7 @@ class operateOnApp(dissomniag.taskManager.AtomicTask):
         if hasattr(self.context, "tagOrCommit"):
             tagOrCommit = self.context.tagOrCommit
         try:
-            result = appLiveCdRel.operateOnRemote(self.job.getUser, self.context.action, scriptName = scriptName, tagOrCommit = tagOrCommit, job = self.job)
+            result = appLiveCdRel.operateOnRemote(self.job.getUser(), self.context.action, scriptName = scriptName, tagOrCommit = tagOrCommit, job = self.job)
         except dissomniag.InvalidAction as e:
             self.multiLog("No valid action provided by operateOnApp. %s" % str(e), log)
             return dissomniag.taskManager.TaskFailed("No valid action provided by operateOnApp.")

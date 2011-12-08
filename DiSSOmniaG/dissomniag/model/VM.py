@@ -31,8 +31,7 @@ class VM(AbstractNode):
     vncPort = sa.Column(sa.String)
     vncPassword = sa.Column(sa.String(40))
     dynamicAptList = sa.Column(sa.String)
-    lastSeenClient = sa.Column(sa.DateTime
-                               )
+    lastSeenClient = sa.Column(sa.DateTime)
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))    # The characters to make up the random password
     host = orm.relationship("Host", primaryjoin = "VM.host_id == Host.host_id", backref = "virtualMachines")
