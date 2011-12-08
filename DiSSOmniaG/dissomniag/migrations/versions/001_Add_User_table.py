@@ -170,7 +170,7 @@ app_livecd = Table('app_livecd', meta,
            Column('app_id', Integer, ForeignKey('apps.id'), primary_key = True),
            Column('livecd_id', Integer, ForeignKey('livecds.id'), primary_key = True),
            Column('lastSeen', DateTime),
-           Column('state', String),
+           Column('state', Integer),
            Column('log', String),
 )
 

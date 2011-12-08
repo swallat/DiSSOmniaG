@@ -12,6 +12,7 @@ import sqlalchemy.orm as orm
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import ipaddr, random
 import xmlrpclib
+import datetime
 
 import dissomniag
 from dissomniag.model import *
@@ -103,7 +104,7 @@ class AppLiveCdRelation(dissomniag.Base):
     liveCd_id = sa.Column(sa.Integer, sa.ForeignKey('livecds.id'), primary_key = True)
     liveCd = orm.relationship("LiveCd", backref="AppLiveCdRelations")
     lastSeen = sa.Column(sa.DateTime)
-    state = sa.Column(sa.String)
+    state = sa.Column(sa.Integer)
     log = sa.Column(sa.String)
     
     def __init__(self, app, liveCd):
@@ -121,10 +122,11 @@ class AppLiveCdRelation(dissomniag.Base):
         except Exception:
             return self.liveCd.authUser(user)
     
-    def updateInfo(self, user, state, log):
+    def updateInfo(self, user, state, log = None):
         session = dissomniag.Session()
         
         self.authUser(user)
+        self.lastSeen = datetime.datetime.now()
         if AppState.isValid(state):
             self.state = state
             
@@ -140,8 +142,8 @@ class AppLiveCdRelation(dissomniag.Base):
         
         tree = self._addCommonInfoToTree(user, tree)
         
-        action = etree.SubElement(tree, "action")
-        action.text = str(action)
+        myAction = etree.SubElement(tree, "action")
+        myAction.text = str(action)
         return tree
     
     def _getAppAddInfo(self, user):
@@ -183,9 +185,10 @@ class AppLiveCdRelation(dissomniag.Base):
         
         if tagOrCommit != None:
             tagOrCommit = etree.SubElement(tree, "tagOrCommit")
-            tagOrCommit.text = str(scriptName)
+            tagOrCommit.text = str(tagOrCommit)
             
         xmlString = self._getXmlString(tree)
+        log.info(xmlString)
         
         proxy = self._getServerProxy(user)
         
@@ -217,8 +220,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createStartJob(self, user, scriptName = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("app", self.app)
-        context.add("liveCd", self.liveCd)
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
         context.scriptName = scriptName
         context.action = AppActions.START
         
@@ -229,8 +232,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createStopJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("app", self.app)
-        context.add("liveCd", self.liveCd)
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
         context.action = AppActions.STOP
         
         job = dissomniag.taskManager.Job(context, "Stop an App on a VM", user)
@@ -240,8 +243,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createCompileJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("app", self.app)
-        context.add("liveCd", self.liveCd)
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
         context.action = AppActions.COMPILE
         
         job = dissomniag.taskManager.Job(context, "Compile an App on a VM", user)
@@ -251,8 +254,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createResetJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("app", self.app)
-        context.add("liveCd", self.liveCd)
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
         context.action = AppActions.RESET
         
         job = dissomniag.taskManager.Job(context, "Reset an App on a VM", user)
@@ -262,8 +265,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createInterruptJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("app", self.app)
-        context.add("liveCd", self.liveCd)
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
         context.action = AppActions.INTERRUPT
         
         job = dissomniag.taskManager.Job(context, "Interrupt an App on a VM", user)
@@ -273,8 +276,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createRefreshGitJob(self, user, tagOrCommit = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("app", self.app)
-        context.add("liveCd", self.liveCd)
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
         context.tagOrCommit = tagOrCommit
         context.action = AppActions.REFRESH_GIT
         
@@ -285,8 +288,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createRefreshAndResetJob(self, user, tagOrCommit = None, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("app", self.app)
-        context.add("liveCd", self.liveCd)
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
         context.tagOrCommit = tagOrCommit
         context.action = AppActions.REFRESH_AND_RESET
         
@@ -297,8 +300,8 @@ class AppLiveCdRelation(dissomniag.Base):
     def createCloneJob(self, user, **kwargs):
         self.authUser(user)
         context = dissomniag.taskManager.Context()
-        context.add("app", self.app)
-        context.add("liveCd", self.liveCd)
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
         context.action = AppActions.CLONE
         
         job = dissomniag.taskManager.Job(context, "Clone an App on a VM", user)
