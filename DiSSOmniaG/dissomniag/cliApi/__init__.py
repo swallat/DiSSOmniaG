@@ -170,37 +170,41 @@ def delAppVm(*args):
     import ManageApps
     ManageApps.delAppVm().call(*args)
     
-def appReset(*args):
+def resetApp(*args):
     import ManageApps
-    ManageApps.appReset().call(*args)
+    ManageApps.resetApp().call(*args)
 
-def appCompile(*args):
+def compileApp(*args):
     import ManageApps
-    ManageApps.appCompile().call(*args)
+    ManageApps.compileApp().call(*args)
     
-def appStart(*args):
+def startApp(*args):
     import ManageApps
-    ManageApps.appStart().call(*args)
+    ManageApps.startApp().call(*args)
     
-def appStop(*args):
+def stopApp(*args):
     import ManageApps
-    ManageApps.appStop().call(*args)
+    ManageApps.stopApp().call(*args)
 
-def appInterrupt(*args):
+def interruptApp(*args):
     import ManageApps
-    ManageApps.appInterrupt().call(*args)
+    ManageApps.interruptApp().call(*args)
     
-def appRefreshGit(*args):
+def refreshGitApp(*args):
     import ManageApps
-    ManageApps.appRefreshGit().call(*args)
+    ManageApps.refreshGitApp().call(*args)
     
-def appRefreshAndReset(*args):
+def refreshAndResetApp(*args):
     import ManageApps
-    ManageApps.appRefreshAndReset().call(*args)
+    ManageApps.refreshAndResetApp().call(*args)
     
-def appClone(*args):
+def cloneApp(*args):
     import ManageApps
-    ManageApps.appClone().call(*args)
+    ManageApps.cloneApp().call(*args)
+    
+def cleanApp(*args):
+    import ManageApps
+    ManageApps.cleanApp().call(*args)
 
 def testSubprocess(terminal, user, *args):
     import sys

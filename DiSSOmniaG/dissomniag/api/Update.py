@@ -78,7 +78,7 @@ def updateAppInfo(user, appInfoXml):
     
     logElem = xml.find("log")
     myLog = None
-    if myLog != None:
+    if logElem != None:
         myLog = str(logElem.text)
     else:
         log.info("updateAppInfo: No log provided.")

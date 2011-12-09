@@ -365,6 +365,8 @@ class operateOnApp(dissomniag.taskManager.AtomicTask):
             self.multiLog("NoMaintainanceIp resolvable %s" % str(e), log)
             return dissomniag.taskManager.TaskFailed("NoMaintainanceIp resolvable .")
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             self.multiLog("Execute exception %s" % str(e), log)
             return dissomniag.taskManager.TaskFailed("Execute exception %s" % str(e))
         else:
@@ -377,4 +379,3 @@ class operateOnApp(dissomniag.taskManager.AtomicTask):
 
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS
-        pass

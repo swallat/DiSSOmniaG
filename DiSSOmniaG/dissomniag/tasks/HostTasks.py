@@ -36,7 +36,7 @@ class DeleteExistingVMsOnHost(dissomniag.taskManager.AtomicTask):
         
         oneFailed = False
         for vm in self.context.host.virtualMachines:
-            if not dissomniag.model.VM.deleteNode(vm):
+            if not dissomniag.model.VM.deleteNode(self.job.getUser(), vm):
                 oneFailed = True
                 self.job.trace("VM %s is not deletable by User %s" % (str(vm.commonName), str(self.job.getUser().username)))
                 

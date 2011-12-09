@@ -180,7 +180,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.UnrevertableFailure()
         
     def deleteOldDebianLiveFolders(self, patternFolder):
-        
+        #dissomniag.getRoot()
         folder = patternFolder
         if folder.endswith("/"):
             l = len(folder)

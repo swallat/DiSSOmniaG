@@ -59,11 +59,11 @@ class GitEventHandler(pyinotify.ProcessEvent):
                         app = session.query(dissomniag.model.App).filter(dissomniag.model.App.name == appName).one()
                         vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == branchName).one()
                         liveCd = vm.liveCd
-                        rel = session.query(dissomniag.model.AppLiveCdRelations).filter(dissomniag.model.AppLiveCdRelations.liveCd == liveCd).filter(dissomniag.model.AppLiveCdRelations.app == app).one()
+                        rel = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.liveCd == liveCd).filter(dissomniag.model.AppLiveCdRelation.app == app).one()
                         rel.createRefreshAndResetJob(dissomniag.getIdentity().getAdministrativeUser())
                         log.info("App %s auto git update executed on branch %s." % (appName, branchName))
                     except Exception as e:
-                        log.error("SKIPPED App %s auto git update executed on branch %s." % (appName, branchName))
+                        log.error("SKIPPED App %s auto git update executed on branch %s. Exception: %s" % (appName, branchName, str(e)))
                 except Exception as e:
                     log.error("process_GIT_EVENT: No valid request.")
         try:
@@ -677,14 +677,14 @@ branch = splittedBranch[len(splittedBranch)-1].strip()
 
 scriptSyncFolder = "%s"
 appName = "%s"
-filename = appName, "_", str(time.time())
+filename = "".join((appName, "_", str(time.time())))
 myFile = os.path.join(scriptSyncFolder, filename)
 
 try:
     with open(myFile, 'w') as f:
-        f.write(appName, " = ", branch, "\n")
+        f.write("".join((appName, " = ", branch, "")))
 except Exception as e:
-    print("Cannot write to file ", myFile, ". ", str(e))
+    print("".join(("Cannot write to file ", myFile, ". ", str(e))))
     
 sys.exit(0)
         """ % (dissomniag.config.git.scriptSyncFolder, appName))

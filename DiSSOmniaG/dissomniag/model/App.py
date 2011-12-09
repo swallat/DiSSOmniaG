@@ -13,6 +13,9 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 import ipaddr, random
 import xmlrpclib
 import datetime
+import logging
+
+log = logging.getLogger("model.App")
 
 import dissomniag
 from dissomniag.model import *
@@ -68,10 +71,11 @@ class AppActions:
     REFRESH_AND_RESET = 6
     CLONE = 7
     DELETE = 8
+    CLEAN = 9
     
     @staticmethod
     def isValid(appState):
-        if 0 <= appState < 9 and isinstance(appState, int):
+        if 0 <= appState < 10 and isinstance(appState, int):
             return True
     
         else:
@@ -97,6 +101,8 @@ class AppActions:
             return "CLONE"
         elif appState == AppActions.DELETE:
             return "DELETE"
+        elif appState == AppActions.CLEAN:
+            return "CLEAN"
 
 class AppLiveCdRelation(dissomniag.Base):
     __tablename__= 'app_livecd'
@@ -180,12 +186,12 @@ class AppLiveCdRelation(dissomniag.Base):
         tree = self._getActionXml(user, action)
         
         if scriptName != None:
-            scriptName = etree.SubElement(tree, "scriptName")
-            scriptName.text = str(scriptName)
+            scriptNameElem = etree.SubElement(tree, "scriptName")
+            scriptNameElem.text = str(scriptName)
         
         if tagOrCommit != None:
-            tagOrCommit = etree.SubElement(tree, "tagOrCommit")
-            tagOrCommit.text = str(tagOrCommit)
+            tagOrCommitElem = etree.SubElement(tree, "tagOrCommit")
+            tagOrCommitElem.text = str(tagOrCommit)
             
         xmlString = self._getXmlString(tree)
         log.info(xmlString)
@@ -308,6 +314,17 @@ class AppLiveCdRelation(dissomniag.Base):
         job.addTask(dissomniag.tasks.operateOnApp())
         return dissomniag.taskManager.Dispatcher.addJob(user, job)
     
+    def createCleanJob(self, user, **kwargs):
+        self.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(self.app, "app")
+        context.add(self.liveCd, "liveCd")
+        context.action = AppActions.CLEAN
+        
+        job = dissomniag.taskManager.Job(context, "Clean an App on a VM", user)
+        job.addTask(dissomniag.tasks.operateOnApp())
+        return dissomniag.taskManager.Dispatcher.addJob(user, job)
+    
     @staticmethod
     def createRelation(user, app, liveCd):
         if app.authUser(user) and liveCd.authUser(user):
@@ -421,6 +438,8 @@ class App(dissomniag.Base):
                 rel.createRefreshAndResetJob(user, **kwargs)
             elif action == AppActions.CLONE:
                 rel.createCloneJob(user, **kwargs)
+            elif action == AppActions.CLEAN:
+                rel.createCleanJob(user, **kwargs)
             else:
                 continue
             doneOne = True
@@ -456,7 +475,7 @@ class App(dissomniag.Base):
         
         #1. Delete all Relations
         for rel in app.AppLiveCdRelations:
-            AppLiveCdRelation.deleteRelation(user, app, totalDeleteApp = True, triggerPush = False)
+            AppLiveCdRelation.deleteRelation(user, rel, totalDeleteApp = True, triggerPush = False)
             
         context = dissomniag.taskManager.Context()
         context.add(app, "app")

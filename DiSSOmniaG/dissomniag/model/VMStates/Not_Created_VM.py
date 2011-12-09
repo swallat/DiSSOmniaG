@@ -83,7 +83,7 @@ class Not_Created_VM(AbstractVMState):
                 # Check if folder for image exists
                 if not os.access(self.vm.getLocalUtilityFolder(job.getUser()), os.F_OK):
                     os.makedirs(self.vm.getLocalUtilityFolder(job.getUser()))
-                    
+                dissomniag.getRoot()
                 shutil.copy2("./binary.iso", self.vm.getLocalPathToCdImage(job.getUser()))
                 
                 with open(os.path.join(self.vm.getLocalUtilityFolder(job.getUser()), "configHash"), 'w') as f:

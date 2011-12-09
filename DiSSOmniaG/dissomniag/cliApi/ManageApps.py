@@ -518,7 +518,7 @@ class AbstractAppAction(CliMethodABCClass.CliMethodABCClass):
         else:
             return ret
         
-class appCompile(AbstractAppAction):
+class compileApp(AbstractAppAction):
     
     def msg(self):
         return "Compile an App."
@@ -529,7 +529,7 @@ class appCompile(AbstractAppAction):
     def name(self):
         return "appCompile"
         
-class appStop(AbstractAppAction):
+class stopApp(AbstractAppAction):
     
     def msg(self):
         return "Stop an App."
@@ -540,7 +540,7 @@ class appStop(AbstractAppAction):
     def name(self):
         return "appStop"
         
-class appStart(AbstractAppAction):
+class startApp(AbstractAppAction):
     
     def msg(self):
         return "Start an App."
@@ -551,7 +551,7 @@ class appStart(AbstractAppAction):
     def name(self):
         return "appStart"
         
-class appClone(AbstractAppAction):
+class cloneApp(AbstractAppAction):
     
     def msg(self):
         return "Clone an App."
@@ -562,7 +562,7 @@ class appClone(AbstractAppAction):
     def name(self):
         return "appClone"
 
-class appInterrupt(AbstractAppAction):
+class interruptApp(AbstractAppAction):
     
     def msg(self):
         return "Interrupt an App."
@@ -573,7 +573,7 @@ class appInterrupt(AbstractAppAction):
     def name(self):
         return "appInterrupt"
         
-class appReset(AbstractAppAction):
+class resetApp(AbstractAppAction):
     
     def msg(self):
         return "Reset an App."
@@ -584,7 +584,7 @@ class appReset(AbstractAppAction):
     def name(self):
         return "appReset"
         
-class appRefreshGit(AbstractAppAction):
+class refreshGitApp(AbstractAppAction):
     
     def msg(self):
         return "Refresh Git repo on an App."
@@ -595,7 +595,7 @@ class appRefreshGit(AbstractAppAction):
     def name(self):
         return "appRefreshGit"
         
-class appRefreshAndReset(AbstractAppAction):
+class refreshAndResetApp(AbstractAppAction):
     
     def msg(self):
         return "Refresh and reset an App."
@@ -605,3 +605,14 @@ class appRefreshAndReset(AbstractAppAction):
     
     def name(self):
         return "appRefreshAndReset"
+    
+class cleanApp(AbstractAppAction):
+    
+    def msg(self):
+        return "Clean an App."
+    
+    def action(self):
+        return dissomniag.model.AppActions.CLEAN
+    
+    def name(self):
+        return "cleanApp"
