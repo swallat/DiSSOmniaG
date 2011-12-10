@@ -194,7 +194,7 @@ class AppLiveCdRelation(dissomniag.Base):
             tagOrCommitElem.text = str(tagOrCommit)
             
         xmlString = self._getXmlString(tree)
-        log.info(xmlString)
+        #log.info(xmlString)
         
         proxy = self._getServerProxy(user)
         
@@ -429,7 +429,7 @@ class App(dissomniag.Base):
             elif action == AppActions.COMPILE:
                 rel.createCompileJob(user, **kwargs)
             elif action == AppActions.RESET:
-                rel.createResetJob
+                rel.createResetJob(user, **kwargs)
             elif action == AppActions.INTERRUPT:
                 rel.createInterruptJob(user, **kwargs)
             elif action == AppActions.REFRESH_GIT:

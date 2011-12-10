@@ -4,7 +4,12 @@ Created on 01.11.2011
 @author: Sebastian Wallat
 '''
 from abc import ABCMeta, abstractmethod
+
 import dissomniag
+
+import logging
+
+log = logging.getLogger("model.VMStates.AbstractVMState")
 
 class AbstractVMState():
     __metaclass__ = ABCMeta
@@ -12,6 +17,7 @@ class AbstractVMState():
     def __init__(self, vm, liveCd):
         self.vm = vm
         self.liveCd = liveCd
+        #log.info("In AbstractVMState.__init__() vm: %s, liveCd: %s" % (str(self.vm), str(self.liveCd)))
         
     @abstractmethod
     def test(self, job):

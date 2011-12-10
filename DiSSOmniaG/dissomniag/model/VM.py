@@ -110,7 +110,9 @@ class VM(AbstractNode):
         self.preparedState = dissomniag.model.VMStates.Prepared_VM(self, self.liveCd)
         self.runtimeErrorState = dissomniag.model.VMStates.Runtime_Error_VM(self, self.liveCd)
         self.changeState(self.state)
+        #log.info("in select Initial State Actor")
         # The characters to make up the random password
+        
     def __init__(self, user, commonName, host):
         
         if host != None and isinstance(host, dissomniag.model.Host):
