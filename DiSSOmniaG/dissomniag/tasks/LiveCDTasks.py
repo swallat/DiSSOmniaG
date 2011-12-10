@@ -22,27 +22,25 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
         
         #1. Check if Utility Folder exists
         if not os.access(dissomniag.config.dissomniag.utilityFolder, os.F_OK):
-            try:
-                dissomniag.getRoot()
-                os.makedirs(dissomniag.config.dissomniag.utilityFolder)
-                os.chown(dissomniag.config.dissomniag.utilityFolder,
-                         dissomniag.config.dissomniag.userId,
-                         dissomniag.config.dissomniag.groupId)
-                os.makedirs(dissomniag.config.dissomniag.serverFolder)
-                os.chown(dissomniag.config.dissomniag.serverFolder,
-                         dissomniag.config.dissomniag.userId,
-                         dissomniag.config.dissomniag.groupId)
-                os.makedirs(dissomniag.config.dissomniag.vmsFolder)
-                os.chown(dissomniag.config.dissomniag.vmsFolder,
-                         dissomniag.config.dissomniag.userId,
-                         dissomniag.config.dissomniag.groupId)
-            except OSError, e:
-                self.infoObj.errorInfo.append("Could not create utility folder. %s" % e)
-                self.infoObj.usable = False
-                self.job.trace(self.infoObj.getErrorInfo())
-                raise dissomniag.taskManager.UnrevertableFailure()
-            finally:
-                dissomniag.resetPermissions()
+            with dissomniag.rootContext():
+                try:
+                    os.makedirs(dissomniag.config.dissomniag.utilityFolder)
+                    os.chown(dissomniag.config.dissomniag.utilityFolder,
+                             dissomniag.config.dissomniag.userId,
+                             dissomniag.config.dissomniag.groupId)
+                    os.makedirs(dissomniag.config.dissomniag.serverFolder)
+                    os.chown(dissomniag.config.dissomniag.serverFolder,
+                             dissomniag.config.dissomniag.userId,
+                             dissomniag.config.dissomniag.groupId)
+                    os.makedirs(dissomniag.config.dissomniag.vmsFolder)
+                    os.chown(dissomniag.config.dissomniag.vmsFolder,
+                             dissomniag.config.dissomniag.userId,
+                             dissomniag.config.dissomniag.groupId)
+                except OSError, e:
+                    self.infoObj.errorInfo.append("Could not create utility folder. %s" % e)
+                    self.infoObj.usable = False
+                    self.job.trace(self.infoObj.getErrorInfo())
+                    raise dissomniag.taskManager.UnrevertableFailure()
             
         #2 Check if Utility Folder is writable
         if not os.access(dissomniag.config.dissomniag.utilityFolder, os.W_OK):
@@ -71,34 +69,31 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
             raise dissomniag.taskManager.UnrevertableFailure()
         
         #4. Check if all utilities to create live cd's are installed. Try to install them.
-        dissomniag.getRoot()
-        cache = apt.Cache()
-        
-        execInstall = False
-        try:
-            liveBuild = cache["live-build"]
-            if not liveBuild.is_installed:
-                liveBuild.markInstall()
-                execInstall = True
-        except KeyError:
-            self.infoObj.errorInfo.append("A apt package is not available!")
-            self.infoObj.usable = False
-            self.job.trace(self.infoObj.getErrorInfo())
-            dissomniag.resetPermissions()
-            raise dissomniag.taskManager.UnrevertableFailure()
+        with dissomniag.rootContext():
+            cache = apt.Cache()
             
-        if execInstall:
-            if cache.commit(apt.progress.TextFetchProgress(),
-                         apt.progress.InstallProgress()):
-                self.infoObj.usable = True
-                dissomniag.resetPermissions()
-                return dissomniag.taskManager.TaskReturns.SUCCESS
-            else:
-                self.infoObj.error.append("Installation Error!")
+            execInstall = False
+            try:
+                liveBuild = cache["live-build"]
+                if not liveBuild.is_installed:
+                    liveBuild.markInstall()
+                    execInstall = True
+            except KeyError:
+                self.infoObj.errorInfo.append("A apt package is not available!")
                 self.infoObj.usable = False
                 self.job.trace(self.infoObj.getErrorInfo())
-                dissomniag.resetPermissions()
                 raise dissomniag.taskManager.UnrevertableFailure()
+                
+            if execInstall:
+                if cache.commit(apt.progress.TextFetchProgress(),
+                             apt.progress.InstallProgress()):
+                    self.infoObj.usable = True
+                    return dissomniag.taskManager.TaskReturns.SUCCESS
+                else:
+                    self.infoObj.error.append("Installation Error!")
+                    self.infoObj.usable = False
+                    self.job.trace(self.infoObj.getErrorInfo())
+                    raise dissomniag.taskManager.UnrevertableFailure()
     
     def revert(self):
         raise dissomniag.taskManager.UnrevertableFailure()
@@ -164,7 +159,6 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             except OSError, e:
                 self.multiLog("Could not delete Pattern folder. %s" % e)
                 self.infoObj.usable = False
-                dissomniag.resetPermissions()
                 raise dissomniag.taskManager.UnrevertableFailure()
                 
             
@@ -176,11 +170,9 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         except OSError, e:
             self.multiLog("Could not create LiveCD pattern folder. %s" % e)
             self.infoObj.usable = False
-            dissomniag.resetPermissions()
             raise dissomniag.taskManager.UnrevertableFailure()
         
     def deleteOldDebianLiveFolders(self, patternFolder):
-        #dissomniag.getRoot()
         folder = patternFolder
         if folder.endswith("/"):
             l = len(folder)
@@ -239,28 +231,28 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
     def cleanUp(self):
         
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
-        dissomniag.getRoot()
         
-        self.stageDir = os.path.join(self.patternFolder, ".stage")
-        self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes")
-        
-        if self.binLocalInc.endswith("/"):
-            cmd = "rm -rf %s/*" % self.binLocalInc
-        else:
-            cmd = "rm -rf %s*" % self.binLocalInc
-        self.multiLog("exec %s" % cmd, log)
-        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-        if ret != 0:
-            self.multiLog("Could not exec %s correctly" % cmd, log)
-        
-        if self.stageDir.endswith("/"):
-            cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
-        else:
-            cmd = "rm %s/binary_iso %s/binary_checksums %s/binary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
-        self.multiLog("exec %s" % cmd, log)
-        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-        if ret != 0:
-            self.multiLog("Could not exec %s correctly" % cmd, log)
+        with dissomniag.rootContext():
+            self.stageDir = os.path.join(self.patternFolder, ".stage")
+            self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes")
+            
+            if self.binLocalInc.endswith("/"):
+                cmd = "rm -rf %s/*" % self.binLocalInc
+            else:
+                cmd = "rm -rf %s*" % self.binLocalInc
+            self.multiLog("exec %s" % cmd, log)
+            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            if ret != 0:
+                self.multiLog("Could not exec %s correctly" % cmd, log)
+            
+            if self.stageDir.endswith("/"):
+                cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+            else:
+                cmd = "rm %s/binary_iso %s/binary_checksums %s/binary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+            self.multiLog("exec %s" % cmd, log)
+            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            if ret != 0:
+                self.multiLog("Could not exec %s correctly" % cmd, log)
         
         
         
@@ -276,146 +268,141 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         #    False: just create it
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder,
                                 dissomniag.config.dissomniag.liveCdPatternDirectory)
-        dissomniag.getRoot()
-
         
-        self.checkIfPatternFolderExists()
+        with dissomniag.rootContext():
         
-        try:
-            #3. Change current working Directory
-            if not dissomniag.chDir(self.patternFolder):
-                self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
-                dissomniag.resetPermissions()
-                raise dissomniag.taskManager.TaskFailed()
+            self.checkIfPatternFolderExists()
             
-            self.deleteOldDebianLiveFolders(self.patternFolder)
-            
-            #2. Create File Lock for Pattern environment
-            self.lockFile = os.path.join(self.patternFolder,
-                                         dissomniag.config.dissomniag.patternLockFile)
-            self.mylock = lockfile.FileLock(self.lockFile, threaded = True)
-            
-            with self.mylock:
-                
-                #3a. Make auto Directory and link config files
-                self.autoFolder = os.path.join(self.patternFolder, "auto/")
-                try:
-                    os.makedirs(self.autoFolder)
-                except OSError:
-                    self.multiLog("Cannot create AutoFolder")
+            try:
+                #3. Change current working Directory
+                if not dissomniag.chDir(self.patternFolder):
+                    self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
                     raise dissomniag.taskManager.TaskFailed()
                 
-                staticAutoFolder = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "auto")
-                infiles = os.listdir(staticAutoFolder)
-                for myfile in infiles:
-                    try:
-                        #print os.path.join(staticAutoFolder, myfile)
-                        #print os.path.join(self.autoFolder, myfile)
-                        os.symlink(os.path.join(staticAutoFolder, myfile), os.path.join(self.autoFolder, myfile))
-                    except OSError:
-                        self.multiLog("Cannot Symlink %s" % myfile , log)
-                        if myfile == "config":
-                            raise dissomniag.taskManager.TaskFailed()
-                        
-                #3b. Create initial stucture
-                cmd = "lb config"
-                self.multiLog("running %s" % cmd)
-                ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-                if ret != 0:
-                    self.multiLog("LB Config error")
-                    dissomniag.resetPermissions()
-                    raise dissomniag.taskManager.TaskFailed()
+                self.deleteOldDebianLiveFolders(self.patternFolder)
                 
-                #3c. Copy dissomniag packagelist
-                packageListFile = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "packagesLists/dissomniag.list")
-                chrootLocalPackagesListFolder = os.path.join(self.patternFolder, "config/chroot_local-packageslists")
-                try:
-                    os.symlink(os.path.abspath(packageListFile), os.path.join(chrootLocalPackagesListFolder, "dissomniag.list"))
-                except OSError:
-                    self.multiLog("Cannot Symlink dissomniag.list")
-                    raise dissomniag.taskManager.TaskFailed()
+                #2. Create File Lock for Pattern environment
+                self.lockFile = os.path.join(self.patternFolder,
+                                             dissomniag.config.dissomniag.patternLockFile)
+                self.mylock = lockfile.FileLock(self.lockFile, threaded = True)
                 
-                #3d. Copy all chroot_local files
-                chrootLocalFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "chroot_local-includes")
-                listings = os.listdir(chrootLocalFilesDir)
-                for infile in listings:
-                    try:
-                        shutil.copytree(os.path.join(chrootLocalFilesDir, infile), os.path.join(self.patternFolder, "config/chroot_local-includes/" + infile), symlinks = True)
-                    except OSError:
-                        src = os.path.join(chrootLocalFilesDir, infile)
-                        dst = os.path.join(self.patternFolder, "config/chroot_local-includes/" + infile)
-                        self.multiLog("Cannot copy an chroot_local-include, src= %s , dst= %s" % (src,dst), log)
-                
-                #3e. Copy all chroot_local hooks
-                hooksFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "hooks")
-                listings = os.listdir(hooksFilesDir)
-                for infile in listings:
-                    try:
-                        shutil.copy2(os.path.join(hooksFilesDir, infile), os.path.join(self.patternFolder, "config/chroot_local-hooks/"))
-                    except OSError:
-                        self.multiLog("Cannot copy an chroot_local-hook")
-                
-                #4. Install Live Daemon
-                
-                self.installLiveDaemon(self.patternFolder)
-                
-                #5. Copy needed files. (like OMNeT binaries)
-                
-                self.installOmnet(self.patternFolder)
-                  
-                #6. Init debian live environment
-                cmd = "lb config"
-                self.multiLog("running %s" % cmd)
-                ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-                if ret != 0:
-                    self.multiLog("LB Config error")
-                    dissomniag.resetPermissions()
-                    raise dissomniag.taskManager.TaskFailed() 
-                
-                #7. Make initial Build
-                # Try 10 times (Solves some repository connection timeout problems)
-                cmd = "lb build"
-                self.multiLog("Make initial Build", log)
-                success = False
-                for i in range(1, 11):
-                    if self.job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
-                        self.multiLog("Job cancelled. Initial LivdCD build failed.")
-                        raise dissomniag.taskManager.TaskFailed("Job cancelled. Initial LivdCD build failed.")
+                with self.mylock:
                     
+                    #3a. Make auto Directory and link config files
+                    self.autoFolder = os.path.join(self.patternFolder, "auto/")
+                    try:
+                        os.makedirs(self.autoFolder)
+                    except OSError:
+                        self.multiLog("Cannot create AutoFolder")
+                        raise dissomniag.taskManager.TaskFailed()
+                    
+                    staticAutoFolder = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "auto")
+                    infiles = os.listdir(staticAutoFolder)
+                    for myfile in infiles:
+                        try:
+                            #print os.path.join(staticAutoFolder, myfile)
+                            #print os.path.join(self.autoFolder, myfile)
+                            os.symlink(os.path.join(staticAutoFolder, myfile), os.path.join(self.autoFolder, myfile))
+                        except OSError:
+                            self.multiLog("Cannot Symlink %s" % myfile , log)
+                            if myfile == "config":
+                                raise dissomniag.taskManager.TaskFailed()
+                            
+                    #3b. Create initial stucture
+                    cmd = "lb config"
+                    self.multiLog("running %s" % cmd)
                     ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
                     if ret != 0:
-                        self.multiLog("Initial LiveCD build failed. Retry %d" % i, log)
-                        continue
-                    else:
-                        success = True
-                        break
-                if not success:
-                    self.multiLog("Initial LiveCD build failed finally.", log)
-                    raise dissomniag.taskManager.TaskFailed("Initial LiveCD build failed finally.")
-
-                #7. Mark environment as Prepared
-                preparedFile = os.path.join(self.patternFolder, "CHECKED")
-                myFile = open(preparedFile, 'w')
-                myFile.write("CHECKED")
-                myFile.close()
-                self.infoObj.usable = True
-                self.infoObj.prepared = True
-                self.returnSuccess()
-        finally:
-                if not dissomniag.resetDir():
-                    self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
-                dissomniag.resetPermissions()
-                
-                self.cleanUp()
+                        self.multiLog("LB Config error")
+                        raise dissomniag.taskManager.TaskFailed()
+                    
+                    #3c. Copy dissomniag packagelist
+                    packageListFile = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "packagesLists/dissomniag.list")
+                    chrootLocalPackagesListFolder = os.path.join(self.patternFolder, "config/chroot_local-packageslists")
+                    try:
+                        os.symlink(os.path.abspath(packageListFile), os.path.join(chrootLocalPackagesListFolder, "dissomniag.list"))
+                    except OSError:
+                        self.multiLog("Cannot Symlink dissomniag.list")
+                        raise dissomniag.taskManager.TaskFailed()
+                    
+                    #3d. Copy all chroot_local files
+                    chrootLocalFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "chroot_local-includes")
+                    listings = os.listdir(chrootLocalFilesDir)
+                    for infile in listings:
+                        try:
+                            shutil.copytree(os.path.join(chrootLocalFilesDir, infile), os.path.join(self.patternFolder, "config/chroot_local-includes/" + infile), symlinks = True)
+                        except OSError:
+                            src = os.path.join(chrootLocalFilesDir, infile)
+                            dst = os.path.join(self.patternFolder, "config/chroot_local-includes/" + infile)
+                            self.multiLog("Cannot copy an chroot_local-include, src= %s , dst= %s" % (src,dst), log)
+                    
+                    #3e. Copy all chroot_local hooks
+                    hooksFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "hooks")
+                    listings = os.listdir(hooksFilesDir)
+                    for infile in listings:
+                        try:
+                            shutil.copy2(os.path.join(hooksFilesDir, infile), os.path.join(self.patternFolder, "config/chroot_local-hooks/"))
+                        except OSError:
+                            self.multiLog("Cannot copy an chroot_local-hook")
+                    
+                    #4. Install Live Daemon
+                    
+                    self.installLiveDaemon(self.patternFolder)
+                    
+                    #5. Copy needed files. (like OMNeT binaries)
+                    
+                    self.installOmnet(self.patternFolder)
+                      
+                    #6. Init debian live environment
+                    cmd = "lb config"
+                    self.multiLog("running %s" % cmd)
+                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    if ret != 0:
+                        self.multiLog("LB Config error")
+                        raise dissomniag.taskManager.TaskFailed() 
+                    
+                    #7. Make initial Build
+                    # Try 10 times (Solves some repository connection timeout problems)
+                    cmd = "lb build"
+                    self.multiLog("Make initial Build", log)
+                    success = False
+                    for i in range(1, 11):
+                        if self.job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
+                            self.multiLog("Job cancelled. Initial LivdCD build failed.")
+                            raise dissomniag.taskManager.TaskFailed("Job cancelled. Initial LivdCD build failed.")
+                        
+                        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                        if ret != 0:
+                            self.multiLog("Initial LiveCD build failed. Retry %d" % i, log)
+                            continue
+                        else:
+                            success = True
+                            break
+                    if not success:
+                        self.multiLog("Initial LiveCD build failed finally.", log)
+                        raise dissomniag.taskManager.TaskFailed("Initial LiveCD build failed finally.")
+    
+                    #7. Mark environment as Prepared
+                    preparedFile = os.path.join(self.patternFolder, "CHECKED")
+                    myFile = open(preparedFile, 'w')
+                    myFile.write("CHECKED")
+                    myFile.close()
+                    self.infoObj.usable = True
+                    self.infoObj.prepared = True
+                    self.returnSuccess()
+            finally:
+                    if not dissomniag.resetDir():
+                        self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
+                    
+                    self.cleanUp()
 
     def revert(self):
         
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder,
                                 dissomniag.config.dissomniag.liveCdPatternDirectory)
         self.chrootFolder = os.path.join(self.patternFolder, "chroot")
-        dissomniag.getRoot()
-        self.cleanUp()
-        dissomniag.resetPermissions()
+        with dissomniag.rootContext():
+            self.cleanUp()
         return dissomniag.taskManager.TaskReturns.SUCCESS
 
 
@@ -424,31 +411,31 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
     def cleanUp(self):
         
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
-        dissomniag.getRoot()
         
-        self.stageDir = os.path.join(self.patternFolder, ".stage")
-        self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes/")
+        with dissomniag.rootContext():
         
-        try:
-            shutil.rmtree(self.binLocalInc)
-        except (OSError, IOError) as e:
-            pass
+            self.stageDir = os.path.join(self.patternFolder, ".stage")
+            self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes/")
             
-        try:
-            os.makedirs(self.binLocalInc)
-        except (OSError, IOError) as e:
-            self.multiLog("Cannot recreate %s" % self.binLocalInc)
-
-        
-        if self.stageDir.endswith("/"):
-            cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
-        else:
-            cmd = "rm %s/binary_iso %s/binary_checksums %s/binary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
-        self.multiLog("exec %s" % cmd, log)
-        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-        if ret != 0:
-            self.multiLog("Could not exec %s correctly" % cmd, log)
-        dissomniag.resetPermissions()
+            try:
+                shutil.rmtree(self.binLocalInc)
+            except (OSError, IOError) as e:
+                pass
+                
+            try:
+                os.makedirs(self.binLocalInc)
+            except (OSError, IOError) as e:
+                self.multiLog("Cannot recreate %s" % self.binLocalInc)
+    
+            
+            if self.stageDir.endswith("/"):
+                cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+            else:
+                cmd = "rm %s/binary_iso %s/binary_checksums %s/binary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+            self.multiLog("exec %s" % cmd, log)
+            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            if ret != 0:
+                self.multiLog("Could not exec %s correctly" % cmd, log)
     
     def run(self):
         if (not hasattr(self.context, "LiveCd")):
@@ -463,73 +450,70 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder,
                                 dissomniag.config.dissomniag.liveCdPatternDirectory)
         
-        dissomniag.getRoot()
+        with dissomniag.rootContext():
         
-        
-        try:
-            
-            if not dissomniag.chDir(self.patternFolder):
-                self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
-                dissomniag.resetPermissions()
-                raise dissomniag.taskManager.TaskFailed()
-            
-            self.lockFile = os.path.join(self.patternFolder,
-                                         dissomniag.config.dissomniag.patternLockFile)
-            self.mylock = lockfile.FileLock(self.lockFile, threaded = True)
-            
-            with self.myLock:
+            try:
                 
-                # 1. Copy infoXML
-                
-                self.versioningHash, self.liveInfoString = self.context.VM.getInfoXMLwithVersionongHash(self.job.getUser())
-                
-                with open("./config/binary_local-includes/liveInfo.xml") as f:
-                    f.write(self.liveInfoString)
-                    
-                    
-                ###
-                #ToDo: At other thinks to binary include like Predefined Apps
-                ###
-                
-                #2. Make initial Build
-                # Try 10 times (Solves some repository connection timeout problems)
-                cmd = "lb build"
-                self.multiLog("Make initial Build", log)
-                success = False
-                for i in range(1, 11):
-                    if self.job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
-                        self.multiLog("Job cancelled. Initial LivdCD build failed.")
-                        raise dissomniag.taskManager.TaskFailed("Job cancelled. Initial LivdCD build failed.")
-                    
-                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-                    if ret != 0:
-                        self.multiLog("Initial LiveCD build failed. Retry %d" % i, log)
-                        continue
-                    else:
-                        success = True
-                        break
-                if not success:
-                    self.multiLog("Initial LiveCD build failed finally.", log)
-                    raise dissomniag.taskManager.TaskFailed("Initial LiveCD build failed finally.")
-                
-                #3. Copy iso to final Folder
-                # Check if folder for image exists
-                if not os.access(self.context.LiveCd.vm.getUtilityFolder(), os.F_OK):
-                    os.makedirs(self.context.LiveCd.vm.getUtilityFolder())
-                    
-                shutil.copy2("./binary.iso", self.context.LiveCd.vm.getLocalPathToCdImage(self.job.getUser()))
-                
-                with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash"), 'w') as f:
-                    f.write(self.versioningHash)
-                
-                self.context.LiveCd.imageCreated = True
-            
-        finally:
-                if not dissomniag.resetDir():
+                if not dissomniag.chDir(self.patternFolder):
                     self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
-                dissomniag.resetPermissions()
+                    raise dissomniag.taskManager.TaskFailed()
                 
-                self.cleanUp()
+                self.lockFile = os.path.join(self.patternFolder,
+                                             dissomniag.config.dissomniag.patternLockFile)
+                self.mylock = lockfile.FileLock(self.lockFile, threaded = True)
+                
+                with self.myLock:
+                    
+                    # 1. Copy infoXML
+                    
+                    self.versioningHash, self.liveInfoString = self.context.VM.getInfoXMLwithVersionongHash(self.job.getUser())
+                    
+                    with open("./config/binary_local-includes/liveInfo.xml") as f:
+                        f.write(self.liveInfoString)
+                        
+                        
+                    ###
+                    #ToDo: At other thinks to binary include like Predefined Apps
+                    ###
+                    
+                    #2. Make initial Build
+                    # Try 10 times (Solves some repository connection timeout problems)
+                    cmd = "lb build"
+                    self.multiLog("Make initial Build", log)
+                    success = False
+                    for i in range(1, 11):
+                        if self.job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
+                            self.multiLog("Job cancelled. Initial LivdCD build failed.")
+                            raise dissomniag.taskManager.TaskFailed("Job cancelled. Initial LivdCD build failed.")
+                        
+                        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                        if ret != 0:
+                            self.multiLog("Initial LiveCD build failed. Retry %d" % i, log)
+                            continue
+                        else:
+                            success = True
+                            break
+                    if not success:
+                        self.multiLog("Initial LiveCD build failed finally.", log)
+                        raise dissomniag.taskManager.TaskFailed("Initial LiveCD build failed finally.")
+                    
+                    #3. Copy iso to final Folder
+                    # Check if folder for image exists
+                    if not os.access(self.context.LiveCd.vm.getUtilityFolder(), os.F_OK):
+                        os.makedirs(self.context.LiveCd.vm.getUtilityFolder())
+                        
+                    shutil.copy2("./binary.iso", self.context.LiveCd.vm.getLocalPathToCdImage(self.job.getUser()))
+                    
+                    with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash"), 'w') as f:
+                        f.write(self.versioningHash)
+                    
+                    self.context.LiveCd.imageCreated = True
+                
+            finally:
+                    if not dissomniag.resetDir():
+                        self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
+                    
+                    self.cleanUp()
         
         return dissomniag.taskManager.TaskReturns.SUCCESS
             

@@ -26,13 +26,11 @@ class DeleteAppFinally(dissomniag.taskManager.AtomicTask):
         
         self.deleted = True
         pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % self.context.app.name)
-        try:
-            dissomniag.getRoot()
-            shutil.rmtree(pathToRepository)
-        except Exception as e:
-            self.multiLog("Cannot delete local Repository %s %s" % (str(e), pathToRepository), log)
-        finally:
-            dissomniag.resetPermissions()
+        with dissomniag.rootContext():
+            try:
+                shutil.rmtree(pathToRepository)
+            except Exception as e:
+                self.multiLog("Cannot delete local Repository %s %s" % (str(e), pathToRepository), log)
             
         session = dissomniag.Session()
         session.delete(self.context.app)
@@ -71,17 +69,15 @@ class DeleteAppLiveCdRelation(dissomniag.taskManager.AtomicTask):
         pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % appLiveCdRel.app.name)
         branchName = self.context.liveCd.vm.commonName
         
-        try:
-            dissomniag.getRoot()
-            repo = git.Repo(pathToRepository)
-            if branchName in repo.heads:
-                #repo.delete_head(branchName)
-                repo.git.branch("-D", branchName)
-        except Exception as e:
-            self.multiLog("Cannot delete branch in Revert %s" % str(e), log)
-            raise dissomniag.taskManager.TaskFailed("Cannot delete branch in Revert %s" % str(e))
-        finally:
-            dissomniag.resetPermissions()
+        with dissomniag.rootContext():
+            try:
+                repo = git.Repo(pathToRepository)
+                if branchName in repo.heads:
+                    #repo.delete_head(branchName)
+                    repo.git.branch("-D", branchName)
+            except Exception as e:
+                self.multiLog("Cannot delete branch in Revert %s" % str(e), log)
+                raise dissomniag.taskManager.TaskFailed("Cannot delete branch in Revert %s" % str(e))
         
         self.deleted = True
         session = dissomniag.Session()
@@ -113,16 +109,14 @@ class DeleteAppLiveCdRelation(dissomniag.taskManager.AtomicTask):
         pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % appLiveCdRel.app.name)
         branchName = self.context.liveCd.vm.commonName
         
-        try:
-            dissomniag.getRoot()
-            repo = git.Repo(pathToRepository)
-            if not branchName in repo.heads:
-                repo.create_head(branchName)
-        except Exception as e:
-            self.multiLog("Cannot create branch %s" % str(e), log)
-            raise dissomniag.taskManager.TaskFailed("Cannot create branch %s" % str(e))
-        finally:
-            dissomniag.resetPermissions()
+        with dissomniag.rootContext():
+            try:
+                repo = git.Repo(pathToRepository)
+                if not branchName in repo.heads:
+                    repo.create_head(branchName)
+            except Exception as e:
+                self.multiLog("Cannot create branch %s" % str(e), log)
+                raise dissomniag.taskManager.TaskFailed("Cannot create branch %s" % str(e))
         
         return dissomniag.taskManager.TaskReturns.SUCCESS
         
@@ -181,16 +175,14 @@ class AddAppBranch(dissomniag.taskManager.AtomicTask):
         pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % appLiveCdRel.app.name)
         branchName = self.context.liveCd.vm.commonName
         
-        try:
-            dissomniag.getRoot()
-            repo = git.Repo(pathToRepository)
-            if not branchName in repo.heads:
-                repo.create_head(branchName)
-        except Exception as e:
-            self.multiLog("Cannot create branch %s" % str(e), log)
-            raise dissomniag.taskManager.TaskFailed("Cannot create branch %s" % str(e))
-        finally:
-            dissomniag.resetPermissions()
+        with dissomniag.rootContext():
+            try:
+                repo = git.Repo(pathToRepository)
+                if not branchName in repo.heads:
+                    repo.create_head(branchName)
+            except Exception as e:
+                self.multiLog("Cannot create branch %s" % str(e), log)
+                raise dissomniag.taskManager.TaskFailed("Cannot create branch %s" % str(e))
         
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
@@ -217,17 +209,15 @@ class AddAppBranch(dissomniag.taskManager.AtomicTask):
         pathToRepository = os.path.join(dissomniag.config.git.pathToGitRepositories, ("%s.git") % appLiveCdRel.app.name)
         branchName = self.context.liveCd.vm.commonName
         
-        try:
-            dissomniag.getRoot()
-            repo = git.Repo(pathToRepository)
-            if branchName in repo.heads:
-                #repo.delete_head(branchName)
-                repo.git.branch("-D", branchName)
-        except Exception as e:
-            self.multiLog("Cannot delete branch in Revert %s" % str(e), log)
-            raise dissomniag.taskManager.TaskFailed("Cannot delete branch in Revert %s" % str(e))
-        finally:
-            dissomniag.resetPermissions()
+        with dissomniag.rootContext():
+            try:
+                repo = git.Repo(pathToRepository)
+                if branchName in repo.heads:
+                    #repo.delete_head(branchName)
+                    repo.git.branch("-D", branchName)
+            except Exception as e:
+                self.multiLog("Cannot delete branch in Revert %s" % str(e), log)
+                raise dissomniag.taskManager.TaskFailed("Cannot delete branch in Revert %s" % str(e))
         
         return dissomniag.taskManager.TaskReturns.SUCCESS
             

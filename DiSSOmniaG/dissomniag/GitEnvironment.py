@@ -36,15 +36,13 @@ class GitEventHandler(pyinotify.ProcessEvent):
         time.sleep(1)
         
         lines = None
-        try:
-            dissomniag.getRoot()
-            with open(filename, 'r') as f:
-                lines = f.readlines()
-        except Exception as e:
-            log.error("GitEventHandler: Cannot read file %s." % filename)
-            return
-        finally:
-            dissomniag.resetPermissions()
+        with dissomniag.rootContext():
+            try:
+                with open(filename, 'r') as f:
+                    lines = f.readlines()
+            except Exception as e:
+                log.error("GitEventHandler: Cannot read file %s." % filename)
+                return
         
         session = dissomniag.Session()
         
@@ -66,14 +64,11 @@ class GitEventHandler(pyinotify.ProcessEvent):
                         log.error("SKIPPED App %s auto git update executed on branch %s. Exception: %s" % (appName, branchName, str(e)))
                 except Exception as e:
                     log.error("process_GIT_EVENT: No valid request.")
-        try:
-            dissomniag.getRoot()
-            os.remove(filename)
-        except OSError as e:
-            log.error("Could not delete file %s in git event handler." % filename)
-        finally:
-            dissomniag.resetPermissions()
-
+        with dissomniag.rootContext():
+            try:
+                os.remove(filename)
+            except OSError as e:
+                log.error("Could not delete file %s in git event handler." % filename)
 class GitEnvironment(object):
     '''
     classdocs
@@ -101,24 +96,22 @@ class GitEnvironment(object):
             
     def _setUpGitFileChangeListener(self):
         if os.access(dissomniag.config.git.scriptSyncFolder, os.F_OK):
-            try:
-                dissomniag.getRoot()
-                shutil.rmtree(dissomniag.config.git.scriptSyncFolder)
-            except Exception as e:
-                pass
+            with dissomniag.rootContext():
+                try:
+                    shutil.rmtree(dissomniag.config.git.scriptSyncFolder)
+                except Exception as e:
+                    pass
             
         self.multiLog("No %s Folder. Try to create it." % dissomniag.config.git.scriptSyncFolder)
-        try:
-            dissomniag.getRoot()
-            os.makedirs(dissomniag.config.git.scriptSyncFolder)
-            uid, gid = self._getGitUserGroup()
-            os.chown(dissomniag.config.git.scriptSyncFolder, uid, gid)
-        except OSError, e:
-            self.multiLog("Could not create script Sync folder. %s" % e)
-            self.isAdminUsable = False
-            return
-        finally:
-            dissomniag.resetPermissions()
+        with dissomniag.rootContext():
+            try:
+                os.makedirs(dissomniag.config.git.scriptSyncFolder)
+                uid, gid = self._getGitUserGroup()
+                os.chown(dissomniag.config.git.scriptSyncFolder, uid, gid)
+            except OSError, e:
+                self.multiLog("Could not create script Sync folder. %s" % e)
+                self.isAdminUsable = False
+                return
             
         self.multiLog("Adding Watch to %s" % dissomniag.config.git.scriptSyncFolder)
         self.wm = pyinotify.WatchManager()
@@ -166,39 +159,35 @@ class GitEnvironment(object):
             if not os.access(dissomniag.config.git.scriptSyncFolder, os.F_OK):
                 if job != None:
                     self.multiLog("No %s Folder. Try to create it." % dissomniag.config.git.scriptSyncFolder, job)
-                try:
-                    dissomniag.getRoot()
-                    os.makedirs(dissomniag.config.git.scriptSyncFolder)
-                    uid, gid = self._getGitUserGroup()
-                    os.chown(dissomniag.config.git.scriptSyncFolder,
-                         uid,
-                         gid)
-                except OSError, e:
-                    if job != None:
-                        self.multiLog("Could not create script Sync folder. %s" % e, job)
-                    self.isAdminUsable = False
-                    return
-                finally:
-                    dissomniag.resetPermissions()
+                with dissomniag.rootContext():
+                    try:
+                        os.makedirs(dissomniag.config.git.scriptSyncFolder)
+                        uid, gid = self._getGitUserGroup()
+                        os.chown(dissomniag.config.git.scriptSyncFolder,
+                             uid,
+                             gid)
+                    except OSError, e:
+                        if job != None:
+                            self.multiLog("Could not create script Sync folder. %s" % e, job)
+                        self.isAdminUsable = False
+                        return
                     
 
             
             if not os.access(dissomniag.config.git.pathToLocalUtilFolder, os.F_OK):
                 if job != None:
                     self.multiLog("No %s Folder. Try to create it." % dissomniag.config.git.pathToLocalUtilFolder, job)
-                try:
-                    dissomniag.getRoot()
-                    os.makedirs(dissomniag.config.git.pathToLocalUtilFolder)
-                    os.chown(dissomniag.config.git.pathToLocalUtilFolder,
-                             dissomniag.config.dissomniag.userId,
-                             dissomniag.config.dissomniag.groupId)
-                except OSError, e:
-                    if job != None:
-                        self.multiLog("Could not create utility folder. %s" % e, job)
-                    self.isAdminUsable = False
-                    return
-                finally:
-                    dissomniag.resetPermissions()
+                with dissomniag.rootContext():
+                    try:
+                        os.makedirs(dissomniag.config.git.pathToLocalUtilFolder)
+                        os.chown(dissomniag.config.git.pathToLocalUtilFolder,
+                                 dissomniag.config.dissomniag.userId,
+                                 dissomniag.config.dissomniag.groupId)
+                    except OSError, e:
+                        if job != None:
+                            self.multiLog("Could not create utility folder. %s" % e, job)
+                        self.isAdminUsable = False
+                        return
                 
                 if self._makeInitialCheckout(job):
                     self.isAdminUsable = True
@@ -241,8 +230,7 @@ class GitEnvironment(object):
         
         if not self.isAdminUsable:
             return False
-        try:
-            dissomniag.getRoot()
+        with dissomniag.rootContext():
             self.multiLog("Entering git.update", job)
             #1. git pull
             self._pull(job)
@@ -268,8 +256,6 @@ class GitEnvironment(object):
             
             #6. push repo
             self._push(job)
-        finally:
-            dissomniag.resetPermissions()
         
     @synchronized(GitEnvironmentLock)
     def makeInitialCommit(self, app, job = None):
@@ -277,51 +263,46 @@ class GitEnvironment(object):
         if skeletonFolder == None:
             self.multiLog("Could not create tmp skeleton folder", job)
             raise dissomniag.taskManager.TaskFailed("Could not create tmp skeleton folder")
-        try:
-            dissomniag.getRoot()
-            gitosisRepo = str("%s@%s:%s.git" % (dissomniag.config.git.gitUser, dissomniag.config.git.gitosisHost, app.name))
-            skeletonRepo.create_remote("origin", gitosisRepo)
-            skeletonRepo.git.push("origin", "master:refs/heads/master")
-            self.addUpdateScript(app, job)
-        except Exception as e:
-            self.multiLog("Cannot push to origin repo. %s, Exception: %s" % (gitosisRepo, str(e)), job)
-            raise dissomniag.taskManager.TaskFailed("Cannot push to origin repo. %s" % gitosisRepo)
-        finally:
+        with dissomniag.rootContext():
             try:
-                del(skeletonRepo)
-                shutil.rmtree(skeletonFolder)
+                gitosisRepo = str("%s@%s:%s.git" % (dissomniag.config.git.gitUser, dissomniag.config.git.gitosisHost, app.name))
+                skeletonRepo.create_remote("origin", gitosisRepo)
+                skeletonRepo.git.push("origin", "master:refs/heads/master")
+                self.addUpdateScript(app, job)
             except Exception as e:
-                pass
-            dissomniag.resetPermissions()
+                self.multiLog("Cannot push to origin repo. %s, Exception: %s" % (gitosisRepo, str(e)), job)
+                raise dissomniag.taskManager.TaskFailed("Cannot push to origin repo. %s" % gitosisRepo)
+            finally:
+                try:
+                    del(skeletonRepo)
+                    shutil.rmtree(skeletonFolder)
+                except Exception as e:
+                    pass
         return True
     
     @synchronized(GitEnvironmentLock)
     def addUpdateScript(self, app, job = None):
         log.info("Trying to add Upadte Hook.")
         targetFile = os.path.join(dissomniag.config.git.pathToGitRepositories, "%s.git/hooks/update" % app.name)
-        dissomniag.getRoot()
-        try:
-            with open(targetFile, 'w') as f:
-                f.write(self.getScriptPattern(str(app.name)))
-        except OSError as e:
-            log.error("Could not create update Script.")
-            return False
-        finally:
-            dissomniag.resetPermissions()
-        
-        try:
-            dissomniag.getRoot()
-            uid, gid = self._getGitUserGroup()
-            os.chown(targetFile, uid, gid)
-            os.chmod(targetFile, 0o755)
-        except OSError as e:
+        with dissomniag.rootContext():
             try:
-                shutil.rmtree(targetFile)
-                log.error("Cannot change User for update hook.")
-            except Exception as e:
-                log.error("Cannot delete update hook.")
-        finally:
-            dissomniag.resetPermissions()
+                with open(targetFile, 'w') as f:
+                    f.write(self.getScriptPattern(str(app.name)))
+            except OSError as e:
+                log.error("Could not create update Script.")
+                return False
+        with dissomniag.rootContext():
+            try:
+                uid, gid = self._getGitUserGroup()
+                os.chown(targetFile, uid, gid)
+                os.chmod(targetFile, 0o755)
+            except OSError as e:
+                try:
+                    shutil.rmtree(targetFile)
+                    log.error("Cannot change User for update hook.")
+                except Exception as e:
+                    log.error("Cannot delete update hook.")
+
         return True
     
     @synchronized(GitEnvironmentLock)
@@ -367,17 +348,17 @@ class GitEnvironment(object):
                 self.multiLog("Could not create skeleton folder. %s" % e, job)
             return None, None
         finally:
-            #dissomniag.resetPermissions()
             pass
     
     @synchronized(GitEnvironmentLock)
     def _checkRunningConfig(self, job = None):
         inFile = None
-        try:
-            with open(dissomniag.config.git.pathToConfigFile, 'r') as f:
-                inFile = f.read()
-        except Exception:
-            pass
+        with dissomniag.rootContext():
+            try:
+                with open(dissomniag.config.git.pathToConfigFile, 'r') as f:
+                    inFile = f.read()
+            except Exception:
+                pass
         config = self._getNewConfig(job)
         actualConfig = StringIO.StringIO()
         config.write(actualConfig)
@@ -602,61 +583,64 @@ class GitEnvironment(object):
                     keys.add(key)
         except NoResultFound:
             pass
-        
-        for key in keys:
-            localFileName = "keydir/%s" % key.getPublicFileString()
-            pathToFile = os.path.join(dissomniag.config.git.pathToKeyFolder, key.getPublicFileString())
-            try:
-                with open(pathToFile, 'w') as f:
-                    f.write(key.publicKey)
-            except Exception:
-                pass
-            index.add([localFileName])
+        with dissomniag.rootContext():
+            for key in keys:
+                localFileName = "keydir/%s" % key.getPublicFileString()
+                pathToFile = os.path.join(dissomniag.config.git.pathToKeyFolder, key.getPublicFileString())
+                try:
+                    with open(pathToFile, 'w') as f:
+                        f.write(key.publicKey)
+                except Exception:
+                    pass
+                index.add([localFileName])
         return
             
         
     @synchronized(GitEnvironmentLock)
     def _commit(self, job = None, commitMessage = None):
-        if job != None:
-            self.multiLog("Entering git._commit", job)
-        if commitMessage == None:
-            commitMessage = str(time.strftime("%d.%m.%Y, %H:%M:%S"))
-        index = self.adminRepo.index
-        if job != None:
-            self.multiLog("Commit gitosis-admin Repo %s" % commitMessage, job)
-        ret = index.commit(commitMessage)
-        self.adminRepo.commit()
-        return True
+        with dissomniag.rootContext():
+            if job != None:
+                self.multiLog("Entering git._commit", job)
+            if commitMessage == None:
+                commitMessage = str(time.strftime("%d.%m.%Y, %H:%M:%S"))
+            index = self.adminRepo.index
+            if job != None:
+                self.multiLog("Commit gitosis-admin Repo %s" % commitMessage, job)
+            ret = index.commit(commitMessage)
+            self.adminRepo.commit()
+            return True
 
     @synchronized(GitEnvironmentLock)
     def _pull(self, job = None):
-        if job != None:
-            self.multiLog("Entering git._pull", job)
-        if self.adminRepo.is_dirty():
-            self._commit(job, "Dirty repo commit")
-        origin = self.adminRepo.remotes.origin
-        try:
-            origin.pull()
-        except Exception:
-            dissomniag.getIdentity().refreshSSHEnvironment()
+        with dissomniag.rootContext():
             if job != None:
-                self.multiLog("Entering git._pull AGAIN", job)
-            origin.pull()
-        return True
+                self.multiLog("Entering git._pull", job)
+            if self.adminRepo.is_dirty():
+                self._commit(job, "Dirty repo commit")
+            origin = self.adminRepo.remotes.origin
+            try:
+                origin.pull()
+            except Exception:
+                dissomniag.getIdentity().refreshSSHEnvironment()
+                if job != None:
+                    self.multiLog("Entering git._pull AGAIN", job)
+                origin.pull()
+            return True
     
     @synchronized(GitEnvironmentLock)
     def _push(self, job = None):
-        if job != None:
-            self.multiLog("Entering git._push", job)
-        origin = self.adminRepo.remotes.origin
-        try:
-            origin.push()
-        except Exception:
-            dissomniag.getIdentity().refreshSSHEnvironment()
+        with dissomniag.rootContext():
             if job != None:
-                self.multiLog("Entering git._push AGAIN", job)
-            origin.push()
-        return True
+                self.multiLog("Entering git._push", job)
+            origin = self.adminRepo.remotes.origin
+            try:
+                origin.push()
+            except Exception:
+                dissomniag.getIdentity().refreshSSHEnvironment()
+                if job != None:
+                    self.multiLog("Entering git._push AGAIN", job)
+                origin.push()
+            return True
     
     @synchronized(GitEnvironmentLock)
     def _getGitUserGroup(self):

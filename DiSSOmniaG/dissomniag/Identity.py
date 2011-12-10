@@ -191,6 +191,22 @@ def getIdentity():
     
     return identity
 
+class rootContext():
+    rootAtStart = False
+    
+    def __enter__(self):
+        if os.getuid() == 0:
+            self.rootAtStart = True
+        else:
+            self.rootAtStart = False
+            getRoot()
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.rootAtStart:
+            pass
+        else:
+            resetPermissions()
+            
 def getRoot():
     os.seteuid(0)
     os.setegid(0)
@@ -220,11 +236,10 @@ def resetDir():
     
     
 def checkProgrammUserAndGroup():
-        log.info("In checkProgrammUserAndGroup")
-        if os.getuid() != 0:
-            raise OSError("The System must be started ad root.")
-        resetPermissions()
-
+    log.info("In checkProgrammUserAndGroup")
+    if os.getuid() != 0:
+        raise OSError("The System must be started ad root.")
+    resetPermissions()
     
 def run():
     
