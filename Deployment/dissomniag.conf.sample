@@ -1,0 +1,37 @@
+[dissomniag]
+configDir = /etc/dissomniag/
+execDir = /usr/share/dissomniag/
+# Enter the key Names that are located in that are located 
+# in the config folder.
+rsaKey = ssh_key
+rsaKeyPub = ssh_key.pub
+utilityFolder = /var/lib/dissomniag/
+
+# If you want to execute dissomniag with another user then root
+# enter the username and the user group.
+#user = dissomniag
+#group = dissomniag
+
+[server]
+rpcServerPort = 8008
+sshServerPort = 8009
+# If you want admin manhole access. Set useManhole to True,
+# and enter a manholePort.
+useManhole = False
+#manholePort = 8010
+
+[ssl]
+pivateKeyFile = /etc/dissomniag/privatekey.pem
+caKeyFile = /etc/dissomniag/cert.pem
+
+[htpasswd]
+htpasswd_file = /etc/dissomniag/htpasswd
+
+[log]
+logDir = /var/log/
+
+[dispatcher]
+revertBeforecancel = True
+
+[hostConfig]
+hostFolder = /var/lib/dissomniag/host/

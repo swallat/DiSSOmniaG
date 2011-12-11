@@ -9,7 +9,7 @@ import pwd, grp, os
 import ConfigParser
 
 config = ConfigParser.SafeConfigParser()
-config.read(["dissomniag.conf"])
+config.read(["/etc/dissomniag/dissomniag.conf","dissomniag.conf"])
 
 
     
@@ -50,7 +50,6 @@ class dissomniag(ParseSection):
         self.rsaKeyPublic = self.parseOption(self.sectionName, "rsaKeyPub", "ssh_key.pub")
         self.utilityFolder = self.parseOption(self.sectionName, "utilityFolder", "/var/lib/dissomniag/")
         self.serverFolder = os.path.join(self.utilityFolder, "server/")
-        self.vmsFolder = os.path.join(self.serverFolder, "vms/")
         self.liveCdPatternDirectory = self.parseOption(self.sectionName, "liveCdPatternDirectory", "pattern")
         self.patternLockFile = self.parseOption(self.sectionName, "patternLockFile", "pattern")
         self.user = self.parseOption(self.sectionName, "user", "sw")
@@ -60,7 +59,6 @@ class dissomniag(ParseSection):
         self.staticFolder = os.path.join(os.getcwd(), "static/")
         self.staticLiveFolder = os.path.join(self.staticFolder, "live/")
         self.pidFile = "/var/run/dissomniag.pid"
-        self.maintainanceInterface = self.parseOption(self.sectionName, "maintainanceInterface", "None")
         return self
     
 dissomniag = dissomniag(config, "dissomniag").parse()
@@ -70,7 +68,9 @@ class server(ParseSection):
     def parse(self):
         self.rpcPort = int(self.parseOption(self.sectionName, "rpcServerPort", "8008"))
         self.sshPort = int(self.parseOption(self.sectionName, "sshServerPort", "8009"))
+        self.useManhole = self.bool(self.parseOption(self.sectionName, "useManhole", "False"))
         self.manholePort = int(self.parseOption(self.sectionName, "manholeServerPort", "8010"))
+        
         return self
     
 server = server(config, "server").parse()
@@ -78,11 +78,10 @@ server = server(config, "server").parse()
 
 class ssl(ParseSection):
     def parse(self):
-        #if not self.config.has_section(self.sectionName):
-        #    self.SSL = False
-        #else:
-        #    self.SSL = True
-        self.SSL = True
+        if not self.config.has_section(self.sectionName):
+            self.SSL = False
+        else:
+            self.SSL = True
         self.privateKey = self.parseOption(self.sectionName, "privateKeyFile", "privatekey.pem")
         self.caKey = self.parseOption(self.sectionName, "caKeyFile", "cert.pem")
         return self
@@ -107,7 +106,7 @@ class htpasswd(ParseSection):
         self.adminUser = self.parseOption(self.sectionName, "adminUser", "admin")
         return self
 
-htpasswd = htpasswd(config, "HTPASSWD").parse()
+htpasswd = htpasswd(config, "htpasswd").parse()
 
 class log(ParseSection):
     
@@ -118,7 +117,7 @@ class log(ParseSection):
         self.toStdOut = self.bool(self.parseOption(self.sectionName, "toStdOut", "True"))
         return self
         
-log = log(config, "LOG").parse()
+log = log(config, "log").parse()
 
 class dispatcher(ParseSection):
     
@@ -126,7 +125,7 @@ class dispatcher(ParseSection):
         self.revertBeforeCancel = self.bool(self.parseOption(self.sectionName, "reverBeforeCancel", "True"))
         return self
     
-dispatcher = dispatcher(config, "DISPATCHER").parse()
+dispatcher = dispatcher(config, "dispatcher").parse()
 
 class hostConfig(ParseSection):
     
@@ -135,29 +134,4 @@ class hostConfig(ParseSection):
         self.vmSubdirectory = self.parseOption(self.sectionName, "vmSubDirectory", "vms/")
         return self
 
-hostConfig = hostConfig(config, "HOST_CONFIG").parse()
-
-class clientConfig(ParseSection):
-    
-    def parse(self):
-        self.rpcServerPort = int(self.parseOption(self.sectionName, "rpcServerPort", "8008"))
-        return self
-    
-clientConfig = clientConfig(config, "CLIENT_CONFIG").parse()
-
-class gitConfig(ParseSection):
-    
-    def parse(self):
-        self.pathToGitRepositories = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/gitosis/repositories/")
-        self.pathToLocalUtilFolder = self.parseOption(self.sectionName, "gitUtilFolder", os.path.join(dissomniag.utilityFolder, "gitosis"))
-        self.pathToSkeleton = self.parseOption(self.sectionName, "gitSkeletonFolder", os.path.join(dissomniag.utilityFolder, "git-skeleton"))
-        self.pathToStaticSkeleton = os.path.join(dissomniag.staticFolder, "git-skeleton")
-        self.pathToKeyFolder = os.path.join(self.pathToLocalUtilFolder, "keydir")
-        self.pathToConfigFile = os.path.join(self.pathToLocalUtilFolder, "gitosis.conf")
-        self.gitUser = self.parseOption(self.sectionName, "gitUser", "gitosis")
-        self.gitGroup = self.parseOption(self.sectionName, "gitGroup", "gitosis")
-        self.gitosisHost = self.parseOption(self.sectionName, "gitosisHost", "localhost")
-        self.scriptSyncFolder = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/gitosis/sync/")
-        return self
-    
-git = gitConfig(config, "GIT_CONFIG").parse()
+hostConfig = hostConfig(config, "host_config").parse()

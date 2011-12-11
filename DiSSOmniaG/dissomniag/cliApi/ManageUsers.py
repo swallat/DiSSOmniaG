@@ -100,35 +100,34 @@ class addUser(CliMethodABCClass.CliMethodABCClass):
         parser.add_argument("--enable-manhole", action = "store_true", dest = "loginManhole", default = False)
         parser.add_argument("username", action = "store")
         parser.add_argument("password", action = "store")
-        parser.add_argument("-k", "--key", action = "store", nargs = "*", dest = "key", help = "Provide the key as the last Argument!")
+        parser.add_argument("-k", "--key", action = "store", nargs = "*", dest = "key", help = "Provide the key as the last Argument!", default = None)
         
         options = parser.parse_args(args[1:])
-        assert options.username
-        assert options.password
         if not self.user.isAdmin:
-            print(self.colorString("Permission denied: Only Admin users are allowed to add a users!", color = Fore.RED, style = Style.BRIGHT))
+            self.printError("Permission denied: Only Admin users are allowed to add a users!")
             return
-            
-        options.key = " ".join(options.key)
+        
+        if options.key != None:
+            options.key = " ".join(options.key)
 
         session = dissomniag.Session()
         try:
             existingUser = session.query(User).filter(User.username == options.username).one()
             if existingUser:
-                print(self.colorString("User already exists.", color = Fore.RED, style = Style.BRIGHT))
+                self.printError("User already exists.")
                 return
         except NoResultFound:
-            newUser = User(options.username, options.password, options.key,
-                           options.isAdmin, options.loginRPC, options.loginSSH,
-                           options.loginManhole, isHtpasswd = False)
+            newUser = User(options.username, options.password, publicKey = options.key,
+                           isAdmin = options.isAdmin, loginRPC = options.loginRPC, loginSSH = options.loginSSH,
+                           loginManhole = options.loginManhole, isHtpasswd = False)
             session.add(newUser)
             dissomniag.saveCommit(session)
             dissomniag.saveFlush(session)
         except MultipleResultsFound:
-            print(self.colorString("User already exists.", color = Fore.RED, style = Style.BRIGHT))
+            self.printError("User already exists.")
             return
         
-        print(self.colorString("SUCCESS", color = Fore.GREEN, style = Style.BRIGHT))
+        self.printSuccess("SUCCESS")
 
 
 class addKey(CliMethodABCClass.CliMethodABCClass):
@@ -193,6 +192,9 @@ class modUser(CliMethodABCClass.CliMethodABCClass):
         
         options = parser.parse_args(args[1:])
         
+        if options.key != None:
+            options.key = " ".join(options.key)
+        
         if not self.user.isAdmin:
             if options.username == dissomniag.Identity.systemUserName:
                 self.printError("Could not find user.")
@@ -208,7 +210,7 @@ class modUser(CliMethodABCClass.CliMethodABCClass):
                 self.user.saveNewPassword(options.newPassword)
             if options.key:
                 try:
-                    self.user.addKey(options.Key)
+                    self.user.addKey(options.key)
                 except dissomniag.BadKeyError:
                     self.printError("Please enter a valid PublicKey.")
                     return
@@ -242,7 +244,7 @@ class modUser(CliMethodABCClass.CliMethodABCClass):
             
             if options.key != None:
                 try:
-                    user.addKey(options.Key)
+                    user.addKey(options.key)
                 except dissomniag.BadKeyError:
                     self.printError("Please enter a valid PublicKey.")
                     return   
