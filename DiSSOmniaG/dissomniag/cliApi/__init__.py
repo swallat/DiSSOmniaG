@@ -2,13 +2,13 @@ import logging
 
 log = logging.getLogger("cliApi.__init__")
 
-def listUser(*args):
+def users(*args):
     import ManageUsers
-    ManageUsers.listUser().call(*args)
+    ManageUsers.users().call(*args)
 
-def listKeys(*args):
+def keys(*args):
     import ManageUsers
-    ManageUsers.listKeys().call(*args)
+    ManageUsers.keys().call(*args)
 
 def addUser(*args):
     import ManageUsers

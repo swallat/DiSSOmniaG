@@ -16,7 +16,7 @@ from dissomniag.utils import CliMethodABCClass
 
 log = logging.getLogger("cliApi.ManageUsers")
 
-class listUser(CliMethodABCClass.CliMethodABCClass):
+class users(CliMethodABCClass.CliMethodABCClass):
 
     def implementation(self, *args):
         sys.stdout = self.terminal
@@ -45,7 +45,7 @@ class listUser(CliMethodABCClass.CliMethodABCClass):
                     self.printInfo(str("%s" % key.publicKey))
             print("\n")
 
-class listKeys(CliMethodABCClass.CliMethodABCClass):
+class keys(CliMethodABCClass.CliMethodABCClass):
     
     def implementation(self, *args):
         sys.stdout = self.terminal

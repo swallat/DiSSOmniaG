@@ -104,7 +104,7 @@ class htpasswd(ParseSection):
         self.adminUser = self.parseOption(self.sectionName, "adminUser", "admin")
         return self
 
-htpasswd = htpasswd(config, "HTPASSWD").parse()
+htpasswd = htpasswd(config, "htpasswd").parse()
 
 class log(ParseSection):
     
@@ -123,7 +123,7 @@ class dispatcher(ParseSection):
         self.revertBeforeCancel = self.bool(self.parseOption(self.sectionName, "reverBeforeCancel", "True"))
         return self
     
-dispatcher = dispatcher(config, "DISPATCHER").parse()
+dispatcher = dispatcher(config, "dispatcher").parse()
 
 class hostConfig(ParseSection):
     
@@ -132,4 +132,4 @@ class hostConfig(ParseSection):
         self.vmSubdirectory = self.parseOption(self.sectionName, "vmSubDirectory", "vms/")
         return self
 
-hostConfig = hostConfig(config, "HOST_CONFIG").parse()
+hostConfig = hostConfig(config, "host_config").parse()

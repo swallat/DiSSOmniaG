@@ -308,10 +308,10 @@ class SSHDiSSOmniaGAvatar(avatar.ConchUser):
         return None
 
     def execCommand(self, protocol, cmd):
-        #self.protocol = protocol
-        #self.openShell(protocol)
-        #self.serverProtocol.write(cmd)
-        raise NotImplementedError
+        self.protocol = protocol
+        self.openShell(protocol)
+        self.serverProtocol.write(cmd)
+        #raise NotImplementedError
         
     def closed(self):
         pass
@@ -327,29 +327,6 @@ class SSHDiSSOmniaGRealm:
             return interfaces[0], SSHDiSSOmniaGAvatar(avatarId, self.api), lambda: None
         else:
             raise Exception, "No supported interfaces found."
-###
-#DEPRECATED
-###   
-def getRSAKeys():
-    if not (os.path.exists('public.key') and os.path.exists('private.key')):
-        #generate a RSA keypar
-        print "Generating RSA keypair..."
-        from Crypto.PublicKey import RSA
-        KEY_LENGTH = 1024
-        privateKey = keys.Key(RSA.generate(KEY_LENGTH))
-        publicKeyString = privateKey.public().toString('OPENSSH')
-        privateKeyString = privateKey.toString('OPENSSH')
-        publicKey = keys.Key.fromString(publicKeyString)
-        #save keys for next time
-        file('public.key', 'w+b').write(publicKeyString)
-        file('private.key', 'w+b').write(privateKeyString)
-        print "done."
-    else:
-        privateKeyString = file('private.key', 'r').read()
-        privateKey = keys.Key.fromString(privateKeyString)
-        publicKeyString = file('public.key', 'r').read()
-        publicKey = keys.Key.fromString(publicKeyString)
-    return publicKey, privateKey
 
 class DiSSOmniaGSSHFactory(factory.SSHFactory):
     pass

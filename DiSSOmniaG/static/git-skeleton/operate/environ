@@ -1,0 +1,3 @@
+#APP_HOME = 
+INET_SRC = /home/user/INET/src
+INET_BIN = /home/user/INET/src/inet
