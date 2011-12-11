@@ -13,6 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from twisted.conch.ssh import keys
 import random
 import string
+import threading
 import dissomniag
 import os
 
@@ -192,20 +193,20 @@ def getIdentity():
     return identity
 
 class rootContext():
-    rootAtStart = False
+    lock = threading.RLock()
+    counter = 0
     
     def __enter__(self):
-        if os.getuid() == 0:
-            self.rootAtStart = True
-        else:
-            self.rootAtStart = False
+        with rootContext.lock:
+            rootContext.counter += 1
             getRoot()
         
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.rootAtStart:
-            pass
-        else:
-            resetPermissions()
+        with rootContext.lock:
+            rootContext.counter -= 1
+            if rootContext.counter <= 0:
+                rootContext.counter = 0
+                resetPermissions()
             
 def getRoot():
     os.seteuid(0)
