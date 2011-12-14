@@ -44,13 +44,6 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
                              dissomniag.config.dissomniag.userId,
                              dissomniag.config.dissomniag.groupId)
                     os.makedirs(dissomniag.config.dissomniag.serverFolder)
-                    os.chown(dissomniag.config.dissomniag.serverFolder,
-                             dissomniag.config.dissomniag.userId,
-                             dissomniag.config.dissomniag.groupId)
-                    os.makedirs(dissomniag.config.dissomniag.vmsFolder)
-                    os.chown(dissomniag.config.dissomniag.vmsFolder,
-                             dissomniag.config.dissomniag.userId,
-                             dissomniag.config.dissomniag.groupId)
                 except OSError, e:
                     self.infoObj.errorInfo.append("Could not create utility folder. %s" % e)
                     self.infoObj.usable = False
@@ -59,22 +52,42 @@ class LiveCdEnvironmentChecks(dissomniag.taskManager.AtomicTask):
             
         #2 Check if Utility Folder is writable
         if not os.access(dissomniag.config.dissomniag.utilityFolder, os.W_OK):
-            self.infoObj.errorInfo.append("Utility Folder is not writable.")
-            self.infoObj.usable = False
-            self.job.trace(self.infoObj.getErrorInfo())
-            raise dissomniag.taskManager.UnrevertableFailure()
+            try:
+                with dissomniag.rootContext():
+                    os.chown(dissomniag.config.dissomniag.utilityFolder,
+                             dissomniag.config.dissomniag.userId,
+                             dissomniag.config.dissomniag.groupId)
+            except OSError as e:
+                self.infoObj.errorInfo.append("Utility Folder is not writable.")
+                self.infoObj.usable = False
+                self.job.trace(self.infoObj.getErrorInfo())
+                raise dissomniag.taskManager.UnrevertableFailure()
         
         if not os.access(dissomniag.config.dissomniag.serverFolder, os.W_OK):
-            self.infoObj.errorInfo.append("Server Folder is not writable.")
-            self.infoObj.usable = False
-            self.job.trace(self.infoObj.getErrorInfo())
-            raise dissomniag.taskManager.UnrevertableFailure()
+            try:
+                with dissomniag.rootContext():
+                    os.makedirs(dissomniag.config.dissomniag.serverFolder)
+                    os.chown(dissomniag.config.dissomniag.serverFolder,
+                            dissomniag.config.dissomniag.userId,
+                            dissomniag.config.dissomniag.groupId)
+            except OSError as e:
+                self.infoObj.errorInfo.append("Server Folder is not writable.")
+                self.infoObj.usable = False
+                self.job.trace(self.infoObj.getErrorInfo())
+                raise dissomniag.taskManager.UnrevertableFailure()
         
         if not os.access(dissomniag.config.dissomniag.vmsFolder, os.W_OK):
-            self.infoObj.errorInfo.append("LiveImages Folder is not writable.")
-            self.infoObj.usable = False
-            self.job.trace(self.infoObj.getErrorInfo())
-            raise dissomniag.taskManager.UnrevertableFailure()
+            try:
+                with dissomniag.rootContext():
+                    os.makedirs(dissomniag.config.dissomniag.vmsFolder)
+                    os.chown(dissomniag.config.dissomniag.vmsFolder,
+                             dissomniag.config.dissomniag.userId,
+                             dissomniag.config.dissomniag.groupId)
+            except OSError as e:
+                self.infoObj.errorInfo.append("LiveImages Folder is not writable.")
+                self.infoObj.usable = False
+                self.job.trace(self.infoObj.getErrorInfo())
+                raise dissomniag.taskManager.UnrevertableFailure()
         
         #3. Check if server has root permissions
         if not os.getuid() == 0:

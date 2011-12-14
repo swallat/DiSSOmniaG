@@ -398,6 +398,7 @@ class GitEnvironment(object):
     def _makeInitialCheckout(self, job = None):
         if job != None:
             self.multiLog("Entering git._makeInitialCheckout", job)
+        self._disableStrictServerKeyChecking()
         gitosisAdminRepo = ("%s@%s:gitosis-admin.git" % (dissomniag.config.git.gitUser, dissomniag.config.git.gitosisHost))
         if job != None:
             self.multiLog("GitosisAdminRepo %s" % gitosisAdminRepo, job)
@@ -414,6 +415,35 @@ class GitEnvironment(object):
             return False
         else:
             return True
+        
+    @synchronized(GitEnvironmentLock)
+    def _disableStrictServerKeyChecking(self, hostOrIp="localhost"):
+        with dissomniag.rootContext():
+            sshFileName = "/etc/ssh/ssh_config"
+            
+            if os.path.isfile(sshFileName):
+                lines = None
+                pattern = ("^Host %s$" % hostOrIp)
+                prog = re.compile(pattern)
+                with open(sshFileName, 'r') as f:
+                    lines = f.readlines()
+                foundHosts = []
+                for line in lines:
+                    if prog.match(line):
+                        return True
+                    
+                
+            if not os.path.isfile(sshFileName):
+                try:
+                    with open(sshFileName, mode='w') as f:
+                        f.write("")
+                    os.chmod(sshFileName, 0o644)
+                except OSError:
+                    pass
+            
+            with open(sshFileName, 'a') as f:
+                f.write("Host %s\n" % hostOrIp)
+                f.write("\tStrictHostKeyChecking no\n\n")
         
     @synchronized(GitEnvironmentLock)
     def _checkRepoFolder(self, job = None):
