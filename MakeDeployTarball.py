@@ -49,6 +49,7 @@ initDFolder = os.path.join(baseBuildDir, "etc/init.d/")
 print("initDFolder %s" %initDFolder)
 liveFolder = os.path.join(baseBuildDir, "var/lib/dissomniag/")
 print("liveFolder %s" %liveFolder)
+confFolder = os.path.join(baseBuildDir, "etc/dissomniag/")
 
 ignore_set = set(["createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem", ".gitignore", "dissomniag.db", "htpasswd", "info.file", "linesOfCode.py", "privatekey.pem", "ssh_key", "ssh_key.pub"])  
 
@@ -56,6 +57,7 @@ def createBuildDir():
     os.makedirs(dissomniagLiveFolder, 0o755)
     os.makedirs(initDFolder, 0o755)
     os.makedirs(liveFolder, 0o755)
+    os.makedirs(confFolder, 0o755)
     
 def copyFilesToBuildDir():
     #1. Copy Daemon Files
@@ -76,6 +78,8 @@ def copyFilesToBuildDir():
     os.chdir(actualPath)
     shutil.copy2(os.path.abspath("Deployment/init.d/dissomniag"), initDFolder)
 
+    #3. copy Sample Conf
+    shutil.copy2(os.path.abspath("Deployment/dissomniag.conf.sample"), confFolder)
     
 def createLiveTarball():
     
