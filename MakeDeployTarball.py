@@ -50,7 +50,7 @@ print("initDFolder %s" %initDFolder)
 liveFolder = os.path.join(baseBuildDir, "var/lib/dissomniag/")
 print("liveFolder %s" %liveFolder)
 
-ignore_set = set(["createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem", ".gitignore"])  
+ignore_set = set(["createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem", ".gitignore", "dissomniag.db", "htpasswd", "info.file", "linesOfCode.py", "privatekey.pem", "ssh_key", "ssh_key.pub"])  
 
 def createBuildDir():
     os.makedirs(dissomniagLiveFolder, 0o755)

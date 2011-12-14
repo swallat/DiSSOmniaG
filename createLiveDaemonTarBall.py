@@ -37,7 +37,7 @@ tarFileName = "dissomniagLive.tar.gz"
 dissomniagLiveFolder = os.path.join(baseBuildDir, "usr/share/dissomniag-live/")
 initDFolder = os.path.join(baseBuildDir, "etc/init.d/")
 
-ignore_set = set(["createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem"])  
+ignore_set = set(["run.pyc", "createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem"])  
 
 def createBuildDir():
     os.makedirs(dissomniagLiveFolder, 0o755)
