@@ -21,6 +21,7 @@
 # You should have received a copy of the GNU General Public License
 # along with DiSSOmniaG. If not, see <http://www.gnu.org/licenses/>
 import sys, os, time, atexit
+import setproctitle
 from signal import SIGTERM
 import config
 
@@ -166,13 +167,13 @@ class Daemon:
 class DissomniagDaemon(Daemon):
     
     def run(self):
+        setproctitle.setproctitle("dissomniag")
         if self.debug:
             myFile = open("/home/sw/git/BachelorCoding/DiSSOmniaG/info.file", "a+")
             myFile.write("In run")
             myFile.flush()
             sys.stdout = myFile
             sys.stderr = myFile
-        
         import dissomniag
         dissomniag.run()
         
@@ -205,6 +206,7 @@ if __name__ == "__main__":
                         sys.exit(2)
                 sys.exit(0)
         elif len(sys.argv) == 1 or (len(sys.argv) == 2 and "--nodaemon" == sys.argv[1]):
+            setproctitle.setproctitle("dissomniag")
             import dissomniag
             dissomniag.run()
         else:

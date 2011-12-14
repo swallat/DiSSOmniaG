@@ -398,7 +398,7 @@ class GitEnvironment(object):
     def _makeInitialCheckout(self, job = None):
         if job != None:
             self.multiLog("Entering git._makeInitialCheckout", job)
-        self._disableStrictServerKeyChecking()
+        self._disableStrictServerKeyChecking(dissomniag.config.git.gitosisHost)
         gitosisAdminRepo = ("%s@%s:gitosis-admin.git" % (dissomniag.config.git.gitUser, dissomniag.config.git.gitosisHost))
         if job != None:
             self.multiLog("GitosisAdminRepo %s" % gitosisAdminRepo, job)
