@@ -21,32 +21,47 @@
 # You should have received a copy of the GNU General Public License
 # along with DiSSOmniaG. If not, see <http://www.gnu.org/licenses/>
 import os, shutil, sys
+import subprocess, shlex
 import tarfile
 
+actualPath = os.path.abspath(os.getcwd())
+print("Actual Path %s" %actualPath)
 try:
-    os.chdir("DiSSOmniaG_liveClient")
+    os.chdir("Deployment")
 except OSError:
-    print("Could not create Tarbal: No such subfolder DiSSOmniaG_liveClient")
+    print("Could not create Tarbal: No such subfolder Deployment")
     sys.exit(-1)
 
-actualPath = os.path.abspath("/home/sw/git/BachelorCoding/DiSSOmniaG_liveClient/")
-baseDirName = "TarTemp"
+deploymentDir = os.path.abspath(os.getcwd())
+print("deploymentDir %s" %deploymentDir)
+dissomniagBaseDir = os.path.abspath(os.path.join(actualPath, "DiSSOmniaG"))
+print("dissomniagBaseDir %s" %dissomniagBaseDir)
+baseDirName = "Deployment/TarTemp"
+print("baseDirName %s" %baseDirName)
 baseBuildDir = os.path.abspath(os.path.join(actualPath, baseDirName))
-tarFileName = "dissomniagLive.tar.gz"
+print("baseBuildDir %s" %baseBuildDir)
+tarFileName = "dissomniag.tar.gz"
+print("tarFileName %s" %tarFileName)
 
-dissomniagLiveFolder = os.path.join(baseBuildDir, "usr/share/dissomniag-live/")
+dissomniagLiveFolder = os.path.join(baseBuildDir, "usr/share/dissomniag/")
+print("dissomniagLiveFolder %s" %dissomniagLiveFolder)
 initDFolder = os.path.join(baseBuildDir, "etc/init.d/")
+print("initDFolder %s" %initDFolder)
+liveFolder = os.path.join(baseBuildDir, "var/lib/dissomniag/")
+print("liveFolder %s" %liveFolder)
 
-ignore_set = set(["createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem"])  
+ignore_set = set(["createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem", ".gitignore"])  
 
 def createBuildDir():
     os.makedirs(dissomniagLiveFolder, 0o755)
     os.makedirs(initDFolder, 0o755)
-
+    os.makedirs(liveFolder, 0o755)
+    
 def copyFilesToBuildDir():
     #1. Copy Daemon Files
-    
-    listing = os.listdir(actualPath)
+ 
+    listing = os.listdir(dissomniagBaseDir)
+    os.chdir(dissomniagBaseDir)
     for obj in listing:
         if obj in ignore_set:
             continue
@@ -58,8 +73,32 @@ def copyFilesToBuildDir():
             
             
     #2. Copy init.d File
-    shutil.copy2(os.path.abspath("../DiSSOmniaG/static/live/init.d/dissomniag_live"), initDFolder)
-            
+    os.chdir(actualPath)
+    shutil.copy2(os.path.abspath("Deployment/init.d/dissomniag"), initDFolder)
+
+    
+def createLiveTarball():
+    
+    tarBallName = "dissomniagLive.tar.gz"
+    destDir = "DiSSOmniaG/static/live/liveDaemon"
+    srcDir = "DiSSOmniaG_liveClient"
+    
+    dstTarball = os.path.join(destDir, tarBallName)
+    srcTarball = os.path.join(srcDir, tarBallName)
+    try:
+        try:
+            os.remove(dstTarball)
+        except Exception:
+            pass
+        os.chdir(actualPath)
+        print(os.getcwd())
+        cmd = os.path.abspath("createLiveDaemonTarBall.py")
+        proc = subprocess.call(cmd)
+        shutil.copy2(srcTarball, destDir)
+    except OSError as e:
+        print("Could not create live Client Tarball. %s" %str(e))
+    finally:
+        os.chdir(deploymentDir)
     
 
 def createTarFile():
@@ -69,6 +108,7 @@ def createTarFile():
         for infile in listing:
             if infile not in ignore_set:
                 tar.add(infile)
+                
     shutil.copy2(tarFileName, "../")
     os.chdir("../")
 
@@ -90,10 +130,12 @@ if __name__ == '__main__':
     try:
         deleteOldTarFile()
         createBuildDir()
+        createLiveTarball()
         copyFilesToBuildDir()
         createTarFile()
-    except Exception:
+    except Exception as e:
         failed = True
+        print(str(e))
     finally:
         cleanUp()
         if failed:
