@@ -3,7 +3,7 @@ configDir = /etc/dissomniag/
 execDir = /usr/share/dissomniag/
 # Enter the key Names that are located in that are located 
 # in the config folder.
-rsaKey = ssh_key
+rsaKeyPrivate = ssh_key
 rsaKeyPub = ssh_key.pub
 utilityFolder = /var/lib/dissomniag/
 

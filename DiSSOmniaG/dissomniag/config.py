@@ -72,7 +72,7 @@ class dissomniag(ParseSection):
         self.group = self.parseOption(self.sectionName, "group", "sw")
         self.userId = pwd.getpwnam(self.user).pw_uid
         self.groupId = grp.getgrnam(self.group).gr_gid
-        self.staticFolder = os.path.join(os.getcwd(), "static/")
+        self.staticFolder = os.path.join(self.execDir, "static/")
         self.staticLiveFolder = os.path.join(self.staticFolder, "live/")
         self.pidFile = "/var/run/dissomniag.pid"
         self.maintainanceInterface = self.parseOption(self.sectionName, "maintainanceInterface", "None")
@@ -150,6 +150,8 @@ class hostConfig(ParseSection):
         self.hostFolder = self.parseOption(self.sectionName, "hostFolder", "/var/lib/dissomniag/host/")
         self.vmSubdirectory = self.parseOption(self.sectionName, "vmSubDirectory", "vms/")
         return self
+    
+hostConfig = hostConfig(config, "hostConfig").parse()
 
 class clientConfig(ParseSection):
     
@@ -157,7 +159,7 @@ class clientConfig(ParseSection):
         self.rpcServerPort = int(self.parseOption(self.sectionName, "rpcServerPort", "8008"))
         return self
 
-clientConfig = clientConfig(config, "CLIENT_CONFIG").parse()
+clientConfig = clientConfig(config, "clientConfig").parse()
 
 class gitConfig(ParseSection):
     
@@ -174,4 +176,4 @@ class gitConfig(ParseSection):
         self.scriptSyncFolder = self.parseOption(self.sectionName, "gitRepoFolder", "/srv/gitosis/sync/")
         return self
     
-git = gitConfig(config, "GIT_CONFIG").parse()
+git = gitConfig(config, "gitConfig").parse()
