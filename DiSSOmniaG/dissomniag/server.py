@@ -368,7 +368,11 @@ def getManholeFactory(namespace):
 # End Manhole Server
 #===============================================================================
 
-
+#    Easiest way to create the key file pair was to use OpenSSL -- http://openssl.org/ Windows binaries are available
+#    You can create a self-signed certificate easily "openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout privatekey.pem"
+#    for more information --  http://docs.python.org/library/ssl.html#ssl-certificates
+#KEYFILE='/etc/ssl/private/ssl-cert-snakeoil.key'    # Replace with your PEM formatted key file
+#CERTFILE='/etc/ssl/certs/ssl-cert-snakeoil.pem'  # Replace with your PEM formatted certificate file
         
 def startRPCServer():
     api_server = APIServer(dissomniag.api)

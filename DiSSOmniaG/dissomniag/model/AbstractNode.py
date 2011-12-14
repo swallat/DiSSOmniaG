@@ -29,7 +29,6 @@ import uuid
 
 import dissomniag
 from dissomniag.model import *
-from numpy.core.defchararray import startswith
 
 log = logging.getLogger("model.AbstractNode")
 
