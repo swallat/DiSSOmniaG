@@ -163,7 +163,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
                 context.add(net, "net")
                 job = dissomniag.taskManager.Job(context, "Sanity check generatedNetworks on startup", user = self.user)
                 job.addTask(dissomniag.tasks.statusNetwork())
-                dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, net.host, job)
+                dissomniag.taskManager.Dispatcher.addJob(self.user, job)
         
         # Check existing VM's
         

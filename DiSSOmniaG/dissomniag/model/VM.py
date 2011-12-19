@@ -282,8 +282,7 @@ class VM(AbstractNode):
             interfMacAttrib = interfMac.attrib
             interfMacAttrib["address"] = interface.macAddress
             
-            interfSource = etree.SubElement
-            (interf, "source")
+            interfSource = etree.SubElement(interf, "source")
             interfSourceAttrib = interfSource.attrib
             interfSourceAttrib["network"] = interface.ipAddresses[0].network.name
             
