@@ -150,6 +150,15 @@ class addApp(CliMethodABCClass.CliMethodABCClass):
             return
         else:
             self.printSuccess("Successfully added App %s for user %s." % (name, self.user.username))
+            try:
+                gitUser = dissomniag.config.git.gitUser
+                if dissomniag.config.git.gitosisHost == "localhost":
+                    gitHost = dissomniag.getIdentity().getMaintainanceIP().addr
+                else:
+                    gitHost = dissomniag.config.git.gitosisHost
+                self.printSuccess("The repository is accessible with following command: git clone %s@%s:%s.git" % (gitUser, gitHost, name))
+            except Exception:
+                pass            
             return
         
 class delApp(CliMethodABCClass.CliMethodABCClass):

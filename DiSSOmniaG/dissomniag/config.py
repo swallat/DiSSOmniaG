@@ -99,6 +99,7 @@ class ssl(ParseSection):
             self.SSL = False
         else:
             self.SSL = True
+        self.SSL = True
         self.privateKey = self.parseOption(self.sectionName, "privateKeyFile", "privatekey.pem")
         self.caKey = self.parseOption(self.sectionName, "caKeyFile", "cert.pem")
         return self
