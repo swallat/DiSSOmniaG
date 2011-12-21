@@ -533,7 +533,7 @@ class AbstractAppAction(CliMethodABCClass.CliMethodABCClass):
                 return False
             
         try:
-            print("self.action() = %s" % dissomniag.model.AppActions.getName(self.action()))
+            #print("self.action() = %s" % dissomniag.model.AppActions.getName(self.action()))
             ret = app.operate(self.user, self.action(), relObj, scriptName = self.scriptName, tagOrCommit = self.tagOrCommit)
         except Exception as e:
             import traceback
