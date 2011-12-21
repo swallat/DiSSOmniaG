@@ -675,4 +675,22 @@ class checkUpToDateOnRemote(dissomniag.taskManager.AtomicTask):
     
     def revert(self):
         return dissomniag.taskManager.TaskReturns.SUCCESS
+    
+class addAllCurrentAppsOnRemote(dissomniag.taskManager.AtomicTask):
+    
+    def run(self):
+        if not hasattr(self.context, "liveCd"):
+            self.multiLog("No LiveCd in Context", log)
+            raise dissomniag.taskManager.TaskFailed("No LiveCd in Context")
         
+        try:
+            self.multiLog("Try to add all current apps on Remote", log)
+            self.context.liveCd.addAllCurrentAppsOnRemote(self.job.getUser())
+        except Exception as e:
+            self.multiLog("Try to add all current apps on Remote FAILED: %s" % str(e), log)
+            
+        return dissomniag.taskManager.TaskReturns.SUCCESS 
+        
+    
+    def revert(self):
+        return dissomniag.taskManager.TaskReturns.SUCCESS

@@ -52,7 +52,7 @@ def update(user, infoXml):
             Push app info
             """
             try:
-                vm.liveCd.addAllCurrentAppsOnRemote(user)
+                vm.liveCd.createAddAllCurrentAppsOnRemoteJob(user, vm.liveCd)
             except Exception as e:
                 import traceback
                 traceback.print_exc()

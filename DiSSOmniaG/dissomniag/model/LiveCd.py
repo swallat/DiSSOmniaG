@@ -220,6 +220,18 @@ class LiveCd(dissomniag.Base):
         return proxy.addApps(xmlString)
     
     @staticmethod
+    def createAddAllCurrentAppsOnRemoteJob(user, livecd):
+        if livecd == None or not isinstance(livecd,LiveCd):
+            return False
+        livecd.authUser(user)
+        context = dissomniag.taskManager.Context()
+        context.add(livecd, "liveCd")
+        job = dissomniag.taskManager.Job(context, "Create All Current Apps On Remote Job", user)
+        job.addTask(dissomniag.tasks.LiveCDTasks.addAllCurrentAppsOnRemote())
+        dissomniag.taskManager.Dispatcher.addJobSyncronized(user, livecd, job)
+        
+    
+    @staticmethod
     def checkUptODateOnHd(user, livecd):
         if livecd == None or not isinstance(livecd,LiveCd):
             return False
