@@ -59,8 +59,8 @@ class dissomniag(ParseSection):
     def parse(self):
         self.isCentral = self.bool(self.parseOption(self.sectionName, "isCentral", "True"))
         self.centralIp = self.parseOption(self.sectionName, "CentralSystemIP", "None")
-        self.configDir = self.parseOption(self.sectionName, "configDir", "/home/sw/git/BachelorCoding/DiSSOmniaG/")
-        self.execDir = self.parseOption(self.sectionName, "execDir", "/home/sw/git/BachelorCoding/DiSSOmniaG/")
+        self.configDir = self.parseOption(self.sectionName, "configDir", "/etc/dissomniag/")
+        self.execDir = self.parseOption(self.sectionName, "execDir", "/usr/share/dissomniag/")
         self.rsaKeyPrivate = self.parseOption(self.sectionName, "rsaKey", "ssh_key")
         self.rsaKeyPublic = self.parseOption(self.sectionName, "rsaKeyPub", "ssh_key.pub")
         self.utilityFolder = self.parseOption(self.sectionName, "utilityFolder", "/var/lib/dissomniag/")
@@ -68,8 +68,8 @@ class dissomniag(ParseSection):
         self.vmsFolder = os.path.join(self.serverFolder, "vms/")
         self.liveCdPatternDirectory = self.parseOption(self.sectionName, "liveCdPatternDirectory", "pattern")
         self.patternLockFile = self.parseOption(self.sectionName, "patternLockFile", "pattern")
-        self.user = self.parseOption(self.sectionName, "user", "sw")
-        self.group = self.parseOption(self.sectionName, "group", "sw")
+        self.user = self.parseOption(self.sectionName, "user", "root")
+        self.group = self.parseOption(self.sectionName, "group", "root")
         self.userId = pwd.getpwnam(self.user).pw_uid
         self.groupId = grp.getgrnam(self.group).gr_gid
         self.staticFolder = os.path.join(self.execDir, "static/")
@@ -99,7 +99,6 @@ class ssl(ParseSection):
             self.SSL = False
         else:
             self.SSL = True
-        self.SSL = True
         self.privateKey = self.parseOption(self.sectionName, "privateKeyFile", "privatekey.pem")
         self.caKey = self.parseOption(self.sectionName, "caKeyFile", "cert.pem")
         return self

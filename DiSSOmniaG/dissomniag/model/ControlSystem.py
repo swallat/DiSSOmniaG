@@ -110,24 +110,17 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
             return False    
     
     def run(self):
+        """
+        starts The server
+        """
         if not self.isStarted:
             self.isStarted = True
         else:
             raise dissomniag.Identity.IdentityRestartNotAllowed()
-        """
-        starts The server
-        """
         
-        #log.info("Securly rollback Session")
-        #try:
-        #    dissomniag.Session().rollback()
-        #except Exception:
-        #    pass
         self.user = self.getAdministrativeUser()
         log.info("Starting Dispatcher")
         dissomniag.taskManager.Dispatcher.startDispatcher()
-        #sw = dissomniag.auth.User.addUser(username = "admin", password = "b00tloader", publicKey = "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAf0N76ZZlEhL6I3+7bMx2Tje+nuAoJ4ylefaiAvl0w5mnYNIfqw7VUlN4TMjBsBReb8b1mefY5XKBEc2FXKSlCBirQeTap9dfYCMN6fJfQfw2IQFUaiXqUJHyvAqGTTtI5bq8d8QA1Kpuc+VJgGdIQXl5wcn4J+z7zB9BfaCrDsZVDTxbObNqCg8M9mc9mNgcoqHam/F6BuU5EDj1tOqXlWPFr2PgAgvvUAjMwvIbKMZU9IaMdG3hzKdoeYjSlQGhxIXH7Qxmv1MWj/O934eSfRTkYp+HEwmeg4IM/kize6IAfnVh6L4KBq1HKXn8SindeY36SZdSP8cl2H6rnA7w2XfC0ercbi2YjUm5iGAPrODbdd5p1LkTTpBt2dpuM23aBZmaQRcreq420ugipXYAL/THSAQ8mcWPbCoLPj+SDY8+GQLys7Wjzj5N1AlBElY9snbFiDefTsWBHarZEkVvOf3j23UN2pHKUIYteKZTuv0/R1mA2zmQr1Btd/nzUqFZqgLjCXkUZk9iG18wlrPSjkFUQOblGP4dn0kGjj3RZdz8ELr4sCiRiqmfe3RNSnFhqQLYZ+I3EObOKLIcAe2LLILYwln1gQHV2K35O0WpBB9XjPXyl65SWIlKqIUOIRmBRemRoA4M3UCKt1I8FN8HIDgxqlw/LzSIL2SsjkOyw== sw@sw-laptop", isAdmin = True, loginManhole = True, loginSSH = True, loginRPC = True, isHtpasswd = False)
-        #sw.addKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDL4E096miP6Zhfne5uZnwPpdzGlUp/3FqLmxOfDednHLfYfuwp7YVJeFOMvHALghf7ICcwr18hGqK0DBj7zfVSzH0nDoj461JnOPELiaoja/Vh7cvzSmrgFTr1VnDHMtQ9Jcm1daMP6WXvQ6amw3pt6CUGM3vSlZ9zdfdqPJhfuy0rJlsiyRY5y8cgDg8xOoZtYlfmQalPOcMvB+qwAKJDgnrXI/2MxVP/YLAM6SY3GY4J59SSoV4sgLSJUMtKrI2V1Vs49GXpiLeLjbShgapeKfvFujF/MeWa2H0xwGaERoChwMqO6ylh7p90lGHh+SJg3a6tAoz9GULv/iGwiZoz sw@R307")
         #Check LiveCd Environment
         context = dissomniag.taskManager.Context()
         job = dissomniag.taskManager.Job(context, "Check the LiveCD assembly environment.", user = self.user)

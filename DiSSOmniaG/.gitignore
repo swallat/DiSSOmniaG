@@ -1,1 +1,9 @@
 /dissomniag.db
+/dissomniag.conf
+/cert.pem
+/htpasswd
+/privatekey.pem
+/ssh_key
+/ssh_key.pub
+/*pyc
+/info.file
