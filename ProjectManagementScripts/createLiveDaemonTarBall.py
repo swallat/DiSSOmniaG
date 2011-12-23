@@ -29,7 +29,8 @@ except OSError:
     print("Could not create Tarbal: No such subfolder DiSSOmniaG_liveClient")
     sys.exit(-1)
 
-actualPath = os.path.abspath("/home/sw/git/BachelorCoding/DiSSOmniaG_liveClient/")
+os.chdir("../")
+actualPath = os.getcwd()
 baseDirName = "TarTemp"
 baseBuildDir = os.path.abspath(os.path.join(actualPath, baseDirName))
 tarFileName = "dissomniagLive.tar.gz"

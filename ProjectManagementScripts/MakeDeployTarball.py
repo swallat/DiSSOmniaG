@@ -130,6 +130,7 @@ def deleteOldTarFile():
         pass
 
 if __name__ == '__main__':
+    os.chdir("../")
     failed = False
     try:
         deleteOldTarFile()
