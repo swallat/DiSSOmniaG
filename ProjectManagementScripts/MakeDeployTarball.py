@@ -24,34 +24,48 @@ import os, shutil, sys
 import subprocess, shlex
 import tarfile
 
-actualPath = os.path.abspath(os.getcwd())
-print("Actual Path %s" %actualPath)
-try:
-    os.chdir("Deployment")
-except OSError:
-    print("Could not create Tarbal: No such subfolder Deployment")
-    sys.exit(-1)
+def parsePath():
+    global actualPath
+    actualPath = os.path.abspath(os.getcwd())
+    print("Actual Path %s" %actualPath)
+    try:
+        os.chdir("Deployment")
+    except OSError:
+        print("Could not create Tarbal: No such subfolder Deployment")
+        sys.exit(-1)
 
-deploymentDir = os.path.abspath(os.getcwd())
-print("deploymentDir %s" %deploymentDir)
-dissomniagBaseDir = os.path.abspath(os.path.join(actualPath, "DiSSOmniaG"))
-print("dissomniagBaseDir %s" %dissomniagBaseDir)
-baseDirName = "Deployment/TarTemp"
-print("baseDirName %s" %baseDirName)
-baseBuildDir = os.path.abspath(os.path.join(actualPath, baseDirName))
-print("baseBuildDir %s" %baseBuildDir)
-tarFileName = "dissomniag.tar.gz"
-print("tarFileName %s" %tarFileName)
-
-dissomniagLiveFolder = os.path.join(baseBuildDir, "usr/share/dissomniag/")
-print("dissomniagLiveFolder %s" %dissomniagLiveFolder)
-initDFolder = os.path.join(baseBuildDir, "etc/init.d/")
-print("initDFolder %s" %initDFolder)
-liveFolder = os.path.join(baseBuildDir, "var/lib/dissomniag/")
-print("liveFolder %s" %liveFolder)
-confFolder = os.path.join(baseBuildDir, "etc/dissomniag/")
-
-ignore_set = set(["createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem", ".gitignore", "dissomniag.db", "htpasswd", "info.file", "linesOfCode.py", "privatekey.pem", "ssh_key", "ssh_key.pub"])  
+    global deploymentDir
+    deploymentDir = os.path.abspath(os.getcwd())
+    print("deploymentDir %s" %deploymentDir)
+    global dissomniagBaseDir
+    dissomniagBaseDir = os.path.abspath(os.path.join(actualPath, "DiSSOmniaG"))
+    print("dissomniagBaseDir %s" %dissomniagBaseDir)
+    global baseDirName
+    baseDirName = "Deployment/TarTemp"
+    print("baseDirName %s" %baseDirName)
+    global baseBuildDir
+    baseBuildDir = os.path.abspath(os.path.join(actualPath, baseDirName))
+    print("baseBuildDir %s" %baseBuildDir)
+    global tarFileName
+    tarFileName = "dissomniag.tar.gz"
+    print("tarFileName %s" %tarFileName)
+    
+    global dissomniagLiveFolder
+    dissomniagLiveFolder = os.path.join(baseBuildDir, "usr/share/dissomniag/")
+    print("dissomniagLiveFolder %s" %dissomniagLiveFolder)
+    global initDFolder
+    initDFolder = os.path.join(baseBuildDir, "etc/init.d/")
+    print("initDFolder %s" %initDFolder)
+    global liveFolder
+    liveFolder = os.path.join(baseBuildDir, "var/lib/dissomniag/")
+    print("liveFolder %s" %liveFolder)
+    global confFolder
+    confFolder = os.path.join(baseBuildDir, "etc/dissomniag/")
+    global scriptFolder
+    scriptFolder = os.path.join(actualPath, "ProjectManagementScripts/")
+    
+    global ignore_set 
+    ignore_set = set(["createLiveDaemonTarBall.py", baseDirName, tarFileName, ".pydevproject", ".project", "log", "key.pem", "cert.pem", ".gitignore", "dissomniag.db", "htpasswd", "info.file", "linesOfCode.py", "privatekey.pem", "ssh_key", "ssh_key.pub"])  
 
 def createBuildDir():
     os.makedirs(dissomniagLiveFolder, 0o755)
@@ -84,8 +98,8 @@ def copyFilesToBuildDir():
 def createLiveTarball():
     
     tarBallName = "dissomniagLive.tar.gz"
-    destDir = "DiSSOmniaG/static/live/liveDaemon"
-    srcDir = "DiSSOmniaG_liveClient"
+    destDir = os.path.join(actualPath, "DiSSOmniaG/static/live/liveDaemon")
+    srcDir = os.path.join(actualPath, "DiSSOmniaG_liveClient")
     
     dstTarball = os.path.join(destDir, tarBallName)
     srcTarball = os.path.join(srcDir, tarBallName)
@@ -94,10 +108,12 @@ def createLiveTarball():
             os.remove(dstTarball)
         except Exception:
             pass
-        os.chdir(actualPath)
+        os.chdir(scriptFolder)
         print(os.getcwd())
         cmd = os.path.abspath("createLiveDaemonTarBall.py")
         proc = subprocess.call(cmd)
+        print("srcTarball: %s" % srcTarball)
+        print("destDir: %s" % destDir)
         shutil.copy2(srcTarball, destDir)
     except OSError as e:
         print("Could not create live Client Tarball. %s" %str(e))
@@ -131,6 +147,8 @@ def deleteOldTarFile():
 
 if __name__ == '__main__':
     os.chdir("../")
+    print(os.getcwd())
+    parsePath()
     failed = False
     try:
         deleteOldTarFile()

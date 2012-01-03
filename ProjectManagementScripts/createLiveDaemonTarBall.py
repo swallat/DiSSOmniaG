@@ -22,14 +22,12 @@
 # along with DiSSOmniaG. If not, see <http://www.gnu.org/licenses/>
 import os, shutil, sys
 import tarfile
-
+os.chdir("../")
 try:
     os.chdir("DiSSOmniaG_liveClient")
 except OSError:
     print("Could not create Tarbal: No such subfolder DiSSOmniaG_liveClient")
     sys.exit(-1)
-
-os.chdir("../")
 actualPath = os.getcwd()
 baseDirName = "TarTemp"
 baseBuildDir = os.path.abspath(os.path.join(actualPath, baseDirName))
