@@ -1,6 +1,6 @@
 [submodule "DiSSOmniaG_liveClient"]
 	path = DiSSOmniaG_liveClient
-	url = git@github.com:bigblue13k/DiSSOmniaG-Live-Client.git
+	url = git@github.com:swallat/DiSSOmniaG-Live-Client.git
 [submodule "DiSSOmniaG/static/live/omnetLibs"]
 	path = DiSSOmniaG/static/live/omnetLibs
-	url = git@github.com:bigblue13k/DiSSOmniaG-OMNeT-Libs.git
+	url = git@github.com:swallat/DiSSOmniaG-OMNeT-Libs.git
