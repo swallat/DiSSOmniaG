@@ -20,7 +20,7 @@ sshServerPort = 8009
 useManhole = False
 #manholePort = 8010
 
-[ssl]
+[SSL]
 pivateKeyFile = /etc/dissomniag/privatekey.pem
 caKeyFile = /etc/dissomniag/cert.pem
 

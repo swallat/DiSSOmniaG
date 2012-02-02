@@ -26,7 +26,6 @@ import ConfigParser
 config = ConfigParser.SafeConfigParser()
 config.read(["/etc/dissomniag/dissomniag.conf","dissomniag.conf"])
 
-
     
 class ParseSection(object):
     __metaclass__ = ABCMeta
