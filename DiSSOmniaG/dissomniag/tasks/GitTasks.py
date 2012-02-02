@@ -49,6 +49,16 @@ class CheckGitEnvironment(dissomniag.taskManager.AtomicTask):
             env._checkRepoFolder(self.job)
         except Exception as e:
             self.multiLog(str(e), log)
+            #Give one retry:
+            try:
+                self.multiLog("Retry CheckGitEnvironment:", log)
+                env = dissomniag.GitEnvironment()
+                self.multiLog("Entering GitEnvironment()._checkAdmin", log)
+                env._checkAdmin(self.job)
+                self.multiLog("Entering GitEnvironment()._checkRepoFolder", log)
+                env._checkRepoFolder(self.job)
+            except Exception as e:
+                self.multiLog(str(e), log)
             
         return dissomniag.taskManager.TaskReturns.SUCCESS
     
