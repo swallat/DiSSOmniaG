@@ -21,7 +21,7 @@ useManhole = False
 #manholePort = 8010
 
 [SSL]
-pivateKeyFile = /etc/dissomniag/privatekey.pem
+privateKeyFile = /etc/dissomniag/privatekey.pem
 caKeyFile = /etc/dissomniag/cert.pem
 
 [htpasswd]
