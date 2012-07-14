@@ -24,15 +24,15 @@ cwd=$(pwd)
 cd ../
 
 tar cvzpf DissomniagLive.tgz DiSSOmniaG_liveClient/
-rm $cwd/config/binary_local-includes/DissomniagLive.tgz
+rm $cwd/config/includes.binary/DissomniagLive.tgz
 #rm $cwd/binary/DissomniagLive.tgz
-mv DissomniagLive.tgz $cwd/config/binary_local-includes/
-cp DiSSOmniaG/static/live/init.d/dissomniag_live $cwd/config/binary_local-includes/
+mv DissomniagLive.tgz $cwd/config/includes.binary/
+cp DiSSOmniaG/static/live/init.d/dissomniag_live $cwd/config/includes.binary/
 
 cd $cwd
 echo $cwd
 
-rm .stage/binary_includes
-rm .stage/binary_local-includes
-rm .stage/binary_checksums
-rm .stage/binary_iso
+rm .build/binary_includes
+rm .build/binary_local-includes
+rm .build/binary_checksums
+rm .build/binary_iso

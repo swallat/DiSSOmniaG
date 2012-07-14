@@ -21,6 +21,8 @@
 # along with DiSSOmniaG. If not, see <http://www.gnu.org/licenses/>
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+import lxml
+from lxml import etree
 
 import dissomniag
 from dissomniag.dbAccess import Base
@@ -71,6 +73,25 @@ class Host(AbstractNode):
         if user.isAdmin:
             return True
         raise dissomniag.UnauthorizedFunctionCall()
+    
+    def getUserXml(self):
+        host = etree.Element("host")
+        name = etree.SubElement(host, "name")
+        name.text = self.commonName
+        uuid = etree.SubElement(host, "uuid");
+        uuid.text = self.uuid
+        userName = etree.SubElement(host, "userName")
+        userName.text = self.administrativeUserName
+        utilityFolder = etree.SubElement(host, "utilityFolder");
+        utilityFolder.text = self.utilityFolder
+        maintainanceIp = etree.SubElement(host, "maintainanceIp");
+        maintainanceIp.text = self.getMaintainanceIP().addr;
+        state = etree.SubElement(host, "hostState");
+        state.text = dissomniag.model.NodeState.getStateName(self.state)
+        lastChecked = etree.SubElement(host, "lastChecked")
+        lastChecked.text = self.lastChecked;
+        return host
+        
     
     def checkPingable(self, user):
         

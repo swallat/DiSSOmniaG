@@ -206,7 +206,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             l = len(folder)
             folder = folder[0:(l - 1)]
         
-        cmd = "rm -rf %s/binary* %s/.stage %s/auto %s/config %s/cache %s/chroot" % (folder, folder, folder, folder, folder, folder)
+        cmd = "rm -rf %s/binary* %s/.build %s/auto %s/config %s/cache %s/chroot" % (folder, folder, folder, folder, folder, folder)
         self.multiLog("exec %s" % cmd)
         ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
         
@@ -216,7 +216,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         1. Copy Files
         """
         tarBall = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "liveDaemon/dissomniagLive.tar.gz")
-        chrootLocalIncludesFolder = os.path.join(patternFolder, "config/chroot_local-includes")
+        chrootLocalIncludesFolder = os.path.join(patternFolder, "config/includes.chroot")
         targetTarBall = os.path.join(chrootLocalIncludesFolder, "dissomniagLive.tar.gz")
         try:
             shutil.copy2(tarBall, chrootLocalIncludesFolder)
@@ -234,7 +234,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         
         omnetTarBall = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "omnetLibs/OMNeT.tar.gz")
         inetTarBall = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "omnetLibs/INET.tar.gz")
-        chrootLocalIncludesFolder = os.path.join(patternFolder, "config/chroot_local-includes")
+        chrootLocalIncludesFolder = os.path.join(patternFolder, "config/includes.chroot")
         omnetTargetTarBall = os.path.join(chrootLocalIncludesFolder, "OMNeT.tar.gz")
         inetTargetTarBall = os.path.join(chrootLocalIncludesFolder, "INET.tar.gz")
         try:
@@ -261,8 +261,8 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
         
         with dissomniag.rootContext():
-            self.stageDir = os.path.join(self.patternFolder, ".stage")
-            self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes")
+            self.stageDir = os.path.join(self.patternFolder, ".build")
+            self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary")
             
             if self.binLocalInc.endswith("/"):
                 cmd = "rm -rf %s/*" % self.binLocalInc
@@ -274,9 +274,9 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                 self.multiLog("Could not exec %s correctly" % cmd, log)
             
             if self.stageDir.endswith("/"):
-                cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+                cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
             else:
-                cmd = "rm %s/binary_iso %s/binary_checksums %s/binary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+                cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
             self.multiLog("exec %s" % cmd, log)
             ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
             if ret != 0:
@@ -346,7 +346,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                     
                     #3c. Copy dissomniag packagelist
                     packageListFile = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "packagesLists/dissomniag.list")
-                    chrootLocalPackagesListFolder = os.path.join(self.patternFolder, "config/chroot_local-packageslists")
+                    chrootLocalPackagesListFolder = os.path.join(self.patternFolder, "config/package-lists")
                     try:
                         os.symlink(os.path.abspath(packageListFile), os.path.join(chrootLocalPackagesListFolder, "dissomniag.list"))
                     except OSError:
@@ -358,18 +358,18 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                     listings = os.listdir(chrootLocalFilesDir)
                     for infile in listings:
                         try:
-                            shutil.copytree(os.path.join(chrootLocalFilesDir, infile), os.path.join(self.patternFolder, "config/chroot_local-includes/" + infile), symlinks = True)
+                            shutil.copytree(os.path.join(chrootLocalFilesDir, infile), os.path.join(self.patternFolder, "config/includes.chroot/" + infile), symlinks = True)
                         except OSError:
                             src = os.path.join(chrootLocalFilesDir, infile)
-                            dst = os.path.join(self.patternFolder, "config/chroot_local-includes/" + infile)
-                            self.multiLog("Cannot copy an chroot_local-include, src= %s , dst= %s" % (src,dst), log)
+                            dst = os.path.join(self.patternFolder, "config/includes.chroot/" + infile)
+                            self.multiLog("Cannot copy an includes.chroot, src= %s , dst= %s" % (src,dst), log)
                     
                     #3e. Copy all chroot_local hooks
                     hooksFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "hooks")
                     listings = os.listdir(hooksFilesDir)
                     for infile in listings:
                         try:
-                            shutil.copy2(os.path.join(hooksFilesDir, infile), os.path.join(self.patternFolder, "config/chroot_local-hooks/"))
+                            shutil.copy2(os.path.join(hooksFilesDir, infile), os.path.join(self.patternFolder, "config/hooks/"))
                         except OSError:
                             self.multiLog("Cannot copy an chroot_local-hook")
                     
@@ -442,8 +442,8 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
         
         with dissomniag.rootContext():
         
-            self.stageDir = os.path.join(self.patternFolder, ".stage")
-            self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes/")
+            self.stageDir = os.path.join(self.patternFolder, ".build")
+            self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary/")
             
             try:
                 shutil.rmtree(self.binLocalInc)
@@ -496,7 +496,7 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
                     
                     self.versioningHash, self.liveInfoString = self.context.VM.getInfoXMLwithVersionongHash(self.job.getUser())
                     
-                    with open("./config/binary_local-includes/liveInfo.xml") as f:
+                    with open("./config/includes.binary/liveInfo.xml") as f:
                         f.write(self.liveInfoString)
                         
                         
