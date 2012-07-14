@@ -138,7 +138,7 @@ class CheckLiveCdEnvironmentPrepared(dissomniag.taskManager.AtomicTask):
         checkedFile = os.path.join(self.patternFolder, "CHECKED")
         checkedFileExists = os.access(checkedFile, os.F_OK)
         
-        stageDirectory = os.path.join(self.patternFolder, ".stage/")
+        stageDirectory = os.path.join(self.patternFolder, ".build/")
         stageDirectoryExists = os.access(stageDirectory, os.F_OK)
         
         configDirectory = os.path.join(self.patternFolder, "config/")
@@ -146,7 +146,7 @@ class CheckLiveCdEnvironmentPrepared(dissomniag.taskManager.AtomicTask):
         
         binLocalIncEmpty = True
         if configDirectoryExists:
-            binaryLocalIncludesFolder = os.path.join(configDirectory, "binary_local-includes/")
+            binaryLocalIncludesFolder = os.path.join(configDirectory, "includes.binary/")
             binaryLocalIncExists = os.access(binaryLocalIncludesFolder, os.F_OK)
             if binaryLocalIncExists and os.listdir(binaryLocalIncludesFolder) != []:
                 binLocalIncEmpty = False
@@ -380,6 +380,15 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                     #5. Copy needed files. (like OMNeT binaries)
                     
                     self.installOmnet(self.patternFolder)
+                    
+                    #5b Copy syslinux Debian package
+                    packagesChrootStaticDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "packages.chroot")
+                    listings = os.listdir(packagesChrootStaticDir)
+                    for infile in listings:
+                        try:
+                            shutil.copy2(os.path.join(packagesChrootStaticDir, infile), os.path.join, "config/packages.chroot/")
+                        except OSError:
+                            self.multiLog("Cannot copy packages.chroot")
                       
                     #6. Init debian live environment
                     cmd = "lb config"
