@@ -62,7 +62,7 @@ class Not_Created_VM(AbstractVMState):
                     
                     # 1. Copy infoXML
                     self.liveInfoString, self.versioningHash = self.liveCd.getInfoXMLwithVersionongHash(job.getUser())
-                    lifeInfoFile = os.path.join(self.patternFolder, "config/binary_local-includes/liveInfo.xml")
+                    lifeInfoFile = os.path.join(self.patternFolder, "config/includes.binary/liveInfo.xml")
                     self.multiLog(str(lifeInfoFile), job, log)
                     with open(lifeInfoFile, 'w') as f:
                         f.write(self.liveInfoString)
@@ -99,7 +99,7 @@ class Not_Created_VM(AbstractVMState):
                     # Check if folder for image exists
                     if not os.access(self.vm.getLocalUtilityFolder(job.getUser()), os.F_OK):
                         os.makedirs(self.vm.getLocalUtilityFolder(job.getUser()))
-                    shutil.copy2("./binary.iso", self.vm.getLocalPathToCdImage(job.getUser()))
+                    shutil.copy2("./binary.hybrid.iso", self.vm.getLocalPathToCdImage(job.getUser()))
                     
                     with open(os.path.join(self.vm.getLocalUtilityFolder(job.getUser()), "configHash"), 'w') as f:
                         f.write(self.versioningHash)
@@ -143,8 +143,8 @@ class Not_Created_VM(AbstractVMState):
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
         
         with dissomniag.rootContext():
-            self.stageDir = os.path.join(self.patternFolder, ".stage")
-            self.binLocalInc = os.path.join(self.patternFolder, "config/binary_local-includes/")
+            self.stageDir = os.path.join(self.patternFolder, ".build")
+            self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary/")
             
             try:
                 shutil.rmtree(self.binLocalInc)
@@ -157,9 +157,9 @@ class Not_Created_VM(AbstractVMState):
                 self.multiLog("Cannot recreate %s" % self.binLocalInc)
             
             if self.stageDir.endswith("/"):
-                cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+                cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
             else:
-                cmd = "rm %s/binary_iso %s/binary_checksums %s/binary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+                cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
             self.multiLog("exec %s" % cmd, job, log)
             ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
             if ret != 0:

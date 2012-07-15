@@ -466,9 +466,9 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
     
             
             if self.stageDir.endswith("/"):
-                cmd = "rm %sbinary_iso %sbinary_checksums %sbinary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+                cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
             else:
-                cmd = "rm %s/binary_iso %s/binary_checksums %s/binary_local-includes" % (self.stageDir, self.stageDir, self.stageDir)
+                cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
             self.multiLog("exec %s" % cmd, log)
             ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
             if ret != 0:
@@ -539,7 +539,7 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
                     if not os.access(self.context.LiveCd.vm.getUtilityFolder(), os.F_OK):
                         os.makedirs(self.context.LiveCd.vm.getUtilityFolder())
                         
-                    shutil.copy2("./binary.iso", self.context.LiveCd.vm.getLocalPathToCdImage(self.job.getUser()))
+                    shutil.copy2("./binary.hybrid.iso", self.context.LiveCd.vm.getLocalPathToCdImage(self.job.getUser()))
                     
                     with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash"), 'w') as f:
                         f.write(self.versioningHash)
