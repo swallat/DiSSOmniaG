@@ -76,6 +76,14 @@ class Not_Created_VM(AbstractVMState):
                     # Try 10 times (Solves some repository connection timeout problems)
                     #cmd = "lb build"
                     #self.multiLog("Make initial Build", job, log)
+                    
+                    cmd = "lb config"
+                    self.multiLog("Run lb config", log)
+                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    if ret != 0:
+                        self.multiLog("LB config error")
+                        raise dissomniag.taskManager.TaskFailed()
+                    
                     cmd = "lb binary"
                     self.multiLog("lb binary", job, log)
                     success = False
@@ -143,6 +151,10 @@ class Not_Created_VM(AbstractVMState):
     def cleanUpPrepare(self, job):
         
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
+        
+        if not dissomniag.chDir(self.patternFolder):
+                    self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
+                    raise dissomniag.taskManager.TaskFailed()
         
         with dissomniag.rootContext():
             

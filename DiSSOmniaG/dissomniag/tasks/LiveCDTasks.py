@@ -260,6 +260,10 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
         
+        if not dissomniag.chDir(self.patternFolder):
+                    self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
+                    raise dissomniag.taskManager.TaskFailed()
+        
         with dissomniag.rootContext():
             
             #Clean to binary
@@ -496,7 +500,12 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
     def cleanUp(self):
         
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
-        
+
+        if not dissomniag.chDir(self.patternFolder):
+                    self.multiLog("Cannot chdir to %s" % self.patternFolder, log)
+                    raise dissomniag.taskManager.TaskFailed()
+                
+                        
         with dissomniag.rootContext():
             
             #Clean to binary
