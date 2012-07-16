@@ -62,3 +62,5 @@ echo $cmd1 >> /root/.bashrc
 echo $cmd2 >> /root/.bashrc
 echo $cmd3 >> /root/.bashrc
 echo $cmd4 >> /root/.bashrc
+
+chown -R $user: $execDir
