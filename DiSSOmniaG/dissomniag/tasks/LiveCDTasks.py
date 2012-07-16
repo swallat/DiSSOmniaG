@@ -271,19 +271,12 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                 #raise dissomniag.taskManager.TaskFailed()
             
             self.stageDir = os.path.join(self.patternFolder, ".build")
-            self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary")
-            
-            self.stageDir = os.path.join(self.patternFolder, ".build")
             self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary/")
             
-            if self.binLocalInc.endswith("/"):
-                cmd = "rm -rf %s/*" % self.binLocalInc
-            else:
-                cmd = "rm -rf %s*" % self.binLocalInc
-            self.multiLog("exec %s" % cmd, log)
-            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-            if ret != 0:
-                self.multiLog("Could not exec %s correctly" % cmd, log)
+            try:
+                shutil.rmtree(self.binLocalInc)
+            except (OSError, IOError) as e:
+                pass
                 
             try:
                 os.makedirs(self.binLocalInc)
@@ -388,6 +381,14 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                     for infile in listings:
                         try:
                             shutil.copy2(os.path.join(hooksFilesDir, infile), os.path.join(self.patternFolder, "config/hooks/"))
+                        except OSError:
+                            self.multiLog("Cannot copy an chroot_local-hook")
+                            
+                    tasksFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "task-lists")
+                    listings = os.listdir(tasksFilesDir)
+                    for infile in listings:
+                        try:
+                            shutil.copy2(os.path.join(tasksFilesDir, infile), os.path.join(self.patternFolder, "config/task-lists/"))
                         except OSError:
                             self.multiLog("Cannot copy an chroot_local-hook")
                     

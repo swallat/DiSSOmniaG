@@ -148,10 +148,10 @@ class Not_Created_VM(AbstractVMState):
             
             #Clean to binary
             cmd = "lb clean --binary"
-            self.multiLog("running %s" % cmd)
+            self.multiLog("running %s" % cmd, job, log)
             ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
             if ret != 0:
-                self.multiLog("LB clean --binary error")
+                self.multiLog("LB clean --binary error", job, log)
                 #raise dissomniag.taskManager.TaskFailed()
                 
             self.stageDir = os.path.join(self.patternFolder, ".build")
@@ -165,7 +165,7 @@ class Not_Created_VM(AbstractVMState):
             try:
                 os.makedirs(self.binLocalInc)
             except (OSError, IOError) as e:
-                self.multiLog("Cannot recreate %s" % self.binLocalInc)
+                self.multiLog("Cannot recreate %s" % self.binLocalInc, job, log)
             #
             #if self.stageDir.endswith("/"):
             #    cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
