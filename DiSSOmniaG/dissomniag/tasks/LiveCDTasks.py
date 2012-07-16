@@ -412,6 +412,15 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                             shutil.copy2(os.path.join(packagesChrootStaticDir, infile), os.path.join(self.patternFolder, "config/packages.chroot/"))
                         except OSError:
                             self.multiLog("Cannot copy packages.chroot")
+                            
+                    #6c Copy isolinux cfg
+                    isolinuxCfgDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "includes.binary")
+                    listings = os.listdir(isolinuxCfgDir)
+                    for infile in listings:
+                        try:
+                            shutil.copy2(os.path.join(isolinuxCfgDir, infile), os.path.join(self.patternFolder, "config/packages.chroot/"))
+                        except OSError:
+                            self.multiLog("Cannot copy packages.chroot")
                       
                     #6. Init debian live environment
                     cmd = "lb config"
