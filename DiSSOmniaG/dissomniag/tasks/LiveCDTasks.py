@@ -384,7 +384,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                         except OSError:
                             self.multiLog("Cannot copy an chroot_local-hook")
                             
-                    tasksFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "task-lists")
+                    tasksFilesDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "task-lists/")
                     listings = os.listdir(tasksFilesDir)
                     for infile in listings:
                         try:
