@@ -8,9 +8,9 @@ lb config noauto \
         --apt aptitude \
         --architecture i386 \
         --package-lists 'gnome dissomniag' \
-        --bootappend-live "boot=config username=user locales=de_DE.UTF-8 keyboard-layouts=de" \
-        --tasks 'german german-desktop german-gnome-desktop' \
         --boot config \
+        --bootappend-live "username=user locales=de_DE.UTF-8 keyboard-layouts=de" \
+        --tasks 'german german-desktop german-gnome-desktop' \
         -m http://localhost/debian \
         --mirror-bootstrap http://localhost/debian \
         --mirror-chroot http://localhost/debian \

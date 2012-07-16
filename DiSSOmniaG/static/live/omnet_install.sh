@@ -1,4 +1,4 @@
-#!/bin/sh
+1#!/bin/sh
 # DiSSOmniaG (Distributed Simulation Service wit OMNeT++ and Git)
 # Copyright (C) 2011, 2012 Sebastian Wallat, University Duisburg-Essen
 # 
