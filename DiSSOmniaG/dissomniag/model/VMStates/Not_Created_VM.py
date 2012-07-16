@@ -78,7 +78,7 @@ class Not_Created_VM(AbstractVMState):
                     #self.multiLog("Make initial Build", job, log)
                     
                     cmd = "lb config"
-                    self.multiLog("Run lb config", log)
+                    self.multiLog("Run lb config", job, log)
                     ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
                     if ret != 0:
                         self.multiLog("LB config error")
