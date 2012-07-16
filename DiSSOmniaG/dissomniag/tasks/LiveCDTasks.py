@@ -261,8 +261,20 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
         
         with dissomniag.rootContext():
+            
+            #Clean to binary
+            cmd = "lb clean --binary"
+            self.multiLog("running %s" % cmd)
+            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            if ret != 0:
+                self.multiLog("LB clean --binary error")
+                #raise dissomniag.taskManager.TaskFailed()
+            
             self.stageDir = os.path.join(self.patternFolder, ".build")
             self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary")
+            
+            self.stageDir = os.path.join(self.patternFolder, ".build")
+            self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary/")
             
             if self.binLocalInc.endswith("/"):
                 cmd = "rm -rf %s/*" % self.binLocalInc
@@ -272,15 +284,21 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
             ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
             if ret != 0:
                 self.multiLog("Could not exec %s correctly" % cmd, log)
-            
-            if self.stageDir.endswith("/"):
-                cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
-            else:
-                cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
-            self.multiLog("exec %s" % cmd, log)
-            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-            if ret != 0:
-                self.multiLog("Could not exec %s correctly" % cmd, log)
+                
+            try:
+                os.makedirs(self.binLocalInc)
+            except (OSError, IOError) as e:
+                self.multiLog("Cannot recreate %s" % self.binLocalInc)
+    
+            #
+            #if self.stageDir.endswith("/"):
+            #    cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
+            #else:
+            #    cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
+            #self.multiLog("exec %s" % cmd, log)
+            #ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            #if ret != 0:
+            #    self.multiLog("Could not exec %s correctly" % cmd, log)
         
         
         
@@ -398,26 +416,55 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                         self.multiLog("LB Config error")
                         raise dissomniag.taskManager.TaskFailed() 
                     
-                    #7. Make initial Build
+                    #7. Make bootstrap
                     # Try 10 times (Solves some repository connection timeout problems)
-                    cmd = "lb build"
-                    self.multiLog("Make initial Build", log)
-                    success = False
-                    for i in range(1, 11):
-                        if self.job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
-                            self.multiLog("Job cancelled. Initial LivdCD build failed.")
-                            raise dissomniag.taskManager.TaskFailed("Job cancelled. Initial LivdCD build failed.")
-                        
-                        ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-                        if ret != 0:
-                            self.multiLog("Initial LiveCD build failed. Retry %d" % i, log)
-                            continue
-                        else:
-                            success = True
-                            break
-                    if not success:
-                        self.multiLog("Initial LiveCD build failed finally.", log)
-                        raise dissomniag.taskManager.TaskFailed("Initial LiveCD build failed finally.")
+                    cmd = "lb bootstrap"
+                    self.multiLog("Run lb bootstrap", log)
+                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    if ret != 0:
+                        self.multiLog("LB bootstrap error")
+                        raise dissomniag.taskManager.TaskFailed() 
+                    
+                    #8. Make chrooot
+                    # Try 10 times (Solves some repository connection timeout problems)
+                    cmd = "lb chroot"
+                    self.multiLog("Run lb chroot", log)
+                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    if ret != 0:
+                        self.multiLog("LB chroot error")
+                        raise dissomniag.taskManager.TaskFailed()
+                    
+                    #9. Make binary
+                    # Try 10 times (Solves some repository connection timeout problems)
+                    cmd = "lb binary"
+                    self.multiLog("Run lb binary", log)
+                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    if ret != 0:
+                        self.multiLog("LB binary error")
+                        raise dissomniag.taskManager.TaskFailed()   
+                    
+                    #8. 
+                    #cmd = "lb build"
+                    #self.multiLog("Run lb build", log)
+                    #ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    #success = False
+                    #for i in range(1, 11):
+                    #    if self.job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
+                    #        self.multiLog("Job cancelled. Initial LivdCD build failed. (lb build")
+                    #        raise dissomniag.taskManager.TaskFailed("Job cancelled. Initial LivdCD build failed.")
+                    #    
+                    #    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    #    if ret != 0:
+                    #        self.multiLog("Initial LiveCD build failed. Retry %d" % i, log)
+                    #        continue
+                    #    else:
+                    #        success = True
+                    #        break
+                    #if not success:
+                    #   self.multiLog("Initial LiveCD build failed finally.", log)
+                    #    raise dissomniag.taskManager.TaskFailed("Initial LiveCD build failed finally.")
+                    
+                    #8.
     
                     #7. Mark environment as Prepared
                     preparedFile = os.path.join(self.patternFolder, "CHECKED")
@@ -450,6 +497,14 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
         
         with dissomniag.rootContext():
+            
+            #Clean to binary
+            cmd = "lb clean --binary"
+            self.multiLog("running %s" % cmd)
+            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            if ret != 0:
+                self.multiLog("LB clean --binary error")
+                #raise dissomniag.taskManager.TaskFailed()
         
             self.stageDir = os.path.join(self.patternFolder, ".build")
             self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary/")
@@ -465,14 +520,14 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
                 self.multiLog("Cannot recreate %s" % self.binLocalInc)
     
             
-            if self.stageDir.endswith("/"):
-                cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
-            else:
-                cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
-            self.multiLog("exec %s" % cmd, log)
-            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-            if ret != 0:
-                self.multiLog("Could not exec %s correctly" % cmd, log)
+            #if self.stageDir.endswith("/"):
+            #    cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
+            #else:
+            #    cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
+            #self.multiLog("exec %s" % cmd, log)
+            #ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            #if ret != 0:
+            #    self.multiLog("Could not exec %s correctly" % cmd, log)
     
     def run(self):
         if (not hasattr(self.context, "LiveCd")):
@@ -515,8 +570,10 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
                     
                     #2. Make initial Build
                     # Try 10 times (Solves some repository connection timeout problems)
-                    cmd = "lb build"
-                    self.multiLog("Make initial Build", log)
+                    #cmd = "lb build"
+                    #self.multiLog("Make initial build", log)
+                    cmd = "lb binary"
+                    self.multiLog("lb binary", log)
                     success = False
                     for i in range(1, 11):
                         if self.job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
@@ -539,7 +596,7 @@ class CreateLiveCd(dissomniag.taskManager.AtomicTask):
                     if not os.access(self.context.LiveCd.vm.getUtilityFolder(), os.F_OK):
                         os.makedirs(self.context.LiveCd.vm.getUtilityFolder())
                         
-                    shutil.copy2("./binary.hybrid.iso", self.context.LiveCd.vm.getLocalPathToCdImage(self.job.getUser()))
+                    shutil.copy2("./binary.iso", self.context.LiveCd.vm.getLocalPathToCdImage(self.job.getUser()))
                     
                     with open(os.path.join(self.context.LiveCd.vm.getLocalUtilityFolder(), "configHash"), 'w') as f:
                         f.write(self.versioningHash)

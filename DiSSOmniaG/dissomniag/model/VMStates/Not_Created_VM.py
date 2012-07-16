@@ -74,8 +74,10 @@ class Not_Created_VM(AbstractVMState):
                     
                     #2. Make initial Build
                     # Try 10 times (Solves some repository connection timeout problems)
-                    cmd = "lb build"
-                    self.multiLog("Make initial Build", job, log)
+                    #cmd = "lb build"
+                    #self.multiLog("Make initial Build", job, log)
+                    cmd = "lb binary"
+                    self.multiLog("lb binary", job, log)
                     success = False
                     for i in range(1, 11):
                         if job._getStatePrivate() == dissomniag.taskManager.jobs.JobStates.CANCELLED:
@@ -99,7 +101,7 @@ class Not_Created_VM(AbstractVMState):
                     # Check if folder for image exists
                     if not os.access(self.vm.getLocalUtilityFolder(job.getUser()), os.F_OK):
                         os.makedirs(self.vm.getLocalUtilityFolder(job.getUser()))
-                    shutil.copy2("./binary.hybrid.iso", self.vm.getLocalPathToCdImage(job.getUser()))
+                    shutil.copy2("./binary.iso", self.vm.getLocalPathToCdImage(job.getUser()))
                     
                     with open(os.path.join(self.vm.getLocalUtilityFolder(job.getUser()), "configHash"), 'w') as f:
                         f.write(self.versioningHash)
@@ -143,6 +145,15 @@ class Not_Created_VM(AbstractVMState):
         self.patternFolder = os.path.join(dissomniag.config.dissomniag.serverFolder, dissomniag.config.dissomniag.liveCdPatternDirectory)
         
         with dissomniag.rootContext():
+            
+            #Clean to binary
+            cmd = "lb clean --binary"
+            self.multiLog("running %s" % cmd)
+            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            if ret != 0:
+                self.multiLog("LB clean --binary error")
+                #raise dissomniag.taskManager.TaskFailed()
+                
             self.stageDir = os.path.join(self.patternFolder, ".build")
             self.binLocalInc = os.path.join(self.patternFolder, "config/includes.binary/")
             
@@ -155,14 +166,14 @@ class Not_Created_VM(AbstractVMState):
                 os.makedirs(self.binLocalInc)
             except (OSError, IOError) as e:
                 self.multiLog("Cannot recreate %s" % self.binLocalInc)
-            
-            if self.stageDir.endswith("/"):
-                cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
-            else:
-                cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
-            self.multiLog("exec %s" % cmd, job, log)
-            ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-            if ret != 0:
-                self.multiLog("Could not exec %s correctly" % cmd, job, log)
+            #
+            #if self.stageDir.endswith("/"):
+            #    cmd = "rm %sbinary_disk %sbinary_checksums %sbinary_includes" % (self.stageDir, self.stageDir, self.stageDir)
+            #else:
+            #    cmd = "rm %s/binary_disk %s/binary_checksums %s/binary_includes" % (self.stageDir, self.stageDir, self.stageDir)
+            #self.multiLog("exec %s" % cmd, job, log)
+            #ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+            #if ret != 0:
+            #    self.multiLog("Could not exec %s correctly" % cmd, job, log)
         return True
         

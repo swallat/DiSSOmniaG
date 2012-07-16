@@ -22,11 +22,16 @@
 lb config noauto \
         --mode debian \
         --distribution squeeze \
+        --parent-distribution squeeze \
+        --binary-images iso \
         --apt aptitude \
         --architecture i386 \
         --package-lists 'gnome dissomniag' \
         --bootappend-live "username=user locales=de_DE.UTF-8 keyboard-layouts=de" \
         --tasks 'german german-desktop german-gnome-desktop' \
         --boot config \
-        -m http://localhost/debian
+        -m http://localhost/debian \
+        --mirror-bootstrap http://localhost/debian \
+        --mirror-chroot http://localhost/debian \
+        --mirror-binary http://localhost/debian \
 		"${@}"
