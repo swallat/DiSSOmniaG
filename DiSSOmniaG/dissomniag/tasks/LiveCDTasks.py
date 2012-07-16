@@ -414,11 +414,15 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                             self.multiLog("Cannot copy packages.chroot")
                             
                     #6c Copy isolinux cfg
-                    isolinuxCfgDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "includes.binary")
+                    isolinuxCfgDir = os.path.join(dissomniag.config.dissomniag.staticLiveFolder, "includes.binary/isolinux")
+                    try:
+                        os.makedirs(os.path.join(self.patternFolder, "config/includes.binary/isolinux/"))
+                    except OSError:
+                        self.multiLog("Cannot create config/includes.binary/isolinux/")
                     listings = os.listdir(isolinuxCfgDir)
                     for infile in listings:
                         try:
-                            shutil.copy2(os.path.join(isolinuxCfgDir, infile), os.path.join(self.patternFolder, "config/packages.chroot/"))
+                            shutil.copy2(os.path.join(isolinuxCfgDir, infile), os.path.join(self.patternFolder, "config/includes.binary/isolinux/"))
                         except OSError:
                             self.multiLog("Cannot copy includes.binary")
                       
