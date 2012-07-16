@@ -31,17 +31,17 @@ set -x
 user=user
 
 adduser --home /home/$user --quiet --gecos ,,,, --disabled-password $user
-usermod -G sudo,$user $user
+usermod -a -G sudo $user
+#
+#passwd $user << EOF
+#b00tloader
+#b00tloader
+#EOF
 
-passwd $user << EOF
-b00tloader
-b00tloader
-EOF
-
-passwd root << EOF
-b00tloader
-b00tloader
-EOF
+#passwd root << EOF
+#b00tloader
+#b00tloader
+#EOF
 
 aptitude install -y python3-dev python3-setuptools
 
