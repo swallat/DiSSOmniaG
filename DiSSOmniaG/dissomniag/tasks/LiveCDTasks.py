@@ -369,7 +369,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                     listings = os.listdir(hooksFilesDir)
                     for infile in listings:
                         try:
-                            shutil.copy2(os.path.join(hooksFilesDir, infile), os.path.join(self.patternFolder, "config/hooks/"))
+                            shutil.copy2(os.path.join(hooksFilesDir, infile), os.path.join(self.patternFolder, "config/hooks/" + infile))
                         except OSError:
                             self.multiLog("Cannot copy an chroot_local-hook")
                     
@@ -386,7 +386,7 @@ class PrepareLiveCdEnvironment(dissomniag.taskManager.AtomicTask):
                     listings = os.listdir(packagesChrootStaticDir)
                     for infile in listings:
                         try:
-                            shutil.copy2(os.path.join(packagesChrootStaticDir, infile), os.path.join(self.patternFolder, "config/packages.chroot/"))
+                            shutil.copy2(os.path.join(packagesChrootStaticDir, infile), os.path.join(self.patternFolder, "config/packages.chroot/" + infile))
                         except OSError:
                             self.multiLog("Cannot copy packages.chroot")
                       
