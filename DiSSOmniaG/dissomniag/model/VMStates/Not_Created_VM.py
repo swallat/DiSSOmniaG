@@ -60,6 +60,14 @@ class Not_Created_VM(AbstractVMState):
                 
                 with self.myLock:
                     
+                    cmd = "lb config"
+                    self.multiLog("Run lb config", job, log)
+                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
+                    if ret != 0:
+                        self.multiLog("LB config error")
+                        raise dissomniag.taskManager.TaskFailed()
+                    
+                    
                     # 1. Copy infoXML
                     self.liveInfoString, self.versioningHash = self.liveCd.getInfoXMLwithVersionongHash(job.getUser())
                     lifeInfoFile = os.path.join(self.patternFolder, "config/includes.binary/liveInfo.xml")
@@ -77,12 +85,7 @@ class Not_Created_VM(AbstractVMState):
                     #cmd = "lb build"
                     #self.multiLog("Make initial Build", job, log)
                     
-                    cmd = "lb config"
-                    self.multiLog("Run lb config", job, log)
-                    ret, output = dissomniag.utils.StandardCmd(cmd, log).run()
-                    if ret != 0:
-                        self.multiLog("LB config error")
-                        raise dissomniag.taskManager.TaskFailed()
+                    
                     
                     cmd = "lb binary"
                     self.multiLog("lb binary", job, log)

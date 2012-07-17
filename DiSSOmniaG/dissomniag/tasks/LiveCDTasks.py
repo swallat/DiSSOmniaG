@@ -148,8 +148,8 @@ class CheckLiveCdEnvironmentPrepared(dissomniag.taskManager.AtomicTask):
         if configDirectoryExists:
             binaryLocalIncludesFolder = os.path.join(configDirectory, "includes.binary/")
             binaryLocalIncExists = os.access(binaryLocalIncludesFolder, os.F_OK)
-            if binaryLocalIncExists and os.listdir(binaryLocalIncludesFolder) != []:
-                binLocalIncEmpty = False
+            if os.access(os.path.join(binaryLocalIncludesFolder, "liveInfo.xml"), os.F_OK):
+                binLocalIncEmpty = False;
                 
         
         autoDirectory = os.path.join(self.patternFolder, "auto/")
