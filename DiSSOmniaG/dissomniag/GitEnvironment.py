@@ -663,6 +663,7 @@ class GitEnvironment(object):
             if self.adminRepo.is_dirty():
                 self._commit(job, "Dirty repo commit")
             origin = self.adminRepo.remotes.origin
+            dissomniag.getIdentity().refreshSSHEnvironment()
             try:
                 origin.pull()
             except Exception:
