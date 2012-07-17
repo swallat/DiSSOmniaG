@@ -46,6 +46,7 @@ class SSHKeyAddError(Exception):
 class Identity:
     isStarted = False
     systemUserName = "<System>"
+    sshEnvironmentPrepared = False
     
     """
     classdocs
@@ -151,6 +152,9 @@ class Identity:
             log.debug("SSH Key added to environment")
         
     def _prepareSSHEnvironment(self):
+        if self.sshEnvironmentPrepared:
+            return
+        
         proc = subprocess.Popen("ssh-agent", stdout = subprocess.PIPE,
                                             stderr = subprocess.STDOUT)
         lines = []
@@ -170,6 +174,7 @@ class Identity:
                     continue
                 log.info(command)
                 os.environ[pointers[0]] = pointers[1]
+        self.sshEnvironmentPrepared = True
                 
     def refreshSSHEnvironment(self):
         self._prepareSSHEnvironment()
