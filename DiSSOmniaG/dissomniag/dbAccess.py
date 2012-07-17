@@ -43,6 +43,7 @@ def saveFlush(session):
         session.flush()
     except Exception as e:
         session.rollback()
+        log.error("in save Flush. " + e)
         raise e
     
 def saveCommit(session):
@@ -50,4 +51,5 @@ def saveCommit(session):
         session.commit()
     except Exception as e:
         session.rollback()
+        log.error("In Save Commit. " + e)
         raise e

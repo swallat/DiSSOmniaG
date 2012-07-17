@@ -161,10 +161,10 @@ class Job(threading.Thread):
         
     def _setState(self, state):
         with self.writeProperty:
+            session = dissomniag.Session()
             self._reFetchInfoObj()
             self.state = state
             self.infoObj.state = state
-            session = dissomniag.Session()
             dissomniag.saveCommit(session)
         
     def _reFetchInfoObj(self):
