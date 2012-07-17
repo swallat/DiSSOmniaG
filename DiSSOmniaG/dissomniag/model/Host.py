@@ -139,8 +139,8 @@ class Host(AbstractNode):
         job.addTask(dissomniag.tasks.CheckHostUpTask())
         job.addTask(dissomniag.tasks.checkLibvirtVersionOnHost())
         job.addTask(dissomniag.tasks.checkKvmOnHost())
-        job.addTask(dissomniag.tasks.getFreeDiskSpaceOnHost())
-        job.addTask(dissomniag.tasks.getRamCapacityOnHost())
+        #job.addTask(dissomniag.tasks.getFreeDiskSpaceOnHost())
+        #job.addTask(dissomniag.tasks.getRamCapacityOnHost())
         
         dissomniag.taskManager.Dispatcher.addJob(user, job)
         
