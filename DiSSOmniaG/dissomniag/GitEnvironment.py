@@ -679,6 +679,7 @@ class GitEnvironment(object):
             if job != None:
                 self.multiLog("Entering git._push", job)
             origin = self.adminRepo.remotes.origin
+            dissomniag.getIdentity().refreshSSHEnvironment()
             try:
                 origin.push()
             except Exception:
