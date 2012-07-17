@@ -722,7 +722,7 @@ class VM(AbstractNode):
     
     @staticmethod
     def deleteNode(user, node):
-        return VM.deleteVM(user, node)
+        return VM.deleteVm(user, node)
     
     
 class VMIdentity(VM, dissomniag.Identity):
