@@ -90,6 +90,8 @@ class Host(AbstractNode):
         state.text = dissomniag.model.NodeState.getStateName(self.state)
         lastCheckedElem = etree.SubElement(host, "lastChecked")
         lastCheckedElem.text = str(self.lastChecked);
+        interfaceNameElem = etree.SubElement(host, "bridgedInterfaceName")
+        interfaceNameElem.test = self.bridgedInterfaceName
         return host
         
     

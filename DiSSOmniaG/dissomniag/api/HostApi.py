@@ -25,6 +25,8 @@ def getHostList(user):
     
     dissomniagPublicSshKey.text = text
     
+    hostList = etree.Element("host-list")
+    
     session = dissomniag.Session()
     
     try:
@@ -33,7 +35,7 @@ def getHostList(user):
         pass
     else:
         for host in hosts:
-            root.append(host.getUserXml())
+            hostList.append(host.getUserXml())
             
     retString = etree.tostring(root, pretty_print = True)
     log.info("Send hostList: " + retString)
