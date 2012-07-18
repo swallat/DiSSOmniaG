@@ -25,13 +25,10 @@ def getHostList(user):
     
     dissomniagPublicSshKey.text = text
     
-    
-    
     hostList = etree.SubElement(root, "host-list")
     
+    session = dissomniag.Session()
     return etree.tostring(root, pretty_print = True)
-    
-    #session = dissomniag.Session()
     
     #try:
     #    hosts = session.query(dissomniag.model.Host).all()
