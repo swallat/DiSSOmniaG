@@ -91,7 +91,7 @@ class Host(AbstractNode):
         lastCheckedElem = etree.SubElement(host, "lastChecked")
         lastCheckedElem.text = str(self.lastChecked);
         interfaceNameElem = etree.SubElement(host, "bridgedInterfaceName")
-        interfaceNameElem.test = self.bridgedInterfaceName
+        interfaceNameElem.text = self.bridgedInterfaceName
         return host
         
     
