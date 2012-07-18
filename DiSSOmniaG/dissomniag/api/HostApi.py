@@ -28,15 +28,15 @@ def getHostList(user):
     hostList = etree.SubElement(root, "host-list")
     
     session = dissomniag.Session()
-    return etree.tostring(root, pretty_print = True)
     
-    #try:
-    #    hosts = session.query(dissomniag.model.Host).all()
-    #except NoResultFound:
-    #    pass
-    #else:
-    #    for host in hosts:
-    #        hostList.append(host.getUserXml())
+    try:
+        hosts = session.query(dissomniag.model.Host).all()
+    except NoResultFound:
+        pass
+    else:
+        for host in hosts:
+            hostList.append(host.getUserXml())
+    return etree.tostring(root, pretty_print = True)
             
     #retString = etree.tostring(root, pretty_print = True)
     #log.info("Send hostList: " + retString)
