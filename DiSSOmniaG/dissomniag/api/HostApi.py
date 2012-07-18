@@ -17,14 +17,17 @@ def getHostList(user):
     
     root = etree.Element("result")
     errorMsg = etree.SubElement(root, "error")
+    
+    dissomniagPublicSshKey = etree.SubElement(root, "public-ssh-key")
+    
+    text = ""
+    with open(os.path.abspath(dissomniag.config.dissomniag.rsaKeyPublic), "r") as f:
+        text = f.read();
+    
+    dissomniagPublicSshKey.text = text
+    
     return etree.tostring(root, pretty_print = True)
-    #dissomniagPublicSshKey = etree.SubElement(root, "public-ssh-key")
     
-    #text = ""
-    #with open(os.path.abspath(dissomniag.config.dissomniag.rsaKeyPublic), "r") as f:
-    #    text = f.read();
-    
-    #dissomniagPublicSshKey.text = text
     #hostList = etree.SubElement(root, "host-list")
     
     #session = dissomniag.Session()
