@@ -36,4 +36,6 @@ def getHostList(user):
         for host in hosts:
             hostList.append(host.getUserXml())
             
-    return etree.tostring(root, pretty_print = True)
+    retString = etree.tostring(root, pretty_print = True)
+    log.info("Send hostList: " + retString)
+    return retString
