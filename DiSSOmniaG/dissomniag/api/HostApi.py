@@ -25,7 +25,7 @@ def getHostList(user):
     
     dissomniagPublicSshKey.text = text
     
-    hostList = etree.Element("host-list")
+    hostList = etree.Element(root, "host-list")
     
     session = dissomniag.Session()
     
