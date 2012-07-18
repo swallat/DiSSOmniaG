@@ -88,8 +88,8 @@ class Host(AbstractNode):
         maintainanceIp.text = self.getMaintainanceIP().addr;
         state = etree.SubElement(host, "hostState");
         state.text = dissomniag.model.NodeState.getStateName(self.state)
-        lastChecked = etree.SubElement(host, "lastChecked")
-        lastChecked.text = self.lastChecked;
+        lastCheckedElem = etree.SubElement(host, "lastChecked")
+        lastCheckedElem.text = self.lastChecked;
         return host
         
     
