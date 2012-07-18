@@ -14,6 +14,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 log = logging.getLogger("api.Hosts.py")
 
 def getHostList(user):
+    return "HALLO"
     root = etree.Element("result")
     errorMsg = etree.SubElement(root, "error")
     
