@@ -89,7 +89,7 @@ class Host(AbstractNode):
         state = etree.SubElement(host, "hostState");
         state.text = dissomniag.model.NodeState.getStateName(self.state)
         lastCheckedElem = etree.SubElement(host, "lastChecked")
-        lastCheckedElem.text = self.lastChecked;
+        lastCheckedElem.text = str(self.lastChecked);
         return host
         
     
