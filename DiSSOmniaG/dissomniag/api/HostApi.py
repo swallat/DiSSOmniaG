@@ -14,9 +14,10 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 log = logging.getLogger("api.Hosts.py")
 
 def getHostList(user):
-    root = etree.Element("hosts")
-    dissomniagPublicSshKey = etree.SubElement(root, "public-ssh-key")
+    root = etree.Element("result")
+    errorMsg = etree.SubElement(root, "error")
     
+    dissomniagPublicSshKey = etree.SubElement(root, "public-ssh-key")
     
     text = ""
     with open(os.path.abspath(dissomniag.config.dissomniag.rsaKeyPublic), "r") as f:
@@ -30,9 +31,9 @@ def getHostList(user):
     try:
         hosts = session.query(dissomniag.model.Host).all()
     except NoResultFound:
-        return etree.tostring(root, pretty_print = True)
+        pass
     else:
         for host in hosts:
             hostList.append(host.getUserXml())
             
-        return etree.tostring(root, pretty_print = True)
+    return etree.tostring(root, pretty_print = True)
