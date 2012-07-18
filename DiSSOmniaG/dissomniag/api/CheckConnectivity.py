@@ -13,4 +13,7 @@ def testConnection(user):
 
 def isAdminUser(user):
     return user.isAdmin
+
+def getHostList2(user):
+    return "HALLO"
     
