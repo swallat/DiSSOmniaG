@@ -41,3 +41,23 @@ def getHostList(user):
     retString = etree.tostring(root, pretty_print = True)
     log.info("Send hostList: " + retString)
     return retString
+
+def checkHost(user, hostName):
+    root = etree.Element("result")
+    errorMsg = etree.SubElement(root, "error")
+    
+    if not user.isAdmin:
+        errorMsg.text("User is no admin user")
+        return etree.tostring(root, pretty_print = True)
+    
+    session = dissomniag.Session()
+    host = None
+    try:
+        host = session.query(dissomniag.model.Host).filter(dissomniag.model.Host.commonName == str(hostName)).one()
+    except (NoResultFound, MultipleResultsFound):
+        errorMsg.text("The Host you have entered is not known or valid.")
+        return etree.tostring(root, pretty_print = True)
+    
+    host.checkFull(user)
+    return etree.tostring(root, pretty_print = True)
+    
