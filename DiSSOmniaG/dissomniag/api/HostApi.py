@@ -26,20 +26,18 @@ def getHostList(user):
     
     dissomniagPublicSshKey.text = text
     
-    return etree.tostring(root, pretty_print = True)
+    hostList = etree.SubElement(root, "host-list")
     
-    #hostList = etree.SubElement(root, "host-list")
+    session = dissomniag.Session()
     
-    #session = dissomniag.Session()
-    
-    #try:
-    #    hosts = session.query(dissomniag.model.Host).all()
-    #except NoResultFound:
-    #    pass
-    #else:
-    #    for host in hosts:
-    #        hostList.append(host.getUserXml())
+    try:
+        hosts = session.query(dissomniag.model.Host).all()
+    except NoResultFound:
+        pass
+    else:
+        for host in hosts:
+            hostList.append(host.getUserXml())
             
-    #retString = etree.tostring(root, pretty_print = True)
-    #log.info("Send hostList: " + retString)
-    #return retString
+    retString = etree.tostring(root, pretty_print = True)
+    log.info("Send hostList: " + retString)
+    return retString
