@@ -4,7 +4,6 @@ Created on 14.07.2012
 @author: Sebastian Wallat
 '''
 from lxml import etree
-import datetime
 import dissomniag.auth.User
 import dissomniag.model.Host
 import dissomniag.config
@@ -26,18 +25,22 @@ def getHostList(user):
     
     dissomniagPublicSshKey.text = text
     
+    
+    
     hostList = etree.SubElement(root, "host-list")
     
-    session = dissomniag.Session()
+    return etree.tostring(root, pretty_print = True)
     
-    try:
-        hosts = session.query(dissomniag.model.Host).all()
-    except NoResultFound:
-        pass
-    else:
-        for host in hosts:
-            hostList.append(host.getUserXml())
+    #session = dissomniag.Session()
+    
+    #try:
+    #    hosts = session.query(dissomniag.model.Host).all()
+    #except NoResultFound:
+    #    pass
+    #else:
+    #    for host in hosts:
+    #        hostList.append(host.getUserXml())
             
-    retString = etree.tostring(root, pretty_print = True)
-    log.info("Send hostList: " + retString)
-    return retString
+    #retString = etree.tostring(root, pretty_print = True)
+    #log.info("Send hostList: " + retString)
+    #return retString
