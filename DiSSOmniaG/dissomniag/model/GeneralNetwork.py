@@ -27,7 +27,7 @@ from dissomniag.model import *
 
 class GeneralNetwork(dissomniag.Base):
     __tablename__ = "generalNetworks"
-    id = sa.Column('id', sa.Integer, sa.ForeignKey('networks.id'), primary_key = True)
+    id = sa.Column('id', sa.Integer, primary_key = True)
     name = sa.Column(sa.String, nullable = False)
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     topology = orm.relationship("Topology", backref = "generalNetworks")
@@ -36,8 +36,9 @@ class GeneralNetwork(dissomniag.Base):
     zValue = sa.Column(sa.Integer, nullable = False, default = 0)
 
 
-    def __init__(selfparams):
+    def __init__(self):
         '''
         Constructor
         '''
+        pass
         
