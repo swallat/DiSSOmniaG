@@ -26,8 +26,8 @@ from IpAddress import *
 from SSHNodeKey import *
 from AbstractNode import *
 from Host import *
-from GeneralNetwork import *
 from VM import *
+from GeneralNetwork import *
 from LiveCd import *
 from Topology import *
 from ControlSystem import *

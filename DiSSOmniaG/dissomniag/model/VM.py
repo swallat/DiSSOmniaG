@@ -60,7 +60,6 @@ class VM(AbstractNode):
     xValue = sa.Column(sa.Integer, nullable = False, default = 0)
     yValue = sa.Column(sa.Integer, nullable = False, default = 0)
     zValue = sa.Column(sa.Integer, nullable = False, default = 0)
-    generalNetworks = orm.relationship('GeneralNetworks', secondary=vm_generalNetwork, backref='vms')
     runningState = None
     
     """

@@ -41,6 +41,7 @@ class GeneralNetwork(dissomniag.Base):
     xValue = sa.Column(sa.Integer, nullable = False, default = 0)
     yValue = sa.Column(sa.Integer, nullable = False, default = 0)
     zValue = sa.Column(sa.Integer, nullable = False, default = 0)
+    vms = orm.relationship('VM', secondary=vm_generalNetwork, backref='generalNetworks')
 
 
     def __init__(self):
