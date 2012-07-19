@@ -166,11 +166,12 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
             pass
         else:
             for vm in vms:
-                context = dissomniag.taskManager.Context()
-                context.add(vm, "vm")
-                job = dissomniag.taskManager.Job(context, "Sanity check VM on startup", user = self.user)
-                job.addTask(dissomniag.tasks.statusVM())
-                dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, vm.host, job)
+                if (vm.host != None):
+                    context = dissomniag.taskManager.Context()
+                    context.add(vm, "vm")
+                    job = dissomniag.taskManager.Job(context, "Sanity check VM on startup", user = self.user)
+                    job.addTask(dissomniag.tasks.statusVM())
+                    dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, vm.host, job)
         
         #print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
         log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
