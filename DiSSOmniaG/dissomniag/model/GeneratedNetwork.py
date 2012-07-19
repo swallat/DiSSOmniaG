@@ -104,7 +104,6 @@ class generatedNetwork(Network):
             self.name = "<EmptyName>"
         if topology:
             self.topology = topology
-        assert isinstance(host, dissomniag.model.Host)
         super(generatedNetwork, self).__init__(user = user, network = network, node = host, name = name)
         self.setDhcpServerAddress(user)
         self.state = GenNetworkState.INACTIVE
