@@ -48,4 +48,26 @@ def getTopologyList(user):
     retString = etree.tostring(root, pretty_print = True)
     log.info("Send TopologyList: " + retString)
     return retString
+
+def isTopologyNameValid(user, topoName):
+    
+    root = etree.Element("result")
+    errorMsg = etree.SubElement(root, "error")
+    
+    topoName = str(topoName)
+    
+    session = dissomniag.Session()
+    isValid = "false"
+    try:
+        topo = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
+    except NoResultFound:
+        isValid = "true"
+    else:
+        isValid = "false"
+        
+    valid = etree.SubElement(root, "isValid")
+    valid.text = isValid
+    retString = etree.tostring(root, pretty_print = True)
+    log.info("Senf isTopologyNameValid: " + retString)
+    return retString
         
