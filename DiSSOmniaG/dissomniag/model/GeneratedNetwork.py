@@ -93,10 +93,15 @@ class generatedNetwork(Network):
     classdocs
     """
     
-    def __init__(self, user, network, host, topology = None):
+    def __init__(self, user, network, host, topology = None, name = None):
         if host != None:
             assert isinstance(host, dissomniag.model.Host)
-        name = self.findEmptyName(host)
+            if name == None:
+                name = self.findEmptyName(host)
+        if name != None:
+            self.name = name
+        else:
+            self.name = "<EmptyName>"
         if topology:
             self.topology = topology
         assert isinstance(host, dissomniag.model.Host)
