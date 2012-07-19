@@ -190,6 +190,11 @@ vms = Table('vms', meta,
            Column('zValue', Integer, nullable = False, default = 0),
 )
 
+vm_generalNetwork = Table('vm_generalNetwork', meta,
+           Column('vm_id', Integer, ForeignKey('vms.id')),
+           Column('generalNet_id', Integer, ForeignKey('generalNetworks.id')),
+)
+
 apps = Table('apps', meta,
            Column('id', Integer, primary_key = True),
            Column('name', String(20), nullable = False, unique = True),
@@ -248,6 +253,8 @@ def upgrade(migrate_engine):
     liveCds.create()
     print("Migrate: Add VMs Table")
     vms.create()
+    print("Migrate: Add VM_generalNetwork")
+    vm_generalNetwork.create()
     print("Migrate: Add Apps Table")
     apps.create()
     print("Migrate: Add User_App Table")
@@ -261,6 +268,7 @@ def downgrade(migrate_engine):
     app_livecd.drop()
     user_app.drop()
     apps.drop()
+    vm_generalNetwork.drop() 
     vms.drop()
     liveCds.drop()
     user_topology.drop()

@@ -25,6 +25,11 @@ import dissomniag
 from dissomniag.dbAccess import Base
 from dissomniag.model import *
 
+vm_generalNetwork = sa.Table('vm_generalNetwork', Base.metadata,
+                          sa.Column('vm_id', sa.Integer, sa.ForeignKey('vms.id')),
+                          sa.Column('generalNet_id', sa.Integer, sa.ForeignKey('generalNetworks.id')),
+)
+
 class GeneralNetwork(dissomniag.Base):
     __tablename__ = "generalNetworks"
     id = sa.Column('id', sa.Integer, primary_key = True)
@@ -34,6 +39,7 @@ class GeneralNetwork(dissomniag.Base):
     xValue = sa.Column(sa.Integer, nullable = False, default = 0)
     yValue = sa.Column(sa.Integer, nullable = False, default = 0)
     zValue = sa.Column(sa.Integer, nullable = False, default = 0)
+    vms = orm.relationship('VMS', secondary=vm_generalNetwork, backref='generalNetworks')
 
 
     def __init__(self):

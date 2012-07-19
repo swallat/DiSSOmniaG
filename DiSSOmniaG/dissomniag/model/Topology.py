@@ -48,6 +48,8 @@ class Topology(dissomniag.Base):
     classdocs
     """
     
+    
+    
     @staticmethod
     def deleteTopology(user, topo):
         if topo == None or type(topo) != Topology:
@@ -55,12 +57,19 @@ class Topology(dissomniag.Base):
         topo.authUser(user)
         
         #1. Delete VM's
-        for vm in topo.virtualMachines:
+        for vm in topo.vms:
             dissomniag.model.VM.deleteVM(user, vm)
             
         #2. Delete Networks's
         for net in topo.generatedNetworks:
             dissomniag.model.generatedNetwork.deleteNetwork(user, net)
+            
+        session = dissomniag.Session()
+        #3. Delete General Network's
+        for net in topo.generalNetworks:
+            session.delete(net)
+
+        dissomniag.saveCommit(session)
         
         context = dissomniag.taskManager.Context()
         context.add(topo, "topology") 
