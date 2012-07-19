@@ -39,7 +39,7 @@ class VM(AbstractNode):
     __mapper_args__ = {'polymorphic_identity': 'vm'}
     vm_id = sa.Column('id', sa.Integer, sa.ForeignKey('nodes.id'), primary_key = True)
     topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
-    topology = orm.relationship("Topology", backref = "vms")
+    topology = orm.relationship("Topology", backref = "vm")
     ramSize = sa.Column(sa.String, default = "1024MB", nullable = False)
     hdSize = sa.Column(sa.String, default = "5GB")
     isHdCreated = sa.Column(sa.Boolean, default = False, nullable = False)
@@ -49,7 +49,6 @@ class VM(AbstractNode):
     vncPassword = sa.Column(sa.String(40))
     dynamicAptList = sa.Column(sa.String)
     lastSeenClient = sa.Column(sa.DateTime)
-    topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
     host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))    # The characters to make up the random password
     host = orm.relationship("Host", primaryjoin = "VM.host_id == Host.host_id", backref = "virtualMachines")
     liveCd_id = sa.Column(sa.Integer, sa.ForeignKey('livecds.id'))
