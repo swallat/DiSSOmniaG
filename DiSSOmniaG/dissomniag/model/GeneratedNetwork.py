@@ -232,6 +232,8 @@ class generatedNetwork(Network):
         uuid = etree.SubElement(root, "uuid")
         uuid.text = self.uuid
         forward = etree.SubElement(root, "forward")
+        forwardAttrib = forward.attrib
+        forwardAttrib['mode'] = str("route")
         if self.withQos and self.getHost(user).libvirtVersion >= "0.9.4":
             bandwith = etree.SubElement(root, 'bandwith')
             inbound = etree.SubElement(bandwith, 'inbound')
