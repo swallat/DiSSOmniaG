@@ -135,13 +135,12 @@ class VM(AbstractNode):
     def __init__(self, user, commonName, host):
         
         if host != None and isinstance(host, dissomniag.model.Host):
-            self.host = host
+            self.setHost(user, host)
         
         sshKey = SSHNodeKey.generateVmKey(commonName, user="user")
         
         super(VM, self).__init__(user, commonName, sshKey = sshKey, state = dissomniag.model.NodeState.NOT_CREATED)
         self.selectInitialStateActor()
-        self.vncPort = self.getFreeVNCPortOnHost(user, host)
         self.vncPassword = dissomniag.utils.random_password()
         
         interface = self.addInterface(user, "maintain")
@@ -152,6 +151,11 @@ class VM(AbstractNode):
         
         session = dissomniag.Session()    
         dissomniag.saveCommit(session)
+        
+    def setHost(self, user, host):
+        if host != None and isinstance(host, dissomniag.model.Host):
+            self.host = host
+            self.vncPort = self.getFreeVNCPortOnHost(user, host)
     
     def getLibVirtXML(self, user):
         self.authUser(user)
