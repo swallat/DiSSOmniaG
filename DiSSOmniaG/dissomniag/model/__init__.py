@@ -32,6 +32,6 @@ from Topology import *
 from ControlSystem import *
 from VMStates import *
 from App import *
-from GeneralNet import *
+from GeneralNetwork import *
 
 
