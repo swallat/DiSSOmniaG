@@ -345,6 +345,86 @@ class VM(AbstractNode):
         
         return domain
     
+    def getGuiXml(self, user):
+        root = etree.Element("node")
+        name = etree.SubElement(root, "name")
+        name.text = self.commonName
+        pos = etree.SubElement(root, "pos")
+        xV = etree.SubElement(pos, "x")
+        xV.text = str(self.xValue)
+        yV = etree.SubElement(pos, "y")
+        yV.text = str(self.yValue)
+        zV = etree.SubElement(pos, "z")
+        zV.text =str(self.zValue)
+        
+        maintainanceInterface = self.getMaintainanceInterface(user)
+        
+        maintainInterface = etree.SubElement(root, "maintainance-interface")
+        maintainIsKnown = etree.SubElement(maintainInterface, "is-known")
+        if maintainanceInterface == None or maintainanceInterface.ipAddresses == []:
+            maintainIsKnown.text = "false"
+        else:
+            maintainIsKnown.text = "true"
+            maintainIp = etree.SubElement(maintainInterface, "maintain-ip")
+            maintainIp.text = str(maintainanceInterface.ipAddresses[0].addr)
+            
+        host = etree.SubElement(root, "host")
+        isHostDefined = etree.SubElement(host, "is-host-defined")
+        if self.host == None or not isinstance(self.host, dissomniag.model.Host):
+            isHostDefined.text = "false"
+        else:
+            isHostDefined.text = "true"
+            hostName = etree.SubElement(host, "host-name")
+            hostName.text = str(self.host.commonName)
+            
+        vncInfo = etree.SubElement(root, "vnc-info")
+        vncPort = etree.SubElement(vncInfo, "port")
+        if self.vncPort != None:
+            vncPort.text = str(self.vncPort)
+        else:
+            vncPort.text = ""
+            
+        vncPassword = etree.SubElement(vncInfo, "vnc-password")
+        if self.vncPassword != None:
+            vncPassword.text = str(self.vncPassword)
+        else:
+            vncPassword.text = ""
+            
+        lastSeen = etree.SubElement(root, "last-seen")
+        lastSeen.text = str(self.lastSeen)
+        
+        state = etree.SubElement(root, "state")
+        state.text = str(dissomniag.model.NodeState.getStateName(self.state))
+        
+        allConnections = etree.SubElement(root, "all-connections")
+        
+        for interface in self.interfaces:
+            if interface.ipAddresses == [] or \
+                interface.ipAddresses[0].network == None or \
+                not isinstance(interface.ipAddresses[0].network, dissomniag.model.generatedNetwork):
+                continue
+            
+            connection = etree.SubElement(allConnections, "connection")
+            type = etree.SubElement(connection, "type")
+            type.name = "vm-net"
+            networkName = etree.SubElement(connection, "network-name")
+            networkName.text = str(interface.ipAddresses[0].network.name)
+            interfaceName = etree.SubElement(connection, "interface-name")
+            interfaceName.text = str(interface.name)
+            interfaceMac = etree.SubElement(connection, "interface-mac")
+            interfaceMac.text = str(interface.macAddress)
+            ipAddress = etree.SubElement(connection, "ip-address")
+            ipAddress.text = str(interface.ipAddresses[0].addr)
+        
+        for net in self.generalNetworks:
+            connection = etree.SubElement(allConnections, "connection")
+            type = etree.SubElement(connection, "type")
+            type.text = "general-net"
+            networkName = etree.SubElement(connection, "network-name")
+            networkName.text = str(net.name)
+            
+        return root 
+    
     def getLibVirtString(self, user):
         self.authUser(user)
         return etree.tostring(self.getLibVirtXML(user), pretty_print = True)

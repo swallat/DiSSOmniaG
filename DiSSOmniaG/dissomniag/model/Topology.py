@@ -21,6 +21,8 @@
 # along with DiSSOmniaG. If not, see <http://www.gnu.org/licenses/>
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+import lxml
+from lxml import etree
 
 import dissomniag
 from dissomniag.model import *
@@ -48,6 +50,29 @@ class Topology(dissomniag.Base):
     classdocs
     """
     
+    def getShortXml(self, user):
+        root = etree.Element("topology")
+        name = etree.SubElement(root, "name")
+        name.text = str(self.name)
+        userList = etree.SubElement(root, "user-list")
+        for user in self.users:
+            userName = etree.SubElement(userList, "user-name")
+            userName.text = str(user.username)
+        return root
+    
+    def getFullXml(self, user):
+        root = self.getShortXml(user)
+        
+        for vm in self.vms:
+            root.append(vm.getGuiXml(user))
+            
+        for genNet in self.generatedNetworks:
+            root.append(genNet.getGuiXml(user))
+        
+        for generalNet in self.generalNetworks:
+            root.append(generalNet.getGuiXml(user))
+            
+        return root
     
     
     @staticmethod

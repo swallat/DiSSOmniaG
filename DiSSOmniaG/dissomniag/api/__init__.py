@@ -27,3 +27,4 @@ from SimpleMath import *
 from Update import *
 from CheckConnectivity import *
 from HostApi import *
+from TopologyApi import *

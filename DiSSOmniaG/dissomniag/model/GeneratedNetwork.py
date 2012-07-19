@@ -110,6 +110,28 @@ class generatedNetwork(Network):
         session = dissomniag.Session()
         dissomniag.saveCommit(session)
         
+    def getGuiXml(self, user):
+        root = etree.Element("vm-net")
+        name = etree.SubElement(root, "name")
+        name.text = str(self.name)
+        pos = etree.SubElement(root, "pos")
+        xV = etree.SubElement(pos, "x")
+        xV.text = str(self.xValue)
+        yV = etree.SubElement(pos, "y")
+        yV.text = str(self.yValue)
+        zV = etree.SubElement(pos, "z")
+        zV.text = str(self.zValue)
+        
+        state = etree.SubElement(root, "state")
+        state.text = str(dissomniag.model.GenNetworkState.getStateName(self.state))
+        
+        netAddress = etree.SubElement(root, "net-address")
+        netAddress.text = str(self.netAddress)
+        netMask = etree.SubElement(root, "net-mask")
+        netMask.text = str(self.netMask)
+        
+        return root
+        
     def findEmptyName(self, host):
         name = None
         existingNames = []

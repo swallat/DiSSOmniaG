@@ -21,6 +21,8 @@
 # along with DiSSOmniaG. If not, see <http://www.gnu.org/licenses/>
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+import lxml
+from lxml import etree
 import dissomniag
 from dissomniag.dbAccess import Base
 from dissomniag.model import *
@@ -47,4 +49,18 @@ class GeneralNetwork(dissomniag.Base):
         Constructor
         '''
         pass
+    
+    def getGuiXml(self, user):
+        root = etree.Element("gen-net")
+        name = etree.SubElement(root, "name")
+        name.text = str(self.name)
+        pos = etree.SubElement(root, "pos")
+        xV = etree.SubElement(pos, "x")
+        xV.text = str(self.xValue)
+        yV = etree.SubElement(pos, "y")
+        yV.text = str(self.yValue)
+        zV = etree.SubElement(pos, "z")
+        zV.text = str(self.zValue)
+        return root
+
         
