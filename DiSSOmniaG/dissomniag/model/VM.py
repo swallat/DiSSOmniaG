@@ -38,6 +38,8 @@ class VM(AbstractNode):
     __tablename__ = 'vms'
     __mapper_args__ = {'polymorphic_identity': 'vm'}
     vm_id = sa.Column('id', sa.Integer, sa.ForeignKey('nodes.id'), primary_key = True)
+    topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
+    topology = orm.relationship("Topology", backref = "vms")
     ramSize = sa.Column(sa.String, default = "1024MB", nullable = False)
     hdSize = sa.Column(sa.String, default = "5GB")
     isHdCreated = sa.Column(sa.Boolean, default = False, nullable = False)

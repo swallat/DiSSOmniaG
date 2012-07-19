@@ -125,7 +125,6 @@ genNetworks = Table('genNetworks', meta,
 topologies = Table('topologies', meta,
            Column('id', Integer, primary_key = True),
            Column('name', String, nullable = False),
-           Column('host_id', Integer, ForeignKey('hosts.id')),
 )
 
 node_network = Table('node_network', meta,
@@ -142,7 +141,6 @@ ipAddresses = Table('ipAddresses', meta,
            Column('node_id', Integer, ForeignKey('nodes.id')), #One to many style
            Column('interface_id', Integer, ForeignKey('interfaces.id')), # One to many style
            Column('network_id', Integer, ForeignKey('networks.id')), # Many to One style
-           Column('topology_id', Integer, ForeignKey('topologies.id')), #Many to One style
            UniqueConstraint('addr', 'node_id', name = "uniqueAddressPerNode"),
 )
 
@@ -162,6 +160,7 @@ liveCds = Table('livecds', meta,
 
 vms = Table('vms', meta,
            Column('id', Integer, ForeignKey('nodes.id'), primary_key = True),
+           Column('topology_id', Integer, ForeignKey('topologies.id')),
            Column('ramSize', String, default = "1024MB", nullable = False),
            Column('hdSize', String, default = "5GB"),
            Column('isHdCreated', Boolean, default = False, nullable = False),
@@ -171,7 +170,6 @@ vms = Table('vms', meta,
            Column('vncPassword', String(40)),
            Column('dynamicAptList', String),
            Column('lastSeenClient', DateTime),
-           Column('topology_id', Integer, ForeignKey('topologies.id')),
            Column('host_id', Integer, ForeignKey('hosts.id')),
            Column('liveCd_id', Integer, ForeignKey('livecds.id')),
            Column("maintainUser_id", Integer, ForeignKey('users.id')),
@@ -193,16 +191,6 @@ app_livecd = Table('app_livecd', meta,
            Column('lastSeen', DateTime),
            Column('state', Integer),
            Column('log', String),
-)
-
-
-
-topology_connections = Table('topologyConnections', meta,
-          Column('id', Integer, primary_key = True),
-          Column('fromVM_id', Integer, ForeignKey('vms.id'), nullable = False),
-          Column('viaGenNetwork_id', Integer, ForeignKey('networks.id'), nullable = False),
-          Column('toVm_id', Integer, ForeignKey('vms.id'), nullable = False),
-          Column('topology_id', Integer, ForeignKey('topologies.id')),
 )
 
 
@@ -249,13 +237,10 @@ def upgrade(migrate_engine):
     user_app.create()
     print("Migrate: Add App_LiveCd Table")
     app_livecd.create()
-    print("Migrate: Add Topology_Connections Table")
-    topology_connections.create()
     
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    topology_connections.drop()
     app_livecd.drop()
     user_app.drop()
     apps.drop()

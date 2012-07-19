@@ -46,8 +46,6 @@ class IpAddress(dissomniag.Base):
     interface = orm.relationship('Interface', backref = 'ipAddresses')
     network_id = sa.Column(sa.Integer, sa.ForeignKey('networks.id')) # Many to One style
     network = orm.relationship('Network', primaryjoin = "IpAddress.network_id == Network.id", backref = 'ipAddresses') # Many to One style
-    topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id')) # Many to one style
-    topology = orm.relationship('Topology', backref = 'ipAddresses')
     __table_attr__ = (sa.UniqueConstraint('addr', 'node_id', name = "uniqueAddressPerNode"))
     
     """

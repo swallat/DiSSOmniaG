@@ -35,14 +35,9 @@ class Topology(dissomniag.Base):
     __tablename__ = 'topologies'
     id = sa.Column(sa.Integer, primary_key = True)
     name = sa.Column(sa.String, nullable = False)
-    
-    host_id = sa.Column(sa.Integer, sa.ForeignKey('hosts.id'))
-    host = orm.relationship("Host", backref = "topologies") # Many to one style
-    virtualMachines = orm.relationship("VM", backref = "topology")
-    
+    #virtualMachines = orm.relationship("VM", backref = "topology")
+    #generatedNetworks = orm.relationship("GeneratedNetwork", backref = "topology")
     users = orm.relationship('User', secondary = user_topology, backref = 'topologies')
-    
-    connections = orm.relationship("TopologyConnection", backref = "topology")
     
     def authUser(self, user):
         if user in self.users or user.isAdmin:
@@ -81,44 +76,4 @@ class Topology(dissomniag.Base):
         
         dissomniag.taskManager.Dispatcher.addJob(user, job)
         return True
-
-
-        
-class TopologyConnection(dissomniag.Base):
-    __tablename__ = 'topologyConnections'
-    id = sa.Column(sa.Integer, primary_key = True)
-    fromVM_id = sa.Column(sa.Integer, sa.ForeignKey('vms.id'), nullable = False)
-    fromVM = orm.relationship("VM", primaryjoin = "TopologyConnection.fromVM_id == VM.vm_id")
-    viaGenNetwork_id = sa.Column(sa.Integer, sa.ForeignKey('networks.id'), nullable = False)
-    viaGenNetwork = orm.relationship("generatedNetwork", backref = "connections")
-    toVM_id = sa.Column(sa.Integer, sa.ForeignKey('vms.id'), nullable = False)
-    toVM = orm.relationship("VM", primaryjoin = "TopologyConnection.toVM_id == VM.vm_id")
-    topology_id = sa.Column(sa.Integer, sa.ForeignKey('topologies.id'))
-    """
-    classdocs
-    """
-    
-    @staticmethod
-    def deleteConnection(user, connection):
-        if connection == None or type(connection) != TopologyConnection:
-            return False
-        connection.topology.authUser(user)
-        try:
-            TopologyConnection.deleteConnectionUnsafe(user, connection)
-        except Exception:
-            return False
-        return True
-    
-    """
-    May raise SqlAlchemy Exception
-    """
-    @staticmethod
-    def deleteConnectionUnsafe(user, connection):
-        if connection == None or type(connection) != TopologyConnection:
-            return False
-        connection.topology.authUser(user)
-        
-        session = dissomniag.Session()
-        session.delete(connection)
-        dissomniag.saveCommit(session)
         
