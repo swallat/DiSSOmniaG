@@ -120,6 +120,18 @@ genNetworks = Table('genNetworks', meta,
            Column('outboundAverage', Integer),
            Column('outboundPeak', Integer),
            Column('outboundBurst', Integer),
+           Column('xValue', Integer, nullable = False, default = 0),
+           Column('yValue', Integer, nullable = False, default = 0),
+           Column('zValue', Integer, nullable = False, default = 0),
+)
+
+generalNetworks = Table('generalNetworks', meta,
+           Column('id', Integer, primary_key = True),
+           Column('name', String, nullable = False, unique = True),
+           Column('topology_id', Integer, ForeignKey('topologies.id')),
+           Column('xValue', Integer, nullable = False, default = 0),
+           Column('yValue', Integer, nullable = False, default = 0),
+           Column('zValue', Integer, nullable = False, default = 0),
 )
 
 topologies = Table('topologies', meta,
@@ -173,6 +185,9 @@ vms = Table('vms', meta,
            Column('host_id', Integer, ForeignKey('hosts.id')),
            Column('liveCd_id', Integer, ForeignKey('livecds.id')),
            Column("maintainUser_id", Integer, ForeignKey('users.id')),
+           Column('xValue', Integer, nullable = False, default = 0),
+           Column('yValue', Integer, nullable = False, default = 0),
+           Column('zValue', Integer, nullable = False, default = 0),
 )
 
 apps = Table('apps', meta,
@@ -221,6 +236,8 @@ def upgrade(migrate_engine):
     networks.create()
     print("Migrate: Add genNetworks Table")
     genNetworks.create()
+    print("Migrate: Add generalNetworks Table")
+    generalNetworks.create()
     print("Migrate: Add Node_Network Table")
     node_network.create()
     print("Migrate: Add ipAddresses Table")
@@ -250,6 +267,7 @@ def downgrade(migrate_engine):
     ipAddresses.drop()
     node_network.drop()
     genNetworks.drop()
+    generalNetworks.drop()
     networks.drop()
     topologies.drop()
     interfaces.drop()

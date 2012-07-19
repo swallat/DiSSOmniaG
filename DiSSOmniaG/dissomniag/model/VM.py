@@ -57,6 +57,9 @@ class VM(AbstractNode):
     liveCd = orm.relationship("LiveCd", backref=orm.backref("vm", uselist=False))
     maintainUser_id = sa.Column(sa.Integer, sa.ForeignKey('users.id'))
     maintainUser = orm.relationship("User", backref=orm.backref("VM", uselist=False))
+    xValue = sa.Column(sa.Integer, nullable = False, default = 0)
+    yValue = sa.Column(sa.Integer, nullable = False, default = 0)
+    zValue = sa.Column(sa.Integer, nullable = False, default = 0)
     runningState = None
     
     """

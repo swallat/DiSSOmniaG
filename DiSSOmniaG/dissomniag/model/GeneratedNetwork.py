@@ -74,6 +74,9 @@ class generatedNetwork(Network):
     outboundAverage = sa.Column(sa.Integer)
     outboundPeak = sa.Column(sa.Integer)
     outboundBurst = sa.Column(sa.Integer)
+    xValue = sa.Column(sa.Integer, nullable = False, default = 0)
+    yValue = sa.Column(sa.Integer, nullable = False, default = 0)
+    zValue = sa.Column(sa.Integer, nullable = False, default = 0)
     
     namePrefix = "virdiss"
     ranges = {"255": range(1, 255),
