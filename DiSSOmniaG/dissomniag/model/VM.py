@@ -375,6 +375,11 @@ class VM(AbstractNode):
             isHostDefined.text = "true"
             hostName = etree.SubElement(host, "host-name")
             hostName.text = str(self.host.commonName)
+            hostIp = etree.SubElement(host, "host-ip")
+            if (self.host.getMaintainanceIP() != None):
+                hostIp.text = str(self.host.getMaintainanceIP().addr)
+            else:
+                hostIp.text = "None"
             
         vncInfo = etree.SubElement(root, "vnc-info")
         vncPort = etree.SubElement(vncInfo, "port")
