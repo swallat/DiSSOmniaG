@@ -115,7 +115,7 @@ def deleteTopology(user, topoName):
     session = dissomniag.Session()
     
     log.info("Topology to Delete: " + topoName)
-    
+    topos = []
     try:
         topos = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
     except NoResultFound:
@@ -124,8 +124,12 @@ def deleteTopology(user, topoName):
         retString = etree.tostring(root, pretty_print = True)
         log.info("Add topology: " + retString)
         return retString
+    
+    
     topo = topos[0]
+    log.info("Topo: " + topo)
     isDeleted = dissomniag.model.Topology.deleteTopology(user,topo)
+    log.finco("is Deleted:" + str(isDeleted))
     if isDeleted:
         deleted.text = "true"
     else:
