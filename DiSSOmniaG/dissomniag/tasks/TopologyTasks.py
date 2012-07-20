@@ -67,7 +67,7 @@ class DeleteTopology(dissomniag.taskManager.AtomicTask):
             self.job.trace("DeleteTopology: In Context missing topology object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing topology object.")
         if ((self.context.topology.generatedNetworks != None and len(self.context.topology.generatedNetworks) != 0) or
-                (self.context.topology.virtualMachines != None and len(self.context.topology.virtualMachines != 0))):
+                (self.context.topology.vms != None and len(self.context.topology.vms != 0))):
             self.job.trace("Topology %s cannot be deleted securely: Make sure that all networks and all VM's of the Topology are deleted.")
             raise dissomniag.taskManager.UnrevertableFailure("Not all VM's or Nets are deleted in Topology")
          
