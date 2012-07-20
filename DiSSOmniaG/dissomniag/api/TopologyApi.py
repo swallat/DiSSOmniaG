@@ -130,7 +130,7 @@ def deleteTopology(user, topoName):
     topo = topos[0]
     log.info("Topo: " + str(topo))
     isDeleted = dissomniag.model.Topology.deleteTopology(user,topo)
-    log.finco("is Deleted:" + str(isDeleted))
+    log.info("is Deleted:" + str(isDeleted))
     if isDeleted:
         deleted.text = "true"
     else:
