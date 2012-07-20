@@ -173,7 +173,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
                     job.addTask(dissomniag.tasks.statusVM())
                     dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, vm.host, job)
                     
-        self.createSampleTopology
+        self.createSampleTopology()
         
         #print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
         log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
@@ -192,6 +192,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         self._tearDown()
         
     def createSampleTopology(self):
+        session = dissomniag.Session()
         try:
             topos = session.query(dissomniag.model.Topology).all()
         except NoResultFound:
@@ -202,7 +203,6 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
                     return
                 
         #No sample Topo exists
-        session = dissomniag.Session()
         adminUser = session.query(dissomniag.auth.User).all()[1]
         ident = dissomniag.getIdentity() 
         ip = str(ident.getMaintainanceIP().addr)
