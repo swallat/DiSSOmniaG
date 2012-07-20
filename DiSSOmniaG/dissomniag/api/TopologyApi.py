@@ -114,6 +114,8 @@ def deleteTopology(user, topoName):
     topoName = str(topoName)
     session = dissomniag.Session()
     
+    log.info("Topology to Delete: " + topoName)
+    
     try:
         topos = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
     except NoResultFound:
