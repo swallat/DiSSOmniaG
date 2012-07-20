@@ -99,12 +99,40 @@ def addTopology(user, topoName):
     else:
         topo = dissomniag.model.Topology()
         topo.name = topoName
+        topo.users.append(user)
         session.add(topo)
         dissomniag.saveCommit(session)
         added.text = "true"
         retString = etree.tostring(root, pretty_print = True)
         log.info("Add topology: " + retString)
         return retString
+    
+def deleteTopology(user, topoName):
+    root = etree.Element("result")
+    errorMsg = etree.SubElement(root, "error")
+    deleted = etree.SubElement(root, "deleted")
+    topoName = str(topoName)
+    
+    try:
+        topos = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
+    except NoResultFound:
+        errorMsg.text = "There is no Topology with name " + topoName
+        deleted.text = "false"
+        retString = etree.tostring(root, pretty_print = True)
+        log.info("Add topology: " + retString)
+        return retString
+    topo = topos[0]
+    isDeleted = dissomniag.model.Topology.deleteTopology(user,topo)
+    if isDeleted:
+        deleted.text = "true"
+    else:
+        deleted.text = "false"
+    deleted.text = "false"
+    retString = etree.tostring(root, pretty_print = True)
+    log.info("Add topology: " + retString)
+    return retString
+    
+        
     
     
     
