@@ -390,7 +390,7 @@ class VM(AbstractNode):
             vncPassword.text = ""
             
         lastSeen = etree.SubElement(root, "last-seen")
-        lastSeen.text = str(self.lastSeen)
+        lastSeen.text = str(self.lastSeenClient)
         
         state = etree.SubElement(root, "state")
         state.text = str(dissomniag.model.NodeState.getStateName(self.state))
@@ -405,7 +405,7 @@ class VM(AbstractNode):
             
             connection = etree.SubElement(allConnections, "connection")
             type = etree.SubElement(connection, "type")
-            type.name = "vm-net"
+            type.text = "vm-net"
             networkName = etree.SubElement(connection, "network-name")
             networkName.text = str(interface.ipAddresses[0].network.name)
             interfaceName = etree.SubElement(connection, "interface-name")
