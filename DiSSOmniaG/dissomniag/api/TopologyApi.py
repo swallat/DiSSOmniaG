@@ -79,13 +79,17 @@ def addTopology(user, topoName):
     added = etree.SubElement(root, "added")
     session = dissomniag.Session()
     try:
-        topo = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
+        topos = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
     except NoResultFound:
         pass
     else:
+        if topos == []:
+            pass
         errorMsg.text = "Topology already Exists"
         added.text = "false"
-        return etree.tostring(root, pretty_print = True)
+        retString = etree.tostring(root, pretty_print = True)
+        log.info("Senf add topology: " + retString)
+        return retString
     
     topo = dissomniag.model.Topology()
     topo.name = topoName
