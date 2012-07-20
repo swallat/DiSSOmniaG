@@ -78,25 +78,33 @@ def addTopology(user, topoName):
     topoName = str(topoName)
     added = etree.SubElement(root, "added")
     session = dissomniag.Session()
+    found = True
     try:
         topos = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
     except NoResultFound:
-        pass
+        found = False
     else:
-        if topos == []:
-            pass
+        if not topos:
+            found = False
+        else:
+            found = True
+        
+    
+    if found:
         errorMsg.text = "Topology already Exists"
         added.text = "false"
         retString = etree.tostring(root, pretty_print = True)
         log.info("Add topology: " + retString)
         return retString
+    else:
+        topo = dissomniag.model.Topology()
+        topo.name = topoName
+        session.add(topo)
+        dissomniag.saveCommit(session)
+        added.text = "true"
+        retString = etree.tostring(root, pretty_print = True)
+        log.info("Add topology: " + retString)
+        return retString
     
-    topo = dissomniag.model.Topology()
-    topo.name = topoName
-    session.add(topo)
-    dissomniag.saveCommit(session)
-    added.text = "true"
-    retString = etree.tostring(root, pretty_print = True)
-    log.info("Add topology: " + retString)
-    return retString
+    
     
