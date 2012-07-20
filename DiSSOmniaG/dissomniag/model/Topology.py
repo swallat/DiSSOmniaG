@@ -54,6 +54,8 @@ class Topology(dissomniag.Base):
         root = etree.Element("topology")
         name = etree.SubElement(root, "name")
         name.text = str(self.name)
+        type = etree.SubElement(root, "type")
+        type.text = "remote"
         userList = etree.SubElement(root, "user-list")
         for user in self.users:
             userName = etree.SubElement(userList, "user-name")

@@ -155,13 +155,6 @@ class Host(AbstractNode):
         #1. Delete all Topologies on Host
         
         session = dissomniag.Session()
-        try:
-            topologies = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.host == node).all()
-        except NoResultFound:
-            pass
-        
-        for topology in topologies:
-            dissomniag.model.Topology.deleteTopology(topology)
         
         context = dissomniag.taskManager.Context()
         context.add(node, "host")    
