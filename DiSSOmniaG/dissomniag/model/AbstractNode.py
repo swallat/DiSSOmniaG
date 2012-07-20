@@ -104,7 +104,6 @@ class AbstractNode(dissomniag.Base):
                  sshKey = None, administrativeUserName = None,
                  utilityFolder = None, state = None,
                  parseLocalInterfaces = False):
-        session = dissomniag.Session()
         self.commonName = commonName
         if setMyUuid == None:
             self.uuid = str(uuid.uuid4())
@@ -115,7 +114,7 @@ class AbstractNode(dissomniag.Base):
             self.state = state
         else:
             self.state = NodeState.NOT_CREATED
-            
+        session = dissomniag.Session()
         session.add(self)
         dissomniag.saveCommit(session)
         
