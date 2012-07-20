@@ -28,8 +28,8 @@ class DeleteVMsOfTopology(dissomniag.taskManager.AtomicTask):
             self.job.trace("DeleteVMsOfTopology: In Context missing topology object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing topology object.")
         failed = False
-        for vm in self.context.topology.virtualMachines:
-            if not dissomniag.model.VM.deleteVM(vm):
+        for vm in self.context.topology.vms:
+            if not dissomniag.model.VM.deleteVm(vm):
                 failed = True
                 self.job.trace("Could not delete VM %s in Topology %s." % (str(vm.commonName), str(self.context.topology.name)))
         if failed:
