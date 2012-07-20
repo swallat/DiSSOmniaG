@@ -172,6 +172,8 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
                     job = dissomniag.taskManager.Job(context, "Sanity check VM on startup", user = self.user)
                     job.addTask(dissomniag.tasks.statusVM())
                     dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, vm.host, job)
+                    
+        self.createSampleTopology
         
         #print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
         log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
@@ -189,6 +191,76 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         reactor.run()
         self._tearDown()
         
+    def createSampleTopology(self):
+        try:
+            topos = session.query(dissomniag.model.Topology).all()
+        except NoResultFound:
+            pass
+        else:
+            for topo in topos:
+                if topo.name == "SampleTopology":
+                    return
+                
+        #No sample Topo exists
+        session = dissomniag.Session()
+        adminUser = session.query(dissomniag.auth.User).all()[1]
+        ident = dissomniag.getIdentity() 
+        ip = str(ident.getMaintainanceIP().addr)
+        host = dissomniag.model.Host(adminUser, "localhost", "132.252.151.218", "br0", administrativeUserName = "dissomniag-host-user")
+        session.add(host)
+        dissomniag.saveCommit(session)
+        host.checkFull(adminUser)
+        topo = dissomniag.model.Topology()
+        topo.name = "SampleTopology" 
+        session.add(topo)
+        dissomniag.saveCommit(session)
+        net1 = dissomniag.model.generatedNetwork(adminUser, "10.100.1.0/24", host, topo, "Connection1") 
+        net1.xValue = str(83)
+        net1.yValue = str(57)
+        net1.zValue = str(0)
+        session.add(net1)
+        dissomniag.saveCommit(session)
+        net2 = dissomniag.model.generatedNetwork(adminUser, "10.100.2.0/24", host, topo, "Connection2") 
+        net2.xValue = str(285) 
+        net2.yValue = str(58) 
+        net2.zValue = str(0) 
+        session.add(net1)
+        dissomniag.saveCommit(session)
+        
+        vm1 = dissomniag.model.VM(adminUser, "Source", host)
+        vm1.xValue = str(17) 
+        vm1.yValue = str(9) 
+        vm1.zValue = str(0)
+        session.add(vm1) 
+        dissomniag.saveCommit(session) 
+        
+        vm2 = dissomniag.model.VM(adminUser, "SimulatedNetwork", host)
+        vm2.xValue = str(169) 
+        vm2.yValue = str(10) 
+        vm2.zValue = str(0.1)
+        
+        session.add(vm2) 
+        dissomniag.saveCommit(session) 
+        
+        vm3 = dissomniag.model.VM(adminUser, "Sink", host) 
+        vm3.xValue = str(406) 
+        vm3.yValue = str(16) 
+        vm3.zValue = str(0) 
+        session.add(vm3) 
+        dissomniag.saveCommit(session) 
+        
+        topo.vms.append(vm1) 
+        topo.vms.append(vm2) 
+        topo.vms.append(vm3) 
+        
+        dissomniag.saveCommit(session)
+        
+        vm1.addInterfaceToNet(adminUser, net1) 
+        vm2.addInterfaceToNet(adminUser, net1) 
+        vm2.addInterfaceToNet(adminUser, net2) 
+        vm3.addInterfaceToNet(adminUser, net2) 
+        
+        dissomniag.saveCommit(session)
     
     def _tearDown(self):
         #print("Closing Dispatcher")
