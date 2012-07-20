@@ -173,11 +173,14 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
                     job.addTask(dissomniag.tasks.statusVM())
                     dissomniag.taskManager.Dispatcher.addJobSyncronized(self.user, vm.host, job)
                     
-        self.createSampleTopology()
+        
         
         #print("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
         log.info("Parse Htpasswd File at: %s" % dissomniag.config.htpasswd.htpasswd_file)
         dissomniag.auth.parseHtpasswdFile()
+        
+        self.createSampleTopology()
+        
         #print("Starting XML-RPC Server at Port: %s" % dissomniag.config.server.rpcPort)
         log.info("Starting XML-RPC Server at Port: %s" % dissomniag.config.server.rpcPort)
         dissomniag.server.startRPCServer()
