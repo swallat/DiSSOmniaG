@@ -102,6 +102,7 @@ def addTopology(user, topoName):
         topo.users.append(user)
         session.add(topo)
         dissomniag.saveCommit(session)
+        dissomniag.saveFlush(session)
         added.text = "true"
         retString = etree.tostring(root, pretty_print = True)
         log.info("Add topology: " + retString)
@@ -127,7 +128,7 @@ def deleteTopology(user, topoName):
     
     
     topo = topos[0]
-    log.info("Topo: " + topo)
+    log.info("Topo: " + str(topo))
     isDeleted = dissomniag.model.Topology.deleteTopology(user,topo)
     log.finco("is Deleted:" + str(isDeleted))
     if isDeleted:
