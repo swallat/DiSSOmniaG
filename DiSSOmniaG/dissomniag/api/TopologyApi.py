@@ -71,3 +71,28 @@ def isTopologyNameValid(user, topoName):
     log.info("Senf isTopologyNameValid: " + retString)
     return retString
         
+        
+def addTopology(user, topoName):
+    root = etree.Element("result")
+    errorMsg = etree.SubElement(root, "error")
+    topoName = str(topoName)
+    added = etree.SubElement(root, "added")
+    session = dissomniag.Session()
+    try:
+        topo = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
+    except NoResultFound:
+        pass
+    else:
+        errorMsg.text = "Topology already Exists"
+        added.text = "false"
+        return etree.tostring(root, pretty_print = True)
+    
+    topo = dissomniag.model.Topology()
+    topo.name = topoName
+    session.add(topo)
+    dissomniag.saveCommit(session)
+    added.text = "true"
+    retString = etree.tostring(root, pretty_print = True)
+    log.info("Senf add topology: " + retString)
+    return retString
+    
