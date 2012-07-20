@@ -208,7 +208,8 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         #No sample Topo exists
         adminUser = session.query(dissomniag.auth.User).all()[1]
         ident = dissomniag.getIdentity() 
-        ip = str(ident.getMaintainanceIP().addr)
+        #ip = str(ident.getMaintainanceIP().addr)
+        ip = "132.252.151.218"
         host = dissomniag.model.Host(adminUser, "localhost", "132.252.151.218", "br0", administrativeUserName = "dissomniag-host-user")
         session.add(host)
         dissomniag.saveCommit(session)
