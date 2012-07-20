@@ -134,12 +134,11 @@ class VM(AbstractNode):
         
     def __init__(self, user, commonName, host):
         
-        if host != None and isinstance(host, dissomniag.model.Host):
-            self.setHost(user, host)
-        
         sshKey = SSHNodeKey.generateVmKey(commonName, user="user")
         
         super(VM, self).__init__(user, commonName, sshKey = sshKey, state = dissomniag.model.NodeState.NOT_CREATED)
+        if host != None and isinstance(host, dissomniag.model.Host):
+            self.setHost(user, host)
         self.selectInitialStateActor()
         self.vncPassword = dissomniag.utils.random_password()
         
