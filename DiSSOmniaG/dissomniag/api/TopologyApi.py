@@ -131,9 +131,11 @@ def deleteTopology(user, topoName):
     log.info("Topo: " + str(topo))
     isDeleted = dissomniag.model.Topology.deleteTopology(user,topo)
     log.info("is Deleted:" + str(isDeleted))
-    if isDeleted:
+    if isDeleted == True:
+        log.info("in is deleted: True")
         deleted.text = "true"
     else:
+        log.info("in is deleted: False")
         deleted.text = "false"
     deleted.text = "false"
     retString = etree.tostring(root, pretty_print = True)
