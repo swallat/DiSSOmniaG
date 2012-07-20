@@ -88,7 +88,7 @@ def addTopology(user, topoName):
         errorMsg.text = "Topology already Exists"
         added.text = "false"
         retString = etree.tostring(root, pretty_print = True)
-        log.info("Senf add topology: " + retString)
+        log.info("Add topology: " + retString)
         return retString
     
     topo = dissomniag.model.Topology()
@@ -97,6 +97,6 @@ def addTopology(user, topoName):
     dissomniag.saveCommit(session)
     added.text = "true"
     retString = etree.tostring(root, pretty_print = True)
-    log.info("Senf add topology: " + retString)
+    log.info("Add topology: " + retString)
     return retString
     
