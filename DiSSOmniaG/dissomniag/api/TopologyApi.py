@@ -112,6 +112,7 @@ def deleteTopology(user, topoName):
     errorMsg = etree.SubElement(root, "error")
     deleted = etree.SubElement(root, "deleted")
     topoName = str(topoName)
+    session = dissomniag.Session()
     
     try:
         topos = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
