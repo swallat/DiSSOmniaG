@@ -25,7 +25,7 @@ class DeleteVMsOfTopology(dissomniag.taskManager.AtomicTask):
     
     def run(self):
         if not hasattr(self.context, "topology") or  type(self.context.topology) != dissomniag.model.Topology:
-            self.job.trace("CheckHostUpTask: In Context missing topology object.")
+            self.job.trace("DeleteVMsOfTopology: In Context missing topology object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing topology object.")
         failed = False
         for vm in self.context.topology.virtualMachines:
@@ -44,7 +44,7 @@ class DeleteNetworksOfTopology(dissomniag.taskManager.AtomicTask):
     
     def run(self):
         if not hasattr(self.context, "topology") or  type(self.context.topology) != dissomniag.model.Topology:
-            self.job.trace("CheckHostUpTask: In Context missing topology object.")
+            self.job.trace("DeleteNetworksOfTopology: In Context missing topology object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing topology object.")
         
         failed = False
