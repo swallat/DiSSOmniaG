@@ -101,8 +101,8 @@ class Topology(dissomniag.Base):
         
         job = dissomniag.taskManager.Job(context = context, description = "Delete Topology", user = user)
         #3. Delete Connections
-        job.addTask(dissomniag.tasks.DeleteExistingVMsOnHost())
-        job.addTask(dissomniag.tasks.DeleteExistingNetsOnHost())
+        job.addTask(dissomniag.tasks.DeleteVMsOfTopology())
+        job.addTask(dissomniag.tasks.DeleteNetworksOfTopology())
         
         #4. Delete Topology
         job.addTask(dissomniag.tasks.DeleteTopology())

@@ -64,7 +64,7 @@ class DeleteTopology(dissomniag.taskManager.AtomicTask):
     
     def run(self):
         if not hasattr(self.context, "topology") or  type(self.context.topology) != dissomniag.model.Topology:
-            self.job.trace("CheckHostUpTask: In Context missing topology object.")
+            self.job.trace("DeleteTopology: In Context missing topology object.")
             raise dissomniag.taskManager.UnrevertableFailure("In Context missing topology object.")
         if ((self.context.topology.generatedNetworks != None and len(self.context.topology.generatedNetworks) != 0) or
                 (self.context.topology.virtualMachines != None and len(self.context.topology.virtualMachines != 0))):
