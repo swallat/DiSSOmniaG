@@ -21,24 +21,6 @@
 # along with DiSSOmniaG. If not, see <http://www.gnu.org/licenses/>
 import dissomniag
 
-class DeleteTopologyConnections(dissomniag.taskManager.AtomicTask):
-    
-    def run(self):
-        if not hasattr(self.context, "topology") or  type(self.context.topology) != dissomniag.model.Topology:
-            self.job.trace("CheckHostUpTask: In Context missing topology object.")
-            raise dissomniag.taskManager.UnrevertableFailure("In Context missing topology object.")
-        try:
-            for connection in self.context.topology.connections:
-                dissomniag.model.TopologyConnection.deleteConnectionUnsafe(self.user, connection)
-        except Exception:
-            self.job.trace("Sqlalchemy Error: Cannot delete Connection of a Topology.")
-            raise dissomniag.taskManager.UnrevertableFailure("Sqlalchemy Error: Cannot delete Connection of a Topology.")
-        
-        return dissomniag.taskManager.TaskReturns.SUCCESS
-    
-    def revert(self):
-        raise dissomniag.taskManager.UnrevertableFailure()
-
 class DeleteVMsOfTopology(dissomniag.taskManager.AtomicTask):
     
     def run(self):
