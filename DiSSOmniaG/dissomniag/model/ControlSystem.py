@@ -196,6 +196,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         
     def createSampleTopology(self):
         session = dissomniag.Session()
+        adminUser = session.query(dissomniag.auth.User).all()[0]
         try:
             topos = session.query(dissomniag.model.Topology).all()
         except NoResultFound:
@@ -203,6 +204,13 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         else:
             for topo in topos:
                 if topo.name == "SampleTopology":
+                    nets = topo.generatedNetworks
+                    for net in nets:
+                        net.start(adminUser)
+                    vms = topo.vms
+                    for vm in vms:
+                        vm.createStartJob(adminUser)
+                    
                     return
                 
         #No sample Topo exists
@@ -265,6 +273,13 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         vm3.addInterfaceToNet(adminUser, net2) 
         
         dissomniag.saveCommit(session)
+        
+        net1.start(adminUser)
+        net2.start(adminUser)
+        
+        vm1.createStartJob(adminUser)
+        vm2.createStartJob(adminUser)
+        vm3.createStartJob(adminUser)
     
     def _tearDown(self):
         #print("Closing Dispatcher")
