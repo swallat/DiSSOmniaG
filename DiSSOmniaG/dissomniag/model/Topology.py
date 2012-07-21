@@ -34,7 +34,7 @@ user_topology = sa.Table('user_topology', dissomniag.Base.metadata,
 )
 
 app_topology = sa.Table('app_topology', dissomniag.Base.metadata,
-                        sa.Column('app_id', sa.Integer, sa.ForeignKey('app.id')),
+                        sa.Column('app_id', sa.Integer, sa.ForeignKey('apps.id')),
                         sa.Column('topology_id', sa.Integer, sa.ForeignKey('topologies.id')),
 )
 

@@ -214,7 +214,7 @@ app_livecd = Table('app_livecd', meta,
 )
 
 app_topology = Table('app_topology', meta,
-                        Column('app_id', Integer, ForeignKey('app.id')),
+                        Column('app_id', Integer, ForeignKey('apps.id')),
                         Column('topology_id', Integer, ForeignKey('topologies.id')),
 )
 
