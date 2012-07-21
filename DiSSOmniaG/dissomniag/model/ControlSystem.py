@@ -210,7 +210,7 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
         ident = dissomniag.getIdentity() 
         #ip = str(ident.getMaintainanceIP().addr)
         ip = "132.252.151.218"
-        host = dissomniag.model.Host(adminUser, "localhost", "132.252.151.218", "br0", administrativeUserName = "dissomniag-host-user")
+        host = dissomniag.model.Host(adminUser, "localhost", "10.0.10.21", "br0", administrativeUserName = "dissomniag-host-user")
         session.add(host)
         dissomniag.saveCommit(session)
         host.checkFull(adminUser)
