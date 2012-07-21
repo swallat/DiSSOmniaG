@@ -33,6 +33,11 @@ user_topology = sa.Table('user_topology', dissomniag.Base.metadata,
            sa.Column('topology_id', sa.Integer, sa.ForeignKey('topologies.id')),
 )
 
+app_topology = sa.Table('app_topology', dissomniag.Base.metadata,
+                        sa.Column('app_id', sa.Integer, sa.ForeignKey('app.id')),
+                        sa.Column('topology_id', sa.Integer, sa.ForeignKey('topologies.id')),
+)
+
 class Topology(dissomniag.Base):
     __tablename__ = 'topologies'
     id = sa.Column(sa.Integer, primary_key = True)
@@ -40,6 +45,7 @@ class Topology(dissomniag.Base):
     #virtualMachines = orm.relationship("VM", backref = "topology")
     #generatedNetworks = orm.relationship("GeneratedNetwork", backref = "topology")
     users = orm.relationship('User', secondary = user_topology, backref = 'topologies')
+    apps = orm.relationship('App', secondary = app_topology, backref = 'apps')
     
     def authUser(self, user):
         if user in self.users or user.isAdmin:

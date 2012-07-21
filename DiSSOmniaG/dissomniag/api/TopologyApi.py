@@ -122,7 +122,7 @@ def deleteTopology(user, topoName):
         errorMsg.text = "There is no Topology with name " + topoName
         deleted.text = "false"
         retString = etree.tostring(root, pretty_print = True)
-        log.info("Add topology: " + retString)
+        log.info("Delete topology: " + retString)
         return retString
     
     
@@ -137,6 +137,29 @@ def deleteTopology(user, topoName):
 
     retString = etree.tostring(root, pretty_print = True)
     log.info("Add topology: " + retString)
+    return retString
+
+def getTopoFullXml(user, topoName):
+    root = etree.Element("result")
+    errorMsg = etree.SubElement(root, "error")
+    topoXml = etree.SubElement(root, "topology-full-xml")
+    
+    topoName = str(topoName)
+    topos = []
+    session = dissomniag.Session()
+    try:
+        topos = session.query(dissomniag.model.Topology).filter(dissomniag.model.Topology.name == topoName).all()
+    except NoResultFound:
+        errorMsg.text = "There is no Topology with name " + topoName
+        retString = etree.tostring(root, pretty_print = True)
+        log.info("getFullXml topology: " + retString)
+        return retString
+    
+    topo = topos[0]
+    
+    topoXml.text = topo.getFullXml(user)
+    retString = etree.tostring(root, pretty_print = True)
+    log.info("getFullXml topology: " + retString)
     return retString
     
         

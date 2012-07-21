@@ -283,7 +283,6 @@ class ControlSystem(AbstractNode, dissomniag.Identity):
     
     def _tearDown(self):
         #print("Closing Dispatcher")
-        log.info("Closing Dispatcher")
         dissomniag.taskManager.Dispatcher.cleanUpDispatcher()
         dissomniag.utils.Logging.doLogEnd()
     

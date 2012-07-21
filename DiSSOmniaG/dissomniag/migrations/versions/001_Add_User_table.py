@@ -213,6 +213,11 @@ app_livecd = Table('app_livecd', meta,
            Column('log', String),
 )
 
+app_topology = Table('app_topology', meta,
+                        Column('app_id', Integer, ForeignKey('app.id')),
+                        Column('topology_id', Integer, ForeignKey('topologies.id')),
+)
+
 
 
 
@@ -261,10 +266,13 @@ def upgrade(migrate_engine):
     user_app.create()
     print("Migrate: Add App_LiveCd Table")
     app_livecd.create()
+    print("Migrate: Add App_Topology Table")
+    app_topology.create()
     
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
+    app_topology.drop()
     app_livecd.drop()
     user_app.drop()
     apps.drop()
