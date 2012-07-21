@@ -157,7 +157,7 @@ def getTopoFullXml(user, topoName):
     
     topo = topos[0]
     
-    topoXml.text = topo.getFullXml(user)
+    topoXml.text = etree.tostring(topo.getFullXml(user), pretty_print = True)
     retString = etree.tostring(root, pretty_print = True)
     log.info("getFullXml topology: " + retString)
     return retString
