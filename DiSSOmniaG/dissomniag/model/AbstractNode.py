@@ -53,7 +53,7 @@ class NodeState:
         elif state == NodeState.DOWN:
             return "DOWN"
         elif state == NodeState.NOT_CREATED:
-            return "NOT CREATED"
+            return "NOT_CREATED"
         elif state == NodeState.PREPARED:
             return "PREPARED"
         elif state == NodeState.PREPARE_ERROR:

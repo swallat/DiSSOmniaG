@@ -19,14 +19,28 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with DiSSOmniaG. If not, see <http://www.gnu.org/licenses/>
+from lxml import etree
+import dissomniag.auth.User
+import dissomniag.model.Host
+import dissomniag.config
+import os
 import logging
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+log = logging.getLogger("api.GeneralNetApi.py")
 
-log = logging.getLogger("api.__init__")
-
-from SimpleMath import *
-from Update import *
-from CheckConnectivity import *
-from HostApi import *
-from TopologyApi import *
-from VmApi import *
-from GeneralNetApi import *
+def isGeneralNetNameValid(user, generalNetName):
+    # HACK until Name change supported always return false
+    
+    root = etree.Element("result")
+    errorMsg = etree.SubElement(root, "error")
+    
+    generalNetName = str(generalNetName)
+    
+    session = dissomniag.Session()
+    isValid = "false"
+        
+    valid = etree.SubElement(root, "isValid")
+    valid.text = isValid
+    retString = etree.tostring(root, pretty_print = True)
+    log.info("Senf isGeneralNetNameValid: " + retString)
+    return retString
