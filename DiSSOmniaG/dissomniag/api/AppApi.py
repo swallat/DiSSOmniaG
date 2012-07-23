@@ -57,11 +57,11 @@ def startApp(user, appName, vmName = None):
         try:
             vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == vmName).one()
         except NoResultFound as e:
-            errorMsg.text = ("There is no VM with name %s." % self.vmName)
+            errorMsg.text = ("There is no VM with name %s." % vmName)
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         except MultipleResultsFound as e:
-            errorMsg.text = ("There are multiple VM's with name %s. DB ERROR." % self.vmName)
+            errorMsg.text = ("There are multiple VM's with name %s. DB ERROR." % vmName)
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         
@@ -74,17 +74,17 @@ def startApp(user, appName, vmName = None):
         try:
             relObj = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == app).filter(dissomniag.model.AppLiveCdRelation.liveCd == liveCd).one()
         except NoResultFound as e:
-            errorMsg.text = ("There is no Relation between app %s and vm %s." % (self.appName, self.vmName))
+            errorMsg.text = ("There is no Relation between app %s and vm %s." % (appName, vmName))
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         except MultipleResultsFound as e:
-            errorMsg.text = ("There are multiple relations between add %s and vm %s." % (self.appName, self.vmName))
+            errorMsg.text = ("There are multiple relations between add %s and vm %s." % (appName, vmName))
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         
     try:
         #print("self.action() = %s" % dissomniag.model.AppActions.getName(self.action()))
-        ret = app.operate(self.user, dissomniag.model.AppActions.START, relObj)
+        ret = app.operate(user, dissomniag.model.AppActions.START, relObj)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -127,11 +127,11 @@ def stopApp(user, appName, vmName = None):
         try:
             vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == vmName).one()
         except NoResultFound as e:
-            errorMsg.text = ("There is no VM with name %s." % self.vmName)
+            errorMsg.text = ("There is no VM with name %s." % vmName)
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         except MultipleResultsFound as e:
-            errorMsg.text = ("There are multiple VM's with name %s. DB ERROR." % self.vmName)
+            errorMsg.text = ("There are multiple VM's with name %s. DB ERROR." % vmName)
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         
@@ -144,17 +144,17 @@ def stopApp(user, appName, vmName = None):
         try:
             relObj = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == app).filter(dissomniag.model.AppLiveCdRelation.liveCd == liveCd).one()
         except NoResultFound as e:
-            errorMsg.text = ("There is no Relation between app %s and vm %s." % (self.appName, self.vmName))
+            errorMsg.text = ("There is no Relation between app %s and vm %s." % (appName, vmName))
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         except MultipleResultsFound as e:
-            errorMsg.text = ("There are multiple relations between add %s and vm %s." % (self.appName, self.vmName))
+            errorMsg.text = ("There are multiple relations between add %s and vm %s." % (appName, vmName))
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         
     try:
         #print("self.action() = %s" % dissomniag.model.AppActions.getName(self.action()))
-        ret = app.operate(self.user, dissomniag.model.AppActions.STOP, relObj)
+        ret = app.operate(user, dissomniag.model.AppActions.STOP, relObj)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -195,11 +195,11 @@ def refreshApp(user, appName, vmName = None):
         try:
             vm = session.query(dissomniag.model.VM).filter(dissomniag.model.VM.commonName == vmName).one()
         except NoResultFound as e:
-            errorMsg.text = ("There is no VM with name %s." % self.vmName)
+            errorMsg.text = ("There is no VM with name %s." % vmName)
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         except MultipleResultsFound as e:
-            errorMsg.text = ("There are multiple VM's with name %s. DB ERROR." % self.vmName)
+            errorMsg.text = ("There are multiple VM's with name %s. DB ERROR." % vmName)
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         
@@ -212,17 +212,17 @@ def refreshApp(user, appName, vmName = None):
         try:
             relObj = session.query(dissomniag.model.AppLiveCdRelation).filter(dissomniag.model.AppLiveCdRelation.app == app).filter(dissomniag.model.AppLiveCdRelation.liveCd == liveCd).one()
         except NoResultFound as e:
-            errorMsg.text = ("There is no Relation between app %s and vm %s." % (self.appName, self.vmName))
+            errorMsg.text = ("There is no Relation between app %s and vm %s." % (appName, vmName))
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         except MultipleResultsFound as e:
-            errorMsg.text = ("There are multiple relations between add %s and vm %s." % (self.appName, self.vmName))
+            errorMsg.text = ("There are multiple relations between add %s and vm %s." % (appName, vmName))
             log.info(etree.tostring(root, pretty_print=True))
             return etree.tostring(root, pretty_print=True)
         
     try:
         #print("self.action() = %s" % dissomniag.model.AppActions.getName(self.action()))
-        ret = app.operate(self.user, dissomniag.model.AppActions.REFRESH_GIT, relObj)
+        ret = app.operate(user, dissomniag.model.AppActions.REFRESH_GIT, relObj)
     except Exception as e:
         import traceback
         traceback.print_exc()
